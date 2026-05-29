@@ -38,6 +38,10 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
 
     Texture2D texture_;
 
+    // Dok je true, UpdateTexture() ne prepisuje teksturu — štiti ručno bojanje.
+    // Nije [SerializeField] pa se resetira pri svakom domain reloadu (recompile).
+    bool paintLock = false;
+
     // ── Public API za Editor skriptu ────────────────────────────────────────
 
     public Texture2D GetTransferTexture() => texture_;
@@ -47,6 +51,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     public void PaintTF(int cx, int cy, int radius, Color color)
     {
         if (texture_ == null) return;
+        paintLock = true;   // blokiraj UpdateTexture dok je bojanje aktivno
         int r2 = radius * radius;
         for (int x = cx - radius; x <= cx + radius; x++)
         for (int y = cy - radius; y <= cy + radius; y++)
@@ -60,7 +65,11 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     }
 
     // Resetira teksturu na ono što Gradient + gradientInfluence propisuju.
-    public void RebuildFromGradient() => UpdateTexture();
+    public void RebuildFromGradient()
+    {
+        paintLock = false;
+        UpdateTexture();
+    }
 
     // ── Unity lifecycle ──────────────────────────────────────────────────────
 
@@ -145,6 +154,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     [ContextMenu("UpdateTexture")]
     public void UpdateTexture()
     {
+        if (paintLock) return;  // ne prepiši ručno bojanje
         texture_ = new Texture2D(TFWidth, TFHeight, TextureFormat.ARGB32, false);
         texture_.wrapMode   = TextureWrapMode.Clamp;
         texture_.filterMode = FilterMode.Bilinear;
