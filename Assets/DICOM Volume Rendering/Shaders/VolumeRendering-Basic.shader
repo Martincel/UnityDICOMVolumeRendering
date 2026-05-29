@@ -7,7 +7,8 @@ Properties
     _Volume("Volume", 3D) = "" {}
     _Transfer("Transfer", 2D) = "" {}
     _Iteration("Iteration", Int) = 10
-    _Intensity("Intensity", Range(0.0, 1.0)) = 0.1
+    _Intensity("Intensity", Range(0.0, 10.0)) = 1.0
+    _GradStep("Gradient Step", Range(0.001, 0.1)) = 0.01
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendSrc ("Blend Src", Float) = 5
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendDst ("Blend Dst", Float) = 10
 
@@ -40,6 +41,7 @@ sampler3D _Volume;
 sampler2D _Transfer;
 int _Iteration;
 float _Intensity;
+float _GradStep;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 
 struct Ray
@@ -67,9 +69,9 @@ inline float sampleVolume(float3 pos)
     return tex3D(_Volume, pos).r * (x * y * z);
 }
 
-inline float4 transferFunction(float t)
+inline float4 transferFunction(float density, float gradMag)
 {
-    return tex2D(_Transfer, float2(t, 0));
+    return tex2D(_Transfer, float2(density, gradMag));
 }
 
 v2f vert(appdata v)
@@ -99,8 +101,13 @@ float4 frag(v2f i) : SV_Target
     [loop]
     for (int i = 0; i < n; ++i)
     {
-        float volume = sampleVolume(localPos + 0.5);
-        float4 color = transferFunction(volume) * volume * _Intensity;
+        float3 sp = localPos + 0.5;
+        float volume = sampleVolume(sp);
+        float gx = sampleVolume(sp + float3(_GradStep,0,0)) - sampleVolume(sp - float3(_GradStep,0,0));
+        float gy = sampleVolume(sp + float3(0,_GradStep,0)) - sampleVolume(sp - float3(0,_GradStep,0));
+        float gz = sampleVolume(sp + float3(0,0,_GradStep)) - sampleVolume(sp - float3(0,0,_GradStep));
+        float gradMag = saturate(length(float3(gx, gy, gz)));
+        float4 color = transferFunction(volume, gradMag) * volume * _Intensity;
         output += (1.0 - output.a) * color;
         localPos += localStep;
     }

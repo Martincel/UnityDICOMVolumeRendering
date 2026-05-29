@@ -18,13 +18,19 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         MaxIntensityProjection // MIP — sve bijelo, prozirnost linearno raste
     }
 
-    const int width = 100;
+    const int tfWidth  = 100;
+    const int tfHeight = 64;
 
     [SerializeField]
     CTPreset preset = CTPreset.Custom;
 
     [SerializeField]
     Gradient gradient = null;
+
+    // 0 = isto kao 1D transfer funkcija (sve gustoće vidljive)
+    // 1 = samo površine vidljive (visoki gradient magnitude)
+    [SerializeField, Range(0f, 1f)]
+    float gradientInfluence = 0f;
 
 #if UNITY_EDITOR
     [SerializeField]
@@ -64,11 +70,18 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     [ContextMenu("UpdateTexture")]
     void UpdateTexture()
     {
-        texture_ = new Texture2D(width, 1, TextureFormat.ARGB32, false);
-        for (int i = 0; i < width; ++i)
+        texture_ = new Texture2D(tfWidth, tfHeight, TextureFormat.ARGB32, false);
+        for (int x = 0; x < tfWidth; x++)
         {
-            var t = (float)i / width;
-            texture_.SetPixel(i, 0, gradient.Evaluate(t));
+            Color c = gradient.Evaluate((float)x / tfWidth);
+            for (int y = 0; y < tfHeight; y++)
+            {
+                // y=0 → gradMag=0 (unutrašnjost), y=max → gradMag=1 (rub/površina)
+                // gradientInfluence=0 → gradFactor=1 uvijek (identično 1D TF)
+                // gradientInfluence=1 → gradFactor=y/height (samo površine vidljive)
+                float gradFactor = Mathf.Lerp(1f, (float)y / (tfHeight - 1), gradientInfluence);
+                texture_.SetPixel(x, y, new Color(c.r, c.g, c.b, c.a * gradFactor));
+            }
         }
         texture_.Apply(false);
         var renderer = GetComponent<Renderer>();
