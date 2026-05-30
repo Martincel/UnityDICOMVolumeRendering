@@ -86,7 +86,7 @@ public class VolumeRenderingEditor : Editor
         EditorGUILayout.EndHorizontal();
 
         // Kursor
-        EditorGUIUtility.AddCursorRect(previewRect, MouseCursor.Crosshair);
+        EditorGUIUtility.AddCursorRect(previewRect, MouseCursor.Arrow);
 
         // Obrada miša s GetControlID — jedini pouzdan način u custom Inspectoru
         HandlePaintWithControlID(previewRect, script);
