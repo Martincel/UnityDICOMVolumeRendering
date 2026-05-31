@@ -6,7 +6,7 @@ namespace VolumeRendering
     [UnityEditor.AssetImporters.ScriptedImporter(1, "dcm")]
     public class PvmRawImporter2 : UnityEditor.AssetImporters.ScriptedImporter
     {
-        // Fiksni HU raspon za normalzaciju — isti za sve serije.
+        // Fiksni HU raspon za normalizaciju — isti za sve serije.
         //   Zrak       ~ -1000 HU  → t = 0.00
         //   Meko tkivo ~     0 HU  → t = 0.25
         //   Kost       ~   700 HU  → t = 0.43
@@ -65,31 +65,64 @@ namespace VolumeRendering
                 }
                 else
                 {
-                    // ── PATH B: komprimiran fajl ───────────────────────────────────
-                    // Ne možemo čitati sirove piksele direktno.
+                    // ── KOMPRIMIRAN: čitamo Window/Level za renormalizaciju ────────
+                    // Koristi se za komprimirane fajlove gdje ne možemo čitati sirove piksele.
                     // Korak 1: pročitamo koji Window/Level je fajl sam postavio
-                    // Korak 2: renderiramo s tim prozorom (0–255)
-                    // Korak 3: piksel → HU (inverzna window formula) → t (fiksna norma)
-                    // Rezultat je konzistentan jer uvijek koristimo iste HU_MIN/HU_MAX.
-
+                    // Korak 2: dobijemo display vrijednosti (0–255) iz rendera ili JPEG dekodera
+                    // Korak 3: inverzna window formula → HU → t (fiksna norma HU_MIN/HU_MAX)
                     double winCenter = dataset.GetSingleValueOrDefault<double>(FellowOakDicom.DicomTag.WindowCenter, 500.0);
                     double winWidth  = dataset.GetSingleValueOrDefault<double>(FellowOakDicom.DicomTag.WindowWidth,  2500.0);
                     double winLow    = winCenter - winWidth / 2.0;
 
-                    Debug.LogWarning($"[DicomImporter] {System.IO.Path.GetFileName(ctx.assetPath)}: " +
-                        $"komprimiran format (frame {frameData.Length} B < {expectedLength} B). " +
-                        $"Render+renormalizacija (WC={winCenter}, WW={winWidth}).");
+                    byte[] displayPixels = null;
 
-                    var    image    = new FellowOakDicom.Imaging.DicomImage(ctx.assetPath);
-                    byte[] raw      = image.RenderImage().As<byte[]>(); // fo-dicom → BGRA
+                    try
+                    {
+                        // ── PATH B: fo-dicom render ────────────────────────────────
+                        // Radi za većinu komprimiranih formata (JPEG-LS, RLE, itd.)
+                        Debug.LogWarning(
+                            $"[DicomImporter] {System.IO.Path.GetFileName(ctx.assetPath)}: " +
+                            $"komprimiran format (frame {frameData.Length} B < {expectedLength} B). " +
+                            $"Render+renormalizacija (WC={winCenter}, WW={winWidth}).");
 
+                        var    image = new FellowOakDicom.Imaging.DicomImage(ctx.assetPath);
+                        byte[] raw   = image.RenderImage().As<byte[]>(); // fo-dicom → BGRA
+
+                        // BGRA: kanal 2 = R vrijednost (grayscale display vrijednost)
+                        displayPixels = new byte[imgWidth * imgHeight];
+                        for (int i = 0; i < imgWidth * imgHeight; i++)
+                            displayPixels[i] = raw[i * 4 + 2];
+                    }
+                    catch (FellowOakDicom.Imaging.Codec.DicomCodecException codecEx)
+                    {
+                        // ── PATH C: JPEG Baseline fallback ─────────────────────────
+                        // fo-dicom nema ugrađeni JPEG dekoder za Unity.
+                        // DICOM JPEG Baseline sprema standardne JPEG bajte direktno u pixel data,
+                        // pa ih možemo dekodirati Unity-jevim ugrađenim JPEG dekoderom.
+                        Debug.LogWarning(
+                            $"[DicomImporter] {System.IO.Path.GetFileName(ctx.assetPath)}: " +
+                            $"fo-dicom ne podržava ovaj codec ({codecEx.Message.Split(':')[0]}). " +
+                            "Koristim Unity JPEG dekoder kao fallback.");
+
+                        var tmpTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        if (!tmpTex.LoadImage(frameData))
+                        {
+                            Debug.LogError($"[DicomImporter] Ne mogu dekodirati JPEG: {ctx.assetPath}");
+                            return;
+                        }
+                        // LoadImage automatski postavi ispravne dimenzije — RGBA grayscale, R=G=B
+                        Color32[] cols = tmpTex.GetPixels32();
+                        displayPixels = new byte[cols.Length];
+                        for (int i = 0; i < cols.Length; i++)
+                            displayPixels[i] = cols[i].r;
+                    }
+
+                    if (displayPixels == null) return;
+
+                    // Inverzna window formula: display 0–255 → HU → t
                     for (int i = 0; i < imgWidth * imgHeight; i++)
                     {
-                        // BGRA: indeks 2 = R kanal (pri zamjeni B↔R dobijemo R vrijednost)
-                        double displayVal = raw[i * 4 + 2];
-
-                        // Inverzna window formula: display 0–255 → HU
-                        double hu  = winLow + (displayVal / 255.0) * winWidth;
+                        double hu  = winLow + (displayPixels[i] / 255.0) * winWidth;
                         byte   val = HuToBytes(hu);
 
                         outputPixels[i * 4 + 0] = val;
