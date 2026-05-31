@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace VolumeRendering
 {
@@ -6,25 +6,30 @@ namespace VolumeRendering
 [ExecuteInEditMode]
 public class VolumeRenderingWithTransferFunction : MonoBehaviour
 {
-    // CT presets za različita tkiva. Vrijednosti su normalizirane (0=zrak, 1=max gustoća).
     public enum CTPreset
     {
-        Custom,          // Ručno uređivanje Gradient polja
-        Bone,            // Kosti — bijelo/žuto, prozirno ispod ~0.55
-        SoftTissue,      // Meko tkivo — ružičasto/crveno, srednje gustoće
-        Lung,            // Pluća — plavo, niske gustoće
-        Brain,           // Mozak — smeđe/bež, srednje gustoće bez kostiju
-        BloodVessels,    // Krvne žile — intenzivno crveno
-        MaxIntensityProjection // MIP — sve bijelo, prozirnost linearno raste
+        Custom,
+        Bone,
+        SoftTissue,
+        Lung,
+        Brain,
+        BloodVessels,
+        MaxIntensityProjection
     }
 
-    const int width = 100;
+    public const int TFWidth  = 100;
+    public const int TFHeight = 64;
 
     [SerializeField]
     CTPreset preset = CTPreset.Custom;
 
     [SerializeField]
     Gradient gradient = null;
+
+    // 0 = identično 1D TF (sve gustoće vidljive podjednako)
+    // 1 = samo površine tkiva vidljive (alpha = 0 za unutrašnjost)
+    [SerializeField, Range(0f, 1f)]
+    float gradientInfluence = 0f;
 
 #if UNITY_EDITOR
     [SerializeField]
@@ -33,22 +38,52 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
 
     Texture2D texture_;
 
-    void Start()
+    // Dok je true, UpdateTexture() ne prepisuje teksturu — štiti ručno bojanje.
+    // Nije [SerializeField] pa se resetira pri svakom domain reloadu (recompile).
+    bool paintLock = false;
+
+    // ── Public API za Editor skriptu ────────────────────────────────────────
+
+    public Texture2D GetTransferTexture() => texture_;
+
+    // Bojanje piksela u krug (cx, cy) radijusa radius s odabranom bojom.
+    // Zove se iz VolumeRenderingEditor kad korisnik crta mišem po previewu.
+    public void PaintTF(int cx, int cy, int radius, Color color)
     {
+        if (texture_ == null) return;
+        paintLock = true;   // blokiraj UpdateTexture dok je bojanje aktivno
+        int r2 = radius * radius;
+        for (int x = cx - radius; x <= cx + radius; x++)
+        for (int y = cy - radius; y <= cy + radius; y++)
+        {
+            if (x < 0 || x >= TFWidth || y < 0 || y >= TFHeight) continue;
+            if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r2) continue;
+            texture_.SetPixel(x, y, color);
+        }
+        texture_.Apply(false);
+        GetComponent<Renderer>().sharedMaterial.SetTexture("_Transfer", texture_);
+    }
+
+    // Resetira teksturu na ono što Gradient + gradientInfluence propisuju.
+    public void RebuildFromGradient()
+    {
+        paintLock = false;
         UpdateTexture();
     }
+
+    // ── Unity lifecycle ──────────────────────────────────────────────────────
+
+    void Start()  => UpdateTexture();
 
     void Update()
     {
 #if UNITY_EDITOR
-        if (updateTextureInEveryFrame)
-        {
-            UpdateTexture();
-        }
+        if (updateTextureInEveryFrame) UpdateTexture();
 #endif
     }
 
-    // Desni klik na komponentu → "Apply CT Preset" da učita odabrani preset u Gradient
+    // ── Presets ──────────────────────────────────────────────────────────────
+
     [ContextMenu("Apply CT Preset")]
     public void ApplyPreset()
     {
@@ -58,22 +93,89 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
             return;
         }
         gradient = BuildPresetGradient(preset);
+        Apply2DSettings(preset);
         UpdateTexture();
     }
 
-    [ContextMenu("UpdateTexture")]
-    void UpdateTexture()
+    // Postavlja gradientInfluence i _GradScale na optimalne vrijednosti za odabrani preset.
+    void Apply2DSettings(CTPreset p)
     {
-        texture_ = new Texture2D(width, 1, TextureFormat.ARGB32, false);
-        for (int i = 0; i < width; ++i)
+        var mat = GetComponent<Renderer>().sharedMaterial;
+        switch (p)
         {
-            var t = (float)i / width;
-            texture_.SetPixel(i, 0, gradient.Evaluate(t));
+            case CTPreset.Bone:
+                // Kosti su gušće od svega ostalog → rubovi su oštri čak i s manjim GradScale.
+                // Blagi surface emphasis poboljšava detalje bez gubljenja volumetrične mase.
+                gradientInfluence = 0.3f;
+                mat.SetFloat("_GradScale", 5f);
+                mat.SetFloat("_Intensity", 2f);
+                break;
+
+            case CTPreset.SoftTissue:
+                // Organi imaju sličnu gustoću međusobno → 2D TF ovdje daje najveću korist.
+                // Visok GradScale jer su razlike između organa male (0.02–0.05 po voxelu).
+                gradientInfluence = 0.8f;
+                mat.SetFloat("_GradScale", 8f);
+                mat.SetFloat("_Intensity", 2.5f);
+                break;
+
+            case CTPreset.Lung:
+                // Stijenke bronha i rubovi pluća → umjeren surface emphasis.
+                gradientInfluence = 0.5f;
+                mat.SetFloat("_GradScale", 6f);
+                mat.SetFloat("_Intensity", 2f);
+                break;
+
+            case CTPreset.Brain:
+                // Korteks i bijela/siva tvar imaju fine rubove → viši GradScale.
+                gradientInfluence = 0.75f;
+                mat.SetFloat("_GradScale", 9f);
+                mat.SetFloat("_Intensity", 2.5f);
+                break;
+
+            case CTPreset.BloodVessels:
+                // Žile su tanke strukture, zidovi su uski → skoro čisti surface rendering.
+                gradientInfluence = 0.9f;
+                mat.SetFloat("_GradScale", 10f);
+                mat.SetFloat("_Intensity", 3f);
+                break;
+
+            case CTPreset.MaxIntensityProjection:
+                // MIP prikazuje sve gustoće podjednako → gradient magnitude nije relevantan.
+                gradientInfluence = 0f;
+                mat.SetFloat("_GradScale", 5f);
+                mat.SetFloat("_Intensity", 1f);
+                break;
         }
-        texture_.Apply(false);
-        var renderer = GetComponent<Renderer>();
-        renderer.sharedMaterial.SetTexture("_Transfer", texture_);
     }
+
+    // ── Generiranje teksture ─────────────────────────────────────────────────
+
+    [ContextMenu("UpdateTexture")]
+    public void UpdateTexture()
+    {
+        if (paintLock) return;  // ne prepiši ručno bojanje
+        texture_ = new Texture2D(TFWidth, TFHeight, TextureFormat.ARGB32, false);
+        texture_.wrapMode   = TextureWrapMode.Clamp;
+        texture_.filterMode = FilterMode.Bilinear;
+
+        for (int x = 0; x < TFWidth; x++)
+        {
+            Color c = gradient.Evaluate((float)x / TFWidth);
+            for (int y = 0; y < TFHeight; y++)
+            {
+                // gradFactor = 1 uvijek kad je gradientInfluence=0 → isti kao stari 1D TF
+                // gradFactor = y/63 kad je gradientInfluence=1 → samo rubovi su opaque
+                float gradFactor = Mathf.Lerp(1f, (float)y / (TFHeight - 1), gradientInfluence);
+                texture_.SetPixel(x, y, new Color(c.r, c.g, c.b, c.a * gradFactor));
+            }
+        }
+
+        texture_.Apply(false);
+        GetComponent<Renderer>().sharedMaterial.SetTexture("_Transfer", texture_);
+    }
+
+    // ── Gradijenti za presetove ──────────────────────────────────────────────
 
     static Gradient BuildPresetGradient(CTPreset p)
     {
@@ -81,7 +183,6 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         switch (p)
         {
             case CTPreset.Bone:
-                // Prozirno za zrak i meko tkivo (<0.52), bijelo/toplo za kosti (>0.65)
                 g.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.black,               0.00f),
@@ -98,14 +199,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 break;
 
             case CTPreset.SoftTissue:
-                // Ružičasto/crveno za meko tkivo (0.25-0.60), prozirno za kosti i zrak
                 g.SetKeys(
                     new GradientColorKey[] {
-                        new GradientColorKey(Color.black,               0.00f),
+                        new GradientColorKey(Color.black,                  0.00f),
                         new GradientColorKey(new Color(0.9f, 0.6f, 0.5f), 0.35f),
                         new GradientColorKey(new Color(0.8f, 0.3f, 0.2f), 0.55f),
-                        new GradientColorKey(Color.black,               0.70f),
-                        new GradientColorKey(Color.black,               1.00f)
+                        new GradientColorKey(Color.black,                  0.70f),
+                        new GradientColorKey(Color.black,                  1.00f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(0.00f, 0.00f),
@@ -118,14 +218,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 break;
 
             case CTPreset.Lung:
-                // Plavo/cyan za pluća (niske gustoće 0.05-0.30), ostalo prozirno
                 g.SetKeys(
                     new GradientColorKey[] {
-                        new GradientColorKey(Color.black,               0.00f),
+                        new GradientColorKey(Color.black,                  0.00f),
                         new GradientColorKey(new Color(0.4f, 0.7f, 1.0f), 0.15f),
                         new GradientColorKey(new Color(0.2f, 0.5f, 0.9f), 0.28f),
-                        new GradientColorKey(Color.black,               0.38f),
-                        new GradientColorKey(Color.black,               1.00f)
+                        new GradientColorKey(Color.black,                  0.38f),
+                        new GradientColorKey(Color.black,                  1.00f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(0.00f, 0.00f),
@@ -138,14 +237,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 break;
 
             case CTPreset.Brain:
-                // Toplo smeđe/bež za moždano tkivo (0.25-0.55), bez kostiju
                 g.SetKeys(
                     new GradientColorKey[] {
-                        new GradientColorKey(Color.black,               0.00f),
+                        new GradientColorKey(Color.black,                  0.00f),
                         new GradientColorKey(new Color(0.8f, 0.6f, 0.4f), 0.32f),
                         new GradientColorKey(new Color(0.9f, 0.8f, 0.6f), 0.50f),
-                        new GradientColorKey(Color.black,               0.62f),
-                        new GradientColorKey(Color.black,               1.00f)
+                        new GradientColorKey(Color.black,                  0.62f),
+                        new GradientColorKey(Color.black,                  1.00f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(0.00f, 0.00f),
@@ -158,14 +256,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 break;
 
             case CTPreset.BloodVessels:
-                // Intenzivno crveno za gustoće karakteristične za krv (0.35-0.60)
                 g.SetKeys(
                     new GradientColorKey[] {
-                        new GradientColorKey(Color.black,               0.00f),
+                        new GradientColorKey(Color.black,                  0.00f),
                         new GradientColorKey(new Color(0.8f, 0.1f, 0.1f), 0.42f),
                         new GradientColorKey(new Color(1.0f, 0.2f, 0.2f), 0.54f),
-                        new GradientColorKey(Color.black,               0.65f),
-                        new GradientColorKey(Color.black,               1.00f)
+                        new GradientColorKey(Color.black,                  0.65f),
+                        new GradientColorKey(Color.black,                  1.00f)
                     },
                     new GradientAlphaKey[] {
                         new GradientAlphaKey(0.00f, 0.00f),
@@ -178,7 +275,6 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 break;
 
             case CTPreset.MaxIntensityProjection:
-                // MIP — bijelo, prozirnost linearno raste s gustoćom
                 g.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),
