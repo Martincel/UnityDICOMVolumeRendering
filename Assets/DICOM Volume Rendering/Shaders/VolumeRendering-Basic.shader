@@ -112,6 +112,10 @@ float4 frag(v2f i) : SV_Target
         float4 color = transferFunction(volume, gradMag) * volume * _Intensity;
         output += (1.0 - output.a) * color;
         localPos += localStep;
+
+        // Early ray termination: ako je output gotovo neproziran, nema smisla nastaviti.
+        // Sve iza ove točke ionako ne bi pridonijelo vidljivoj boji.
+        if (output.a >= 0.95) break;
     }
 
     return output;
