@@ -13,6 +13,8 @@ Properties
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendSrc ("Blend Src", Float) = 5
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendDst ("Blend Dst", Float) = 10
 
+    _NoiseTex("Noise (Generated)", 2D) = "white" {}
+
     [Header(Ranges)]
     _MinX("MinX", Range(0, 1)) = 0.0
     _MaxX("MaxX", Range(0, 1)) = 1.0
@@ -40,6 +42,7 @@ struct v2f
 
 sampler3D _Volume;
 sampler2D _Transfer;
+sampler2D _NoiseTex;
 int _Iteration;
 float _Intensity;
 float _GradStep;
@@ -97,7 +100,12 @@ float4 frag(v2f i) : SV_Target
 
     int n = _Iteration * ray.tmax / sqrt(3);
     float3 localStep = localDir * ray.tmax / n;
-    float3 localPos = i.localPos;
+
+    // Jitter: pomakni početak zrake za nasumičnu vrijednost iz noise teksture.
+    // Svaki piksel na ekranu uzorkuje drugačiji noise piksel → susjedne zrake
+    // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
+    float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
+    float3 localPos = i.localPos + localDir * localStep * jitter;
     float4 output = 0;
 
     [loop]
