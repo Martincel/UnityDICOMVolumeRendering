@@ -77,3 +77,11 @@ shadertoolsconfig.json
 Assets/DICOM\ Volume\ Rendering/Libs/*
 Assets/DICOM\ Volume\ Rendering/Data/*
 Wiki
+
+# Texture3D test assetovi u korijenu Assets/ (lokalni, nisu dio projekta)
+Assets/*.asset
+Assets/*.asset.meta
+Assets/Materials/
+Assets/Materials.meta
+Assets/Packages/
+Assets/Packages.meta
