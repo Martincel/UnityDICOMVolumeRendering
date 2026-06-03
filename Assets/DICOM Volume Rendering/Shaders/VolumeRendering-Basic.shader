@@ -8,10 +8,11 @@ Properties
     _Transfer("Transfer", 2D) = "" {}
     _Iteration("Iteration", Int) = 10
     _Intensity("Intensity", Range(0.0, 10.0)) = 1.0
-    _GradStep("Gradient Step", Range(0.001, 0.1)) = 0.01
     _GradScale("Gradient Scale", Range(1.0, 20.0)) = 5.0
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendSrc ("Blend Src", Float) = 5
     [Enum(UnityEngine.Rendering.BlendMode)] _BlendDst ("Blend Dst", Float) = 10
+
+    _NoiseTex("Noise (Generated)", 2D) = "white" {}
 
     [Header(Ranges)]
     _MinX("MinX", Range(0, 1)) = 0.0
@@ -40,9 +41,9 @@ struct v2f
 
 sampler3D _Volume;
 sampler2D _Transfer;
+sampler2D _NoiseTex;
 int _Iteration;
 float _Intensity;
-float _GradStep;
 float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 
@@ -63,12 +64,16 @@ void intersection(inout Ray ray)
     ray.tmax = min(tmax2.x, tmax2.y);
 }
 
-inline float sampleVolume(float3 pos)
+// Jedno uzorkovanje vraća i gustoću (.r) i pre-computed gradMag (.g).
+// Converter bake-a gradijent u G kanal pri konverziji → nema runtime centralnih razlika.
+inline float2 sampleVolume(float3 pos)
 {
     float x = step(pos.x, _MaxX) * step(_MinX, pos.x);
     float y = step(pos.y, _MaxY) * step(_MinY, pos.y);
     float z = step(pos.z, _MaxZ) * step(_MinZ, pos.z);
-    return tex3D(_Volume, pos).r * (x * y * z);
+    float mask = x * y * z;
+    float4 s = tex3D(_Volume, pos);
+    return float2(s.r * mask, s.g * mask);
 }
 
 inline float4 transferFunction(float density, float gradMag)
@@ -97,21 +102,26 @@ float4 frag(v2f i) : SV_Target
 
     int n = _Iteration * ray.tmax / sqrt(3);
     float3 localStep = localDir * ray.tmax / n;
-    float3 localPos = i.localPos;
+
+    // Jitter: pomakni početak zrake za nasumičnu vrijednost iz noise teksture.
+    // Svaki piksel na ekranu uzorkuje drugačiji noise piksel → susjedne zrake
+    // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
+    float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
+    float3 localPos = i.localPos + localDir * localStep * jitter;
     float4 output = 0;
 
     [loop]
     for (int i = 0; i < n; ++i)
     {
         float3 sp = localPos + 0.5;
-        float volume = sampleVolume(sp);
-        float gx = sampleVolume(sp + float3(_GradStep,0,0)) - sampleVolume(sp - float3(_GradStep,0,0));
-        float gy = sampleVolume(sp + float3(0,_GradStep,0)) - sampleVolume(sp - float3(0,_GradStep,0));
-        float gz = sampleVolume(sp + float3(0,0,_GradStep)) - sampleVolume(sp - float3(0,0,_GradStep));
-        float gradMag = saturate(length(float3(gx, gy, gz)) * _GradScale);
-        float4 color = transferFunction(volume, gradMag) * volume * _Intensity;
+        float2 vg = sampleVolume(sp);           // .x = gustoća, .y = gradMag (pre-computed)
+        float volume  = vg.x;
+        float gradMag = saturate(vg.y * _GradScale);
+        float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
         output += (1.0 - output.a) * color;
         localPos += localStep;
+
+        if (output.a >= 0.95) break;
     }
 
     return output;
