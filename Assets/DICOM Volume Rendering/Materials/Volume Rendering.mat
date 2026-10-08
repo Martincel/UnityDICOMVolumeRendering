@@ -21,20 +21,31 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Mask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Transfer:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Volume:
-        m_Texture: {fileID: 11700000, guid: f1e1d4df771a0b0469bdd0f650c8693d, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _BlendDst: 0
-    - _BlendSrc: 4
-    - _Intensity: 0.06
-    - _Iteration: 500
+    - _BlendSrc: 5
+    - _GradScale: 4
+    - _GradStep: 0.001
+    - _Intensity: 2.5
+    - _Iteration: 100
+    - _MaskDepth: 501
     - _MaxX: 1
     - _MaxY: 1
     - _MaxZ: 1
@@ -44,4 +55,5 @@ Material:
     - _RAY: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _HighlightColor: {r: 1, g: 0, b: 0, a: 0.85}
   m_BuildTextureStacks: []

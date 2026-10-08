@@ -14,6 +14,11 @@ Properties
 
     _NoiseTex("Noise (Generated)", 2D) = "white" {}
 
+    [Header(Annotation)]
+    [NoScaleOffset] _Mask("Mask (Texture2DArray)", 2DArray) = "" {}
+    _MaskDepth("Mask Depth", Int) = 0
+    _HighlightColor("Highlight Color", Color) = (1, 0, 0, 0.85)
+
     [Header(Ranges)]
     _MinX("MinX", Range(0, 1)) = 0.0
     _MaxX("MaxX", Range(0, 1)) = 1.0
@@ -47,6 +52,13 @@ float _Intensity;
 float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 
+// Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
+// kanale s _Volume (vidi AnnotationMaskManager.cs za obrazloženje). _MaskDepth = broj
+// elemenata (postavlja AnnotationMaskManager nakon učitavanja); 0 dok maska ne postoji.
+UNITY_DECLARE_TEX2DARRAY(_Mask);
+float _MaskDepth;
+fixed4 _HighlightColor;
+
 struct Ray
 {
     float3 from;
@@ -79,6 +91,19 @@ inline float2 sampleVolume(float3 pos)
 inline float4 transferFunction(float density, float gradMag)
 {
     return tex2D(_Transfer, float2(density, gradMag));
+}
+
+// Vraća 1 ako je pos unutar markirane regije, inače 0. pos.z je [0,1] (isti UVW prostor
+// kao sampleVolume) — svaki element Texture2DArray-a je jedna Z-ravnina volumena, pa
+// nema interpolacije između elemenata (namjerno, vidi plan: diskretno po sliceu je
+// poželjno za binarnu masku, ne mana).
+inline float sampleMask(float3 pos)
+{
+    if (_MaskDepth <= 0)
+        return 0;
+
+    float sliceIndex = floor(saturate(pos.z) * (_MaskDepth - 1) + 0.5);
+    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, sliceIndex)).r;
 }
 
 v2f vert(appdata v)
@@ -118,6 +143,15 @@ float4 frag(v2f i) : SV_Target
         float volume  = vg.x;
         float gradMag = saturate(vg.y * _GradScale);
         float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
+
+        // Markirana regija "probija" kroz normalnu transfer funkciju — vidljiva čak i
+        // preko gustoće/tkiva koje bi inače bilo skoro prozirno.
+        if (sampleMask(sp) > 0.5)
+        {
+            color.rgb = _HighlightColor.rgb;
+            color.a   = max(color.a, _HighlightColor.a);
+        }
+
         output += (1.0 - output.a) * color;
         localPos += localStep;
 
