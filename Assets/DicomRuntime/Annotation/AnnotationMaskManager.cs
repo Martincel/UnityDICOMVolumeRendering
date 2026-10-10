@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using VolumeRendering.Runtime;
 
@@ -116,6 +117,90 @@ namespace VolumeRendering.Runtime.Annotation
             _mask.Apply(false);
             _dirtySlices.Clear();
             OnMaskChanged?.Invoke();
+        }
+
+        // Sprema masku na disk (format: MaskSerializer). Prazni sliceovi se ne spremaju.
+        // Baca InvalidOperationException ako volumen još nije učitan. Piše u privremenu
+        // datoteku pa je zamijeni, da neuspjeli save ne uništi postojeću datoteku.
+        public void SaveToFile(string path)
+        {
+            if (_mask == null)
+                throw new InvalidOperationException("Maska se ne može spremiti: volumen još nije učitan.");
+
+            var tempPath = path + ".tmp";
+            try
+            {
+                using (var stream = File.Create(tempPath))
+                    MaskSerializer.Write(stream, _width, _height, _depth, CollectSlices());
+
+                if (File.Exists(path))
+                    File.Delete(path);
+                File.Move(tempPath, path);
+            }
+            catch
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                throw;
+            }
+        }
+
+        // Učitava masku s diska. Ako datoteka nije ispravna ili dimenzije ne odgovaraju
+        // trenutnom volumenu, baca izuzetak (InvalidDataException ili MaskDimensionMismatchException)
+        // PRIJE bilo kakve izmjene — postojeća maska ostaje netaknuta.
+        public void LoadFromFile(string path)
+        {
+            if (_mask == null)
+                throw new InvalidOperationException("Maska se ne može učitati: volumen još nije učitan.");
+
+            MaskSerializer.MaskData data;
+            using (var stream = File.OpenRead(path))
+                data = MaskSerializer.Read(stream, _width, _height, _depth);
+
+            // Isprazni sve što je trenutno označeno (jedino ti sliceovi mogu imati nenulte piksele).
+            var empty = new Color32[_width * _height];
+            foreach (var sliceIndex in _dirtySlices.Keys)
+                _mask.SetPixels32(empty, sliceIndex);
+            _dirtySlices.Clear();
+
+            foreach (var pair in data.Slices)
+            {
+                var pixels = new Color32[_width * _height];
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    if (pair.Value[i] != 0)
+                        pixels[i] = Marked;
+                }
+
+                _mask.SetPixels32(pixels, pair.Key);
+                _dirtySlices[pair.Key] = pixels;
+            }
+
+            _mask.Apply(false);
+            OnMaskChanged?.Invoke();
+        }
+
+        // Izvoz maske kao stack 8-bit PNG-ova (jedan po neprazom sliceu) u zadanu mapu.
+        public int ExportToPngStack(string folder)
+        {
+            if (_mask == null)
+                throw new InvalidOperationException("Maska se ne može izvesti: volumen još nije učitan.");
+
+            return MaskPngExporter.Export(folder, _width, _height, CollectSlices());
+        }
+
+        // CPU kopije dotaknutih sliceova pretvorene u 1 bajt po pikselu (0 ili 255).
+        Dictionary<int, byte[]> CollectSlices()
+        {
+            var slices = new Dictionary<int, byte[]>();
+            foreach (var pair in _dirtySlices)
+            {
+                var bytes = new byte[pair.Value.Length];
+                for (int i = 0; i < bytes.Length; i++)
+                    bytes[i] = pair.Value[i].r != 0 ? MaskSerializer.Marked : MaskSerializer.Unmarked;
+                slices[pair.Key] = bytes;
+            }
+            return slices;
         }
     }
 }
