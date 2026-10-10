@@ -26,6 +26,7 @@ Properties
     _MaxY("MaxY", Range(0, 1)) = 1.0
     _MinZ("MinZ", Range(0, 1)) = 0.0
     _MaxZ("MaxZ", Range(0, 1)) = 1.0
+    _ClipMask("Clip Mask", Float) = 0
 }
 
 CGINCLUDE
@@ -51,6 +52,7 @@ int _Iteration;
 float _Intensity;
 float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
+float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
 // kanale s _Volume (vidi AnnotationMaskManager.cs za obrazloženje). _MaskDepth = broj
@@ -78,12 +80,17 @@ void intersection(inout Ray ray)
 
 // Jedno uzorkovanje vraća i gustoću (.r) i pre-computed gradMag (.g).
 // Converter bake-a gradijent u G kanal pri konverziji → nema runtime centralnih razlika.
-inline float2 sampleVolume(float3 pos)
+inline float inClipBox(float3 pos)
 {
     float x = step(pos.x, _MaxX) * step(_MinX, pos.x);
     float y = step(pos.y, _MaxY) * step(_MinY, pos.y);
     float z = step(pos.z, _MaxZ) * step(_MinZ, pos.z);
-    float mask = x * y * z;
+    return x * y * z;
+}
+
+inline float2 sampleVolume(float3 pos)
+{
+    float mask = inClipBox(pos);
     float4 s = tex3D(_Volume, pos);
     return float2(s.r * mask, s.g * mask);
 }
@@ -145,8 +152,9 @@ float4 frag(v2f i) : SV_Target
         float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
 
         // Markirana regija "probija" kroz normalnu transfer funkciju — vidljiva čak i
-        // preko gustoće/tkiva koje bi inače bilo skoro prozirno.
-        if (sampleMask(sp) > 0.5)
+        // preko gustoće/tkiva koje bi inače bilo skoro prozirno. Uz _ClipMask = 1 poštuje
+        // isti rez kao volumen (SliceClipController), inače ostaje vidljiva cijela.
+        if (sampleMask(sp) > 0.5 && (_ClipMask < 0.5 || inClipBox(sp) > 0.5))
         {
             color.rgb = _HighlightColor.rgb;
             color.a   = max(color.a, _HighlightColor.a);
