@@ -23,10 +23,14 @@ namespace VolumeRendering.Runtime.UI
         [SerializeField] Material volumeMaterial;
         [SerializeField] Button modeButton;
         [SerializeField] Button maskButton;
+        [SerializeField] Button maskOnlyButton; // opcionalno: prikaz samo označenog dijela
 
         // Tanki sloj: broj sliceova sa svake strane trenutnog. Jedan slice (1/500) je tanji od
         // koraka raymarcha pa bi treperio ili nestao.
         [SerializeField, Min(1)] int slabHalfThickness = 4;
+
+        // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
+        int _maskOnly;
 
         ClipMode _mode = ClipMode.Off;
         bool _cutMask;
@@ -37,6 +41,7 @@ namespace VolumeRendering.Runtime.UI
         {
             if (modeButton != null) modeButton.onClick.AddListener(CycleMode);
             if (maskButton != null) maskButton.onClick.AddListener(ToggleMask);
+            if (maskOnlyButton != null) maskOnlyButton.onClick.AddListener(CycleMaskOnly);
             UpdateLabels();
         }
 
@@ -44,9 +49,21 @@ namespace VolumeRendering.Runtime.UI
         {
             if (modeButton != null) modeButton.onClick.RemoveListener(CycleMode);
             if (maskButton != null) maskButton.onClick.RemoveListener(ToggleMask);
+            if (maskOnlyButton != null) maskOnlyButton.onClick.RemoveListener(CycleMaskOnly);
             RestoreClip();
             if (volumeMaterial != null)
+            {
                 volumeMaterial.SetFloat("_ClipMask", 0f);
+                volumeMaterial.SetFloat("_MaskOnly", 0f);
+            }
+        }
+
+        void CycleMaskOnly()
+        {
+            _maskOnly = (_maskOnly + 1) % 3;
+            if (volumeMaterial != null)
+                volumeMaterial.SetFloat("_MaskOnly", _maskOnly);
+            UpdateLabels();
         }
 
         void CycleMode()
@@ -126,6 +143,12 @@ namespace VolumeRendering.Runtime.UI
                 _ => "Rez: isključen"
             });
             SetLabel(maskButton, _cutMask ? "Oznaka: reže se" : "Oznaka: uvijek vidljiva");
+            SetLabel(maskOnlyButton, _maskOnly switch
+            {
+                1 => "Samo oznaka: gustoća tkiva",
+                2 => "Samo oznaka: puna boja",
+                _ => "Prikaz: cijeli volumen"
+            });
         }
 
         static void SetLabel(Button button, string text)
