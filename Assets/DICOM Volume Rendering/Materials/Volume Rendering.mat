@@ -41,6 +41,7 @@ Material:
     m_Floats:
     - _BlendDst: 0
     - _BlendSrc: 5
+    - _ClipMask: 0
     - _GradScale: 4
     - _GradStep: 0.001
     - _Intensity: 2.5
