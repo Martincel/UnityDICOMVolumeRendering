@@ -166,7 +166,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
             // Nema spremljenih postavki — koristi hardkodirani gradient s optimalnim 2D TF
             gradient = BuildPresetGradient(preset);
             Apply2DSettings(preset);
-            mat.SetInt("_Iteration",   50);
+            mat.SetInt("_Iteration",   100);
             mat.SetFloat("_MinX", 0f); mat.SetFloat("_MaxX", 1f);
             mat.SetFloat("_MinY", 0f); mat.SetFloat("_MaxY", 1f);
             mat.SetFloat("_MinZ", 0f); mat.SetFloat("_MaxZ", 1f);
@@ -184,9 +184,11 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         {
             case CTPreset.Bone:
                 // Kosti su gušće od svega ostalog → rubovi su oštri čak i s manjim GradScale.
-                gradientInfluence = 0.3f;
-                mat.SetFloat("_GradScale", 5f);
-                mat.SetFloat("_Intensity", 2f);
+                // GI povišen (0.3→0.6) zbog pre-computed gradijenata (*10f bake) koji saturiraju
+                // većinu voksela — viši GI bolje filtrira unutrašnjost tkiva.
+                gradientInfluence = 0.6f;
+                mat.SetFloat("_GradScale", 4f);
+                mat.SetFloat("_Intensity", 2.5f);
                 break;
 
             case CTPreset.SoftTissue:

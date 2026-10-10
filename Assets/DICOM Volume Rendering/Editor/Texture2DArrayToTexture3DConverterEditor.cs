@@ -97,7 +97,7 @@ public class Texture2DArrayToTexture3DConverterEditor : Editor
             float dx = GetR(colors, x+1,y,z,w,h,d) - GetR(colors, x-1,y,z,w,h,d);
             float dy = GetR(colors, x,y+1,z,w,h,d) - GetR(colors, x,y-1,z,w,h,d);
             float dz = GetR(colors, x,y,z+1,w,h,d) - GetR(colors, x,y,z-1,w,h,d);
-            colors[z * w * h + y * w + x].g = Mathf.Clamp01(Mathf.Sqrt(dx*dx + dy*dy + dz*dz));
+            colors[z * w * h + y * w + x].g = Mathf.Clamp01(Mathf.Sqrt(dx*dx + dy*dy + dz*dz) * 10f);
         }
         Debug.Log("[Converter] Gradient magnitude izračunat.");
 

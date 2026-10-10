@@ -85,3 +85,9 @@ Assets/Materials/
 Assets/Materials.meta
 Assets/Packages/
 Assets/Packages.meta
+
+# Lokalni podaci i stanje editora
+/Assets/Stari asseti/
+/Assets/Stari asseti.meta
+/UserSettings/Layouts/
+/UserSettings/Search.index
