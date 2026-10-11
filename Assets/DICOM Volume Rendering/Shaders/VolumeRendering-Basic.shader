@@ -27,6 +27,7 @@ Properties
     _MinZ("MinZ", Range(0, 1)) = 0.0
     _MaxZ("MaxZ", Range(0, 1)) = 1.0
     _ClipMask("Clip Mask", Float) = 0
+    _MaskOnly("Mask Only", Float) = 0
 }
 
 CGINCLUDE
@@ -53,6 +54,7 @@ float _Intensity;
 float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
+float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
 // kanale s _Volume (vidi AnnotationMaskManager.cs za obrazloženje). _MaskDepth = broj
@@ -88,11 +90,15 @@ inline float inClipBox(float3 pos)
     return x * y * z;
 }
 
+inline float2 sampleVolumeRaw(float3 pos)
+{
+    float4 s = tex3D(_Volume, pos);
+    return float2(s.r, s.g);
+}
+
 inline float2 sampleVolume(float3 pos)
 {
-    float mask = inClipBox(pos);
-    float4 s = tex3D(_Volume, pos);
-    return float2(s.r * mask, s.g * mask);
+    return sampleVolumeRaw(pos) * inClipBox(pos);
 }
 
 inline float4 transferFunction(float density, float gradMag)
@@ -146,7 +152,10 @@ float4 frag(v2f i) : SV_Target
     for (int i = 0; i < n; ++i)
     {
         float3 sp = localPos + 0.5;
-        float2 vg = sampleVolume(sp);           // .x = gustoća, .y = gradMag (pre-computed)
+        // "Samo oznaka" uz _ClipMask = 0: oznaka je vidljiva i izvan reza, pa tada gustoća
+        // ne smije biti odrezana (inače bi u tom dijelu uzorkovala nulu).
+        bool maskOnly = _MaskOnly > 0.5;
+        float2 vg = (maskOnly && _ClipMask < 0.5) ? sampleVolumeRaw(sp) : sampleVolume(sp);  // .x = gustoća, .y = gradMag (pre-computed)
         float volume  = vg.x;
         float gradMag = saturate(vg.y * _GradScale);
         float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
@@ -154,7 +163,22 @@ float4 frag(v2f i) : SV_Target
         // Markirana regija "probija" kroz normalnu transfer funkciju — vidljiva čak i
         // preko gustoće/tkiva koje bi inače bilo skoro prozirno. Uz _ClipMask = 1 poštuje
         // isti rez kao volumen (SliceClipController), inače ostaje vidljiva cijela.
-        if (sampleMask(sp) > 0.5 && (_ClipMask < 0.5 || inClipBox(sp) > 0.5))
+        bool inMask = sampleMask(sp) > 0.5 && (_ClipMask < 0.5 || inClipBox(sp) > 0.5);
+
+        if (maskOnly)
+        {
+            // Prikaz samo označenog dijela: sve izvan maske je prozirno. Način 1 zadržava
+            // gustoću tkiva unutar oznake (vidi se struktura), način 2 je puna boja
+            // zasjenjena gradijentom da se oblik ne sliježe u mrlju.
+            if (!inMask)
+                color = 0;
+            else if (_MaskOnly > 1.5)
+            {
+                color.rgb = _HighlightColor.rgb * (0.55 + 0.45 * gradMag);
+                color.a   = _HighlightColor.a;
+            }
+        }
+        else if (inMask)
         {
             color.rgb = _HighlightColor.rgb;
             color.a   = max(color.a, _HighlightColor.a);
