@@ -47,6 +47,7 @@ Material:
     - _Intensity: 2.5
     - _Iteration: 100
     - _MaskDepth: 501
+    - _MaskOnly: 0
     - _MaxX: 1
     - _MaxY: 1
     - _MaxZ: 1
