@@ -18,6 +18,9 @@ namespace VolumeRendering.Runtime.UI
         [SerializeField] float minDistance = 4f;
         [SerializeField] float maxDistance = 40f;
 
+        // true = okreće lijeva tipka; false = okreće desna (lijeva je slobodna za crtanje).
+        public bool LeftButtonOrbits = true;
+
         Camera _cam;
         float _yaw, _pitch, _distance;
         float _startYaw, _startPitch, _startDistance;
@@ -58,12 +61,14 @@ namespace VolumeRendering.Runtime.UI
             bool inView = _cam.pixelRect.Contains(mouse);
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
 
-            if (Input.GetMouseButtonDown(0))
+            // Kad se crta po 3D prikazu (VolumeSlicePainter), lijeva tipka crta, a okreće desna.
+            int orbitButton = LeftButtonOrbits ? 0 : 1;
+            if (Input.GetMouseButtonDown(orbitButton))
             {
                 _dragging = inView && !overUi;
                 _lastMouse = mouse;
             }
-            if (Input.GetMouseButtonUp(0))
+            if (Input.GetMouseButtonUp(orbitButton))
                 _dragging = false;
 
             if (_dragging)

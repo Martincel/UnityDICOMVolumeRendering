@@ -28,6 +28,11 @@ Properties
     _MaxZ("MaxZ", Range(0, 1)) = 1.0
     _ClipMask("Clip Mask", Float) = 0
     _MaskOnly("Mask Only", Float) = 0
+
+    [Header(Slice Plane)]
+    _ShowSlicePlane("Show Slice Plane", Float) = 0
+    _SlicePlaneZ("Slice Plane Z", Range(0, 1)) = 0
+    _SlicePlaneOpacity("Slice Plane Opacity", Range(0, 1)) = 1
 }
 
 CGINCLUDE
@@ -55,6 +60,9 @@ float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
+float _ShowSlicePlane;     // 1 = na ravnini slicea prikaži oštru sivu sliku (za crtanje u 3D)
+float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (slice i = i/(D-1))
+float _SlicePlaneOpacity;
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
 // kanale s _Volume (vidi AnnotationMaskManager.cs za obrazloženje). _MaskDepth = broj
@@ -148,6 +156,16 @@ float4 frag(v2f i) : SV_Target
     float3 localPos = i.localPos + localDir * localStep * jitter;
     float4 output = 0;
 
+    // Oštra ravnina slicea: udaljenost (duž zrake od ulaza u kocku) do ravnine z = _SlicePlaneZ.
+    // Računa se prije petlje jer `i` u petlji zasjenjuje v2f. Ako zraka ne siječe ravninu, tPlane
+    // ostaje vrlo velik i ravnina se ne crta.
+    float3 startPos = i.localPos;
+    float tPlane = 1e9;
+    if (_ShowSlicePlane > 0.5 && abs(localDir.z) > 1e-5)
+        tPlane = (_SlicePlaneZ - 0.5 - startPos.z) / localDir.z;
+    float tCur = 0;
+    float dt = ray.tmax / n;
+
     [loop]
     for (int i = 0; i < n; ++i)
     {
@@ -185,6 +203,29 @@ float4 frag(v2f i) : SV_Target
         }
 
         output += (1.0 - output.a) * color;
+
+        // Ravnina slicea: kad zraka u ovom koraku prijeđe ravninu, složi njezinu boju (siva
+        // gustoća kao u SliceExtract.shader, s maskom preko) — daje oštru sliku na rezu.
+        if (tPlane >= tCur && tPlane < tCur + dt)
+        {
+            float3 pp = startPos + localDir * tPlane + 0.5;
+            float inside = step(_MinX, pp.x) * step(pp.x, _MaxX) * step(_MinY, pp.y) * step(pp.y, _MaxY);
+            float d = tex3D(_Volume, float3(pp.xy, _SlicePlaneZ)).r;
+            float4 pc = float4(d, d, d, 1);
+            if (_MaskDepth > 0)
+            {
+                float sliceIndex = floor(saturate(_SlicePlaneZ) * (_MaskDepth - 1) + 0.5);
+                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, sliceIndex)).r;
+                if (marked > 0.5)
+                    pc.rgb = lerp(pc.rgb, _HighlightColor.rgb, _HighlightColor.a);
+            }
+            pc.a = _SlicePlaneOpacity * inside;
+            // Ravnina je presudna: zamjenjuje ono što je do nje nakupljeno (inače bi rijetki uzorci
+            // ispred nje utjecali na oštru sliku), a volumen iza nje je zaklonjen.
+            output = lerp(output, pc, pc.a);
+        }
+
+        tCur += dt;
         localPos += localStep;
 
         if (output.a >= 0.95) break;

@@ -55,6 +55,9 @@ Material:
     - _MinY: 0
     - _MinZ: 0
     - _RAY: 0
+    - _ShowSlicePlane: 0
+    - _SlicePlaneOpacity: 1
+    - _SlicePlaneZ: 0.52
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HighlightColor: {r: 1, g: 0, b: 0, a: 0.85}
