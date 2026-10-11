@@ -66,9 +66,13 @@ namespace VolumeRendering.Runtime.UI
             UpdateLabels();
         }
 
-        void CycleMode()
+        public ClipMode Mode => _mode;
+
+        void CycleMode() => SetMode((ClipMode)(((int)_mode + 1) % 4));
+
+        // Postavlja način reza (gumb ga kruži; VolumeSlicePainter ga postavlja na FromSlice).
+        public void SetMode(ClipMode next)
         {
-            var next = (ClipMode)(((int)_mode + 1) % 4);
             if (next == ClipMode.Off)
                 RestoreClip();
             _mode = next;

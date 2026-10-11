@@ -26,6 +26,7 @@ namespace VolumeRendering.Runtime.Annotation
         static readonly Color32 Marked = new Color32(255, 0, 0, 255);
 
         int _width, _height, _depth;
+        int _sliceHalfThickness;
 
         // Izloženo da SliceViewController može prikazati istu masku na 2D sliceu (izravan
         // vizualni feedback pri crtanju) — bez ovoga jedina potvrda da je kist nešto ostavio
@@ -78,6 +79,22 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null || sliceIndex < 0 || sliceIndex >= _depth)
                 return;
 
+            // Debljina kista u sliceovima: piše u raspon sliceIndex-k .. sliceIndex+k (0 = samo trenutni).
+            int first = Mathf.Max(0, sliceIndex - _sliceHalfThickness);
+            int last = Mathf.Min(_depth - 1, sliceIndex + _sliceHalfThickness);
+            for (int s = first; s <= last; s++)
+                PaintSlice(s, px, py, radius);
+
+            _mask.Apply(false);
+            OnMaskChanged?.Invoke();
+        }
+
+        // Postavlja pola debljine kista u sliceovima (slider; cijeli broj 0..N).
+        public void SetSliceThickness(float halfThickness) =>
+            _sliceHalfThickness = Mathf.Max(0, Mathf.RoundToInt(halfThickness));
+
+        void PaintSlice(int sliceIndex, int px, int py, int radius)
+        {
             if (!_dirtySlices.TryGetValue(sliceIndex, out var pixels))
             {
                 pixels = _mask.GetPixels32(sliceIndex);
@@ -102,8 +119,6 @@ namespace VolumeRendering.Runtime.Annotation
             }
 
             _mask.SetPixels32(pixels, sliceIndex);
-            _mask.Apply(false);
-            OnMaskChanged?.Invoke();
         }
 
         public void Clear()
