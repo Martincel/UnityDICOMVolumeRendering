@@ -42,6 +42,12 @@ namespace VolumeRendering.Runtime.UI
             if (modeButton != null) modeButton.onClick.AddListener(CycleMode);
             if (maskButton != null) maskButton.onClick.AddListener(ToggleMask);
             if (maskOnlyButton != null) maskOnlyButton.onClick.AddListener(CycleMaskOnly);
+            // Shared materijal može biti spremljen s vrijednostima iz prethodne sesije; kreni od zadanih.
+            if (volumeMaterial != null)
+            {
+                volumeMaterial.SetFloat("_ClipMask", 0f);
+                volumeMaterial.SetFloat("_MaskOnly", 0f);
+            }
             UpdateLabels();
         }
 
