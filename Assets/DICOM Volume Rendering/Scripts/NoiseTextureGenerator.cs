@@ -1,4 +1,5 @@
 using UnityEngine;
+using VolumeRendering.Runtime;
 
 namespace VolumeRendering
 {
@@ -29,7 +30,8 @@ public class NoiseTextureGenerator : MonoBehaviour
         tex.SetPixels(pixels);
         tex.Apply();
 
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_NoiseTex", tex);
+        // U Playu instanca materijala (RuntimeMaterial), u Editoru asset.
+        RuntimeMaterial.For(GetComponent<Renderer>()).SetTexture("_NoiseTex", tex);
     }
 }
 

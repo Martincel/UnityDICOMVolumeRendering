@@ -37,6 +37,9 @@ namespace VolumeRendering.Runtime
         // Okida se na main threadu odmah nakon što je LoadedVolume/Width/Height/Depth postavljen.
         public event Action OnVolumeLoaded;
 
+        // U Playu radi s instancom materijala, ne s assetom (vidi RuntimeMaterial).
+        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
         // Ulaz s diska (Faza 0). Potpis nepromijenjen — zove ga DicomLoadTest.
         public void LoadFromFolder(string folderPath)
             => RunLoad(new DicomFileDataSource(folderPath), folderPath);
@@ -100,6 +103,14 @@ namespace VolumeRendering.Runtime
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
+        }
+
+        // Texture3D je GPU resurs koji Unity ne briše sam dok traje scena.
+        void OnDestroy()
+        {
+            if (LoadedVolume != null)
+                Destroy(LoadedVolume);
+            LoadedVolume = null;
         }
 
         // Glavni async lanac. CancellationToken se provlači do svih I/O i CPU faza.
@@ -181,6 +192,9 @@ namespace VolumeRendering.Runtime
                 swParse.Stop();
                 parseMs = swParse.ElapsedMilliseconds;
 
+                // Jedna serija, iste dimenzije (scout slika ili druga serija u mapi inače ruši gradnju).
+                slices = DicomSliceSelector.SelectConsistent(slices);
+
                 if (slices.Count == 0)
                     return;
 
@@ -214,11 +228,16 @@ namespace VolumeRendering.Runtime
             volumeMaterial.SetTexture("_Volume", tex);
             swUpload.Stop();
 
+            var previousVolume = LoadedVolume;
             LoadedVolume = tex;
             Width = w;
             Height = h;
             Depth = d;
             OnVolumeLoaded?.Invoke();
+
+            // Tek nakon događaja: pretplatnici su do tada prešli na novu teksturu.
+            if (previousVolume != null)
+                Destroy(previousVolume);
 
             swTotal.Stop();
             Debug.Log(

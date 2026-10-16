@@ -31,6 +31,7 @@ namespace VolumeRendering.Runtime
                 int    pixelRepr  = dataset.GetSingleValueOrDefault<int>   (DicomTag.PixelRepresentation,  1);
                 float  sliceLoc   = dataset.GetSingleValueOrDefault<float> (DicomTag.SliceLocation,       0f);
                 int    instNum    = dataset.GetSingleValueOrDefault<int>   (DicomTag.InstanceNumber,       0);
+                string seriesUid  = dataset.GetSingleValueOrDefault<string>(DicomTag.SeriesInstanceUID,   null);
                 double winCenter  = dataset.GetSingleValueOrDefault<double>(DicomTag.WindowCenter,      500.0);
                 double winWidth   = dataset.GetSingleValueOrDefault<double>(DicomTag.WindowWidth,      2500.0);
 
@@ -82,6 +83,7 @@ namespace VolumeRendering.Runtime
                     Height                  = height,
                     SliceLocation           = sliceLoc,
                     InstanceNumber          = instNum,
+                    SeriesInstanceUID       = seriesUid,
                     ImagePositionPatient    = ipp,
                     ImageOrientationPatient = iop
                 };

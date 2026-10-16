@@ -8,6 +8,7 @@ namespace VolumeRendering.Runtime
         public int     Height;
         public float   SliceLocation;     // pozicija u mm duž osi skeniranja (legacy fallback za sortiranje)
         public int     InstanceNumber;    // backup za sortiranje ako geometrija nije dostupna
+        public string  SeriesInstanceUID; // (0020,000E); null ako nedostaje. Loader zadržava jednu seriju.
 
         // Geometrija za robustno prostorno sortiranje (DICOM C.7.6.2).
         // ImagePositionPatient (0020,0032) — koordinate gornjeg lijevog voxela u mm [x, y, z].

@@ -29,7 +29,7 @@ Shader "VolumeRendering/SliceExtract"
             #include "UnityCG.cginc"
 
             sampler3D _Volume;
-            float _SliceZ;
+            float _SliceZ;   // središte slicea: (i + 0.5)/D, točno na voxelu (bez miješanja susjednih sliceova)
 
             // Ista anotacijska maska kao u VolumeRendering-Basic.shader (vidi AnnotationMaskManager.cs),
             // uzorkovana na TOČNOM cjelobrojnom sliceu koji se prikazuje (ne interpolirano kao u
