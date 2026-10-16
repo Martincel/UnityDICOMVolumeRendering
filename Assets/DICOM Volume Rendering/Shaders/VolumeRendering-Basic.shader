@@ -18,6 +18,7 @@ Properties
     [NoScaleOffset] _Mask("Mask (Texture2DArray)", 2DArray) = "" {}
     _MaskDepth("Mask Depth", Int) = 0
     _HighlightColor("Highlight Color", Color) = (1, 0, 0, 0.85)
+    _HighlightOccluded("Highlight Occluded", Float) = 0
 
     [Header(Ranges)]
     _MinX("MinX", Range(0, 1)) = 0.0
@@ -60,6 +61,7 @@ float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
 float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
+float _HighlightOccluded;  // 0 (zadano) = oznaka se vidi kroz tkivo ("probija"); 1 = zaklanja je tkivo ispred
 float _ShowSlicePlane;     // 1 = na ravnini slicea prikaži oštru sivu sliku (za crtanje u 3D)
 float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (slice i = i/(D-1))
 float _SlicePlaneOpacity;
@@ -166,10 +168,27 @@ float4 frag(v2f i) : SV_Target
     float tCur = 0;
     float dt = ray.tmax / n;
 
+    // Oznaka "kroz tkivo": zraka ne staje na neprozirnom tkivu, nego do kraja prikuplja
+    // oznaku zasebno (maskA) i na kraju je slaže preko slike. Isključeno kad je ravnina slicea
+    // aktivna (crtanje u 3D) i u načinu "Samo oznaka", gdje oznaka ionako nije zaklonjena.
+    float maskA = 0;
+    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0;
+
     [loop]
     for (int i = 0; i < n; ++i)
     {
         float3 sp = localPos + 0.5;
+        // Dok je ravnina slicea aktivna (crtanje u 3D), oznaka se uvijek reže zajedno s volumenom:
+        // inače bi oznake iz prethodnih sliceova, koje su ispred ravnine u odrezanom dijelu,
+        // prekrile ravninu pa bi izgledalo da su "svi idući" sliceovi označeni.
+        bool maskFree = _ClipMask < 0.5 && _ShowSlicePlane < 0.5;
+        bool inMask = sampleMask(sp) > 0.5 && (maskFree || inClipBox(sp) > 0.5);
+        if (through && inMask)
+            maskA += (1.0 - maskA) * _HighlightColor.a;
+
+        // Kad je zraka već neprozirna, a oznaka se prati zasebno, preskoči uzorkovanje volumena.
+        if (!(through && output.a >= 0.95))
+        {
         // "Samo oznaka" uz _ClipMask = 0: oznaka je vidljiva i izvan reza, pa tada gustoća
         // ne smije biti odrezana (inače bi u tom dijelu uzorkovala nulu).
         bool maskOnly = _MaskOnly > 0.5;
@@ -181,8 +200,6 @@ float4 frag(v2f i) : SV_Target
         // Markirana regija "probija" kroz normalnu transfer funkciju — vidljiva čak i
         // preko gustoće/tkiva koje bi inače bilo skoro prozirno. Uz _ClipMask = 1 poštuje
         // isti rez kao volumen (SliceClipController), inače ostaje vidljiva cijela.
-        bool inMask = sampleMask(sp) > 0.5 && (_ClipMask < 0.5 || inClipBox(sp) > 0.5);
-
         if (maskOnly)
         {
             // Prikaz samo označenog dijela: sve izvan maske je prozirno. Način 1 zadržava
@@ -196,13 +213,14 @@ float4 frag(v2f i) : SV_Target
                 color.a   = _HighlightColor.a;
             }
         }
-        else if (inMask)
+        else if (inMask && !through)
         {
             color.rgb = _HighlightColor.rgb;
             color.a   = max(color.a, _HighlightColor.a);
         }
 
         output += (1.0 - output.a) * color;
+        }
 
         // Ravnina slicea: kad zraka u ovom koraku prijeđe ravninu, složi njezinu boju (siva
         // gustoća kao u SliceExtract.shader, s maskom preko) — daje oštru sliku na rezu.
@@ -228,7 +246,16 @@ float4 frag(v2f i) : SV_Target
         tCur += dt;
         localPos += localStep;
 
-        if (output.a >= 0.95) break;
+        if (output.a >= 0.95 && !through) break;
+    }
+
+    // Oznaka koja "probija" kroz tkivo: slaže se preko slike s jačinom 0.75, da se tkivo ispod
+    // još naslućuje (struktura oko oznake ostaje vidljiva).
+    if (through && maskA > 0)
+    {
+        float k = maskA * 0.75;
+        output.rgb = lerp(output.rgb, _HighlightColor.rgb, k);
+        output.a   = max(output.a, k);
     }
 
     return output;

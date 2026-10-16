@@ -38,6 +38,10 @@ namespace VolumeRendering.Runtime.UI
         void OnEnable()
         {
             if (modeButton != null) modeButton.onClick.AddListener(Toggle);
+            // Materijal je shared asset i može biti spremljen s uključenom ravninom iz prethodne
+            // sesije; pri svakom pokretanju kreće se od isključene ravnine.
+            if (volumeMaterial != null)
+                volumeMaterial.SetFloat("_ShowSlicePlane", 0f);
             UpdateLabel();
         }
 
