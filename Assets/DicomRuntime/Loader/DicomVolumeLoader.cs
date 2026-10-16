@@ -192,6 +192,9 @@ namespace VolumeRendering.Runtime
                 swParse.Stop();
                 parseMs = swParse.ElapsedMilliseconds;
 
+                // Jedna serija, iste dimenzije (scout slika ili druga serija u mapi inače ruši gradnju).
+                slices = DicomSliceSelector.SelectConsistent(slices);
+
                 if (slices.Count == 0)
                     return;
 
