@@ -67,6 +67,16 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     // Nije [SerializeField] pa se resetira pri svakom domain reloadu (recompile).
     bool paintLock = false;
 
+    void DestroyTexture()
+    {
+        if (texture_ == null) return;
+        if (Application.isPlaying) Destroy(texture_);
+        else DestroyImmediate(texture_);
+        texture_ = null;
+    }
+
+    void OnDestroy() => DestroyTexture();
+
     // ── Public API za Editor skriptu ────────────────────────────────────────
 
     public Texture2D GetTransferTexture() => texture_;
@@ -245,6 +255,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     public void UpdateTexture()
     {
         if (paintLock) return;  // ne prepiši ručno bojanje
+        DestroyTexture();       // prethodna tekstura inače curi pri svakom pozivu
         texture_ = new Texture2D(TFWidth, TFHeight, TextureFormat.ARGB32, false);
         texture_.wrapMode   = TextureWrapMode.Clamp;
         texture_.filterMode = FilterMode.Bilinear;

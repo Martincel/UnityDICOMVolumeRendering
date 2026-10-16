@@ -62,6 +62,17 @@ namespace VolumeRendering.Runtime.Annotation
         {
             if (loader != null)
                 loader.OnVolumeLoaded -= HandleVolumeLoaded;
+            DestroyTextures();
+        }
+
+        void DestroyTextures()
+        {
+            if (_mask != null)
+                Destroy(_mask);
+            if (_staging != null)
+                Destroy(_staging);
+            _mask = null;
+            _staging = null;
         }
 
         void HandleVolumeLoaded()
@@ -69,6 +80,7 @@ namespace VolumeRendering.Runtime.Annotation
             _width = loader.Width;
             _height = loader.Height;
             _depth = Mathf.Max(1, loader.Depth);
+            DestroyTextures();   // maska prethodnog volumena (inače ostaje na GPU-u)
             _slices.Clear();
             _pending.Clear();
             _empty = new byte[_width * _height];

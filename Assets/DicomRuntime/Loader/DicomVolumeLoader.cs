@@ -105,6 +105,14 @@ namespace VolumeRendering.Runtime
             _cts = null;
         }
 
+        // Texture3D je GPU resurs koji Unity ne briše sam dok traje scena.
+        void OnDestroy()
+        {
+            if (LoadedVolume != null)
+                Destroy(LoadedVolume);
+            LoadedVolume = null;
+        }
+
         // Glavni async lanac. CancellationToken se provlači do svih I/O i CPU faza.
         public async Task LoadAsync(IDicomDataSource source, string label, CancellationToken ct = default)
         {
@@ -217,11 +225,16 @@ namespace VolumeRendering.Runtime
             volumeMaterial.SetTexture("_Volume", tex);
             swUpload.Stop();
 
+            var previousVolume = LoadedVolume;
             LoadedVolume = tex;
             Width = w;
             Height = h;
             Depth = d;
             OnVolumeLoaded?.Invoke();
+
+            // Tek nakon događaja: pretplatnici su do tada prešli na novu teksturu.
+            if (previousVolume != null)
+                Destroy(previousVolume);
 
             swTotal.Stop();
             Debug.Log(

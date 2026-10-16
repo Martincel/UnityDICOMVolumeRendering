@@ -52,8 +52,20 @@ namespace VolumeRendering.Runtime.UI
                 loader.OnVolumeLoaded -= HandleVolumeLoaded;
             if (maskManager != null)
                 maskManager.OnMaskChanged -= HandleMaskChanged;
+            DestroySliceTexture();
+            if (_extractMaterial != null)
+                Destroy(_extractMaterial);
+        }
+
+        // Release() oslobađa GPU memoriju, ali sam RenderTexture objekt ostaje; Destroy uklanja oboje.
+        void DestroySliceTexture()
+        {
             if (_sliceTex != null)
+            {
                 _sliceTex.Release();
+                Destroy(_sliceTex);
+            }
+            _sliceTex = null;
         }
 
         void HandleMaskChanged() => ShowSlice(CurrentSliceIndex);
@@ -66,8 +78,7 @@ namespace VolumeRendering.Runtime.UI
                 _extractMaterial = new Material(shader);
             }
 
-            if (_sliceTex != null)
-                _sliceTex.Release();
+            DestroySliceTexture();
             _sliceTex = new RenderTexture(loader.Width, loader.Height, 0, RenderTextureFormat.ARGB32)
             {
                 wrapMode = TextureWrapMode.Clamp
