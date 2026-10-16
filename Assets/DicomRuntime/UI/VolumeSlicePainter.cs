@@ -35,11 +35,13 @@ namespace VolumeRendering.Runtime.UI
 
         public void SetBrushRadius(float radius) => brushRadius = Mathf.Max(1, Mathf.RoundToInt(radius));
 
+        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
         void OnEnable()
         {
             if (modeButton != null) modeButton.onClick.AddListener(Toggle);
-            // Materijal je shared asset i može biti spremljen s uključenom ravninom iz prethodne
-            // sesije; pri svakom pokretanju kreće se od isključene ravnine.
+            // Instanca je kopija asseta, koji može biti spremljen s uključenom ravninom iz ranijih
+            // sesija; pri svakom pokretanju kreće se od isključene ravnine.
             if (volumeMaterial != null)
                 volumeMaterial.SetFloat("_ShowSlicePlane", 0f);
             UpdateLabel();

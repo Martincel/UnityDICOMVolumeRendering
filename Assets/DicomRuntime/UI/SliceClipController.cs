@@ -15,7 +15,8 @@ namespace VolumeRendering.Runtime.UI
     // Na Volume objektu VolumeRenderingPositionSetter komponente svaki Update pišu _MinZ/_MaxZ
     // iz lokatora "Clipping". Ovaj kontroler piše u LateUpdate (pobjeđuje u tom frameu), a pri
     // povratku na "isključeno" vraća vrijednosti koje su vrijedile prije reza, pa lokatori opet
-    // upravljaju. Materijal je shared asset — vrijednosti se vraćaju i pri OnDisable.
+    // upravljaju. U Playu je materijal instanca (RuntimeMaterial), pa se asset ne mijenja; vrijednosti
+    // se svejedno vraćaju i pri OnDisable.
     public class SliceClipController : MonoBehaviour
     {
         public enum ClipMode { Off, FromSlice, ToSlice, Slab }
@@ -38,12 +39,14 @@ namespace VolumeRendering.Runtime.UI
         bool _captured;
         float _origMinZ, _origMaxZ;
 
+        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
         void OnEnable()
         {
             if (modeButton != null) modeButton.onClick.AddListener(CycleMode);
             if (maskButton != null) maskButton.onClick.AddListener(ToggleMask);
             if (maskOnlyButton != null) maskOnlyButton.onClick.AddListener(CycleMaskOnly);
-            // Shared materijal može biti spremljen s vrijednostima iz prethodne sesije; kreni od zadanih.
+            // Instanca je kopija asseta, koji može imati ranije spremljene vrijednosti; kreni od zadanih.
             if (volumeMaterial != null)
             {
                 volumeMaterial.SetFloat("_ClipMask", 0f);

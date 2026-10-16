@@ -37,6 +37,9 @@ namespace VolumeRendering.Runtime
         // Okida se na main threadu odmah nakon što je LoadedVolume/Width/Height/Depth postavljen.
         public event Action OnVolumeLoaded;
 
+        // U Playu radi s instancom materijala, ne s assetom (vidi RuntimeMaterial).
+        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
         // Ulaz s diska (Faza 0). Potpis nepromijenjen — zove ga DicomLoadTest.
         public void LoadFromFolder(string folderPath)
             => RunLoad(new DicomFileDataSource(folderPath), folderPath);

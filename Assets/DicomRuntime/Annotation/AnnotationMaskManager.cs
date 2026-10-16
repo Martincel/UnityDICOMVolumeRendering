@@ -53,6 +53,7 @@ namespace VolumeRendering.Runtime.Annotation
 
         void Awake()
         {
+            volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
             if (loader != null)
                 loader.OnVolumeLoaded += HandleVolumeLoaded;
         }
