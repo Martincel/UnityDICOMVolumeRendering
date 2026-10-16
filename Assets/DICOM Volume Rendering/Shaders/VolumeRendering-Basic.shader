@@ -63,7 +63,7 @@ float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
 float _HighlightOccluded;  // 0 (zadano) = oznaka se vidi kroz tkivo ("probija"); 1 = zaklanja je tkivo ispred
 float _ShowSlicePlane;     // 1 = na ravnini slicea prikaži oštru sivu sliku (za crtanje u 3D)
-float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (slice i = i/(D-1))
+float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (središte slicea i = (i + 0.5)/D)
 float _SlicePlaneOpacity;
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
@@ -116,6 +116,13 @@ inline float4 transferFunction(float density, float gradMag)
     return tex2D(_Transfer, float2(density, gradMag));
 }
 
+// Indeks slicea maske za z u teksturnom prostoru. Kao u Texture3D, slice i pokriva
+// [i/D, (i+1)/D] i središte mu je na (i + 0.5)/D, pa maska i volumen gledaju isti slice.
+inline float maskSliceIndex(float z)
+{
+    return min(floor(saturate(z) * _MaskDepth), _MaskDepth - 1);
+}
+
 // Vraća 1 ako je pos unutar markirane regije, inače 0. pos.z je [0,1] (isti UVW prostor
 // kao sampleVolume) — svaki element Texture2DArray-a je jedna Z-ravnina volumena, pa
 // nema interpolacije između elemenata (namjerno, vidi plan: diskretno po sliceu je
@@ -125,8 +132,7 @@ inline float sampleMask(float3 pos)
     if (_MaskDepth <= 0)
         return 0;
 
-    float sliceIndex = floor(saturate(pos.z) * (_MaskDepth - 1) + 0.5);
-    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, sliceIndex)).r;
+    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, maskSliceIndex(pos.z))).r;
 }
 
 v2f vert(appdata v)
@@ -233,8 +239,7 @@ float4 frag(v2f i) : SV_Target
             float4 pc = float4(d, d, d, 1);
             if (_MaskDepth > 0)
             {
-                float sliceIndex = floor(saturate(_SlicePlaneZ) * (_MaskDepth - 1) + 0.5);
-                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, sliceIndex)).r;
+                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, maskSliceIndex(_SlicePlaneZ))).r;
                 if (marked > 0.5)
                     pc.rgb = lerp(pc.rgb, _HighlightColor.rgb, _HighlightColor.a);
             }

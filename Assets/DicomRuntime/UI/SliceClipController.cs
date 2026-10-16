@@ -6,7 +6,8 @@ namespace VolumeRendering.Runtime.UI
 {
     // Reže 3D volumen na razini slicea koji se trenutno gleda/označava u bočnoj ploči, pa se 2D
     // označavanje i 3D prikaz pomiču zajedno. Koristi postojeći box-clipping u shaderu
-    // (_MinZ/_MaxZ) — Z os je ista kao kod maske i 2D prikaza: slice i leži na z = i/(D-1).
+    // (_MinZ/_MaxZ) — Z os je ista kao kod maske i 2D prikaza: središte slicea i je na z = (i + 0.5)/D
+    // (vidi SliceViewController.SliceCenterZ). Rez ide kroz središte, pa je ploha reza točno slika slicea.
     //
     // Gumb "Rez" kruži kroz načine: isključeno → od slicea dalje → do slicea → tanki sloj.
     // Gumb "Oznaka" bira hoće li se označena regija rezati zajedno s volumenom (_ClipMask).
@@ -110,8 +111,8 @@ namespace VolumeRendering.Runtime.UI
                 _captured = true;
             }
 
-            float last = Mathf.Max(1, count - 1);
-            float z = sliceView.CurrentSliceIndex / last;
+            int slice = sliceView.CurrentSliceIndex;
+            float z = SliceViewController.SliceCenterZ(slice, count);
             float minZ = _origMinZ, maxZ = _origMaxZ;
 
             switch (_mode)
@@ -123,9 +124,8 @@ namespace VolumeRendering.Runtime.UI
                     maxZ = z;
                     break;
                 case ClipMode.Slab:
-                    float half = slabHalfThickness / last;
-                    minZ = Mathf.Clamp01(z - half);
-                    maxZ = Mathf.Clamp01(z + half);
+                    minZ = Mathf.Clamp01(SliceViewController.SliceCenterZ(slice - slabHalfThickness, count));
+                    maxZ = Mathf.Clamp01(SliceViewController.SliceCenterZ(slice + slabHalfThickness, count));
                     break;
             }
 

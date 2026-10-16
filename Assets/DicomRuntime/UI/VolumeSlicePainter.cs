@@ -109,15 +109,16 @@ namespace VolumeRendering.Runtime.UI
                 return;
 
             int slice = sliceView.CurrentSliceIndex;
+            float sliceZ = SliceViewController.SliceCenterZ(slice, depth);
             if (volumeMaterial != null)
-                volumeMaterial.SetFloat("_SlicePlaneZ", depth > 1 ? (float)slice / (depth - 1) : 0f);
+                volumeMaterial.SetFloat("_SlicePlaneZ", sliceZ);
 
             // Uklanja se dio volumena koji je okrenut kameri, da je ravnina slicea vidljiva s
             // kamerine strane: kamera na nižoj strani (z < ravnina) → "od slicea dalje", inače
             // "do slicea". Prati se i pri orbitiranju kad kamera prijeđe na drugu stranu ravnine.
             if (clipController != null)
             {
-                float planeZ = (depth > 1 ? (float)slice / (depth - 1) : 0f) - 0.5f;
+                float planeZ = sliceZ - 0.5f;
                 float camZ = volume.worldToLocalMatrix.MultiplyPoint3x4(viewCamera.transform.position).z;
                 var wanted = camZ < planeZ
                     ? SliceClipController.ClipMode.FromSlice
@@ -171,7 +172,7 @@ namespace VolumeRendering.Runtime.UI
             }
         }
 
-        // Zraka kroz piksel → lokalni prostor volumena → presjek s ravninom z = slice/(D-1) - 0.5.
+        // Zraka kroz piksel → lokalni prostor volumena → presjek s ravninom z = (slice + 0.5)/D - 0.5.
         // worldToLocalMatrix (ne InverseTransformDirection) jer volumen ima neuniformnu skalu.
         bool TryHitSlice(Vector3 mouse, int slice, int depth, out int px, out int py)
         {
@@ -183,7 +184,7 @@ namespace VolumeRendering.Runtime.UI
             if (Mathf.Abs(d.z) < 1e-6f)
                 return false;
 
-            float planeZ = (depth > 1 ? (float)slice / (depth - 1) : 0f) - 0.5f;
+            float planeZ = SliceViewController.SliceCenterZ(slice, depth) - 0.5f;
             float t = (planeZ - o.z) / d.z;
             if (t <= 0f)
                 return false;
@@ -192,9 +193,9 @@ namespace VolumeRendering.Runtime.UI
             if (Mathf.Abs(hit.x) > 0.5f || Mathf.Abs(hit.y) > 0.5f)
                 return false;
 
-            // Isto mapiranje kao shader (pos.xy = local + 0.5) i kao 2D painter (px = u*(W-1)).
-            px = Mathf.RoundToInt((hit.x + 0.5f) * (sliceView.VolumeWidth - 1));
-            py = Mathf.RoundToInt((hit.y + 0.5f) * (sliceView.VolumeHeight - 1));
+            // Isto mapiranje kao shader (pos.xy = local + 0.5) i kao 2D painter (piksel koji sadrži točku).
+            px = SliceViewController.TexelIndex(hit.x + 0.5f, sliceView.VolumeWidth);
+            py = SliceViewController.TexelIndex(hit.y + 0.5f, sliceView.VolumeHeight);
             return true;
         }
     }
