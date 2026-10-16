@@ -16,7 +16,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         Lung,
         Brain,
         BloodVessels,
-        MaxIntensityProjection,
+        AllTissue,
         Anatomical  // Sve odjednom: bijele kosti, bež meko tkivo, crvene žile
     }
 
@@ -233,8 +233,8 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 mat.SetFloat("_Intensity", 3f);
                 break;
 
-            case CTPreset.MaxIntensityProjection:
-                // MIP prikazuje sve gustoće podjednako → gradient nije relevantan.
+            case CTPreset.AllTissue:
+                // Sve gustoće prikazane podjednako (slaganje sprijeda prema natrag, nije pravi MIP) → gradient nije relevantan.
                 gradientInfluence = 0f;
                 mat.SetFloat("_GradScale", 5f);
                 mat.SetFloat("_Intensity", 1f);
@@ -387,8 +387,8 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 );
                 break;
 
-            case CTPreset.MaxIntensityProjection:
-                // MIP: sve gustoće bijelo, alpha linearno raste.
+            case CTPreset.AllTissue:
+                // Sve gustoće bijelo, alpha linearno raste.
                 g.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),
