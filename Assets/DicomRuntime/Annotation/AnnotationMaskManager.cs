@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Rendering;
 using VolumeRendering.Runtime;
 
 namespace VolumeRendering.Runtime.Annotation
@@ -10,20 +11,36 @@ namespace VolumeRendering.Runtime.Annotation
     // sastanak 2026-07-07). Maska je zaseban Texture2DArray (R8, jedan element po sliceu) —
     // NE dijeli kanale s density _Volume teksturom (ostavlja B/A slobodnima za buduću R16
     // migraciju gustoće i Phong normalu iz Faze 4), NE koristi drugi Texture3D (editiranje
-    // dira jedan slice odjednom — Texture2DArray to podržava bez reuploada cijelog volumena).
+    // dira jedan slice odjednom).
+    //
+    // Slanje na GPU: Texture2DArray.Apply uvijek šalje cijeli niz (~131 MB za 512×512×501), pa se
+    // ne zove pri crtanju. Izmijenjeni sliceovi skupljaju se tijekom framea i u LateUpdate se šalju
+    // jednom: svaki se upiše u mali Texture2D (jedan slice, ~256 KB) i Graphics.CopyTexture ga
+    // kopira u svoj element niza na GPU-u. Niz zato nema CPU kopiju (makeNoLongerReadable), a
+    // jedina CPU kopija su označeni sliceovi u _slices. Ako GPU ne podržava kopiju između različitih
+    // tipova tekstura, niz ostaje čitljiv i radi se jedan Apply po frameu.
+    //
+    // DefaultExecutionOrder: LateUpdate se mora izvršiti nakon VolumeSlicePainter.LateUpdate (crta
+    // u LateUpdate), inače bi potez stigao na GPU tek frame kasnije.
+    [DefaultExecutionOrder(1000)]
     public class AnnotationMaskManager : MonoBehaviour
     {
         [SerializeField] DicomVolumeLoader loader;
         [SerializeField] Material volumeMaterial;
 
         Texture2DArray _mask;
+        Texture2D _staging;   // jedan slice, izvor za Graphics.CopyTexture
+        bool _gpuCopy;
+        byte[] _empty;
 
         // CPU kopija samo za sliceove koji su stvarno dotaknuti (lazy) — ne cijeli volumen.
         // Tumor tipično obuhvaća šačicu sliceova, ne svih 500+, pa ovo drži CPU trošak
-        // proporcionalan stvarnom crtanju umjesto fiksnih ~130 MB unaprijed.
-        readonly Dictionary<int, Color32[]> _dirtySlices = new Dictionary<int, Color32[]>();
+        // proporcionalan stvarnom crtanju umjesto fiksnih ~130 MB unaprijed. Vrijednosti su
+        // MaskSerializer.Marked / Unmarked, jedan bajt po pikselu (isti format kao R8 tekstura).
+        readonly Dictionary<int, byte[]> _slices = new Dictionary<int, byte[]>();
 
-        static readonly Color32 Marked = new Color32(255, 0, 0, 255);
+        // Sliceovi izmijenjeni od zadnjeg slanja na GPU.
+        readonly HashSet<int> _pending = new HashSet<int>();
 
         int _width, _height, _depth;
         int _sliceHalfThickness;
@@ -51,7 +68,10 @@ namespace VolumeRendering.Runtime.Annotation
             _width = loader.Width;
             _height = loader.Height;
             _depth = Mathf.Max(1, loader.Depth);
-            _dirtySlices.Clear();
+            _slices.Clear();
+            _pending.Clear();
+            _empty = new byte[_width * _height];
+            _gpuCopy = (SystemInfo.copyTextureSupport & CopyTextureSupport.DifferentTypes) != 0;
 
             _mask = new Texture2DArray(_width, _height, _depth, TextureFormat.R8, false)
             {
@@ -60,10 +80,23 @@ namespace VolumeRendering.Runtime.Annotation
             };
 
             // Eksplicitno nuliraj sve elemente — GPU sadržaj nove teksture nije zajamčeno nula.
-            var empty = new Color32[_width * _height];
             for (int z = 0; z < _depth; z++)
-                _mask.SetPixels32(empty, z);
-            _mask.Apply(false);
+                _mask.SetPixelData(_empty, 0, z);
+            _mask.Apply(false, _gpuCopy);
+
+            if (_gpuCopy)
+            {
+                _staging = new Texture2D(_width, _height, TextureFormat.R8, false)
+                {
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Point
+                };
+            }
+            else
+            {
+                Debug.LogWarning("[AnnotationMaskManager] GPU ne podržava CopyTexture u element niza; " +
+                                 "maska se šalje cijela, jednom po frameu.");
+            }
 
             if (volumeMaterial != null)
             {
@@ -84,8 +117,49 @@ namespace VolumeRendering.Runtime.Annotation
             int last = Mathf.Min(_depth - 1, sliceIndex + _sliceHalfThickness);
             for (int s = first; s <= last; s++)
                 PaintSlice(s, px, py, radius);
+            // Na GPU ide u LateUpdate, jednom po frameu za sve poteze u tom frameu.
+        }
 
-            _mask.Apply(false);
+        void LateUpdate()
+        {
+            if (_pending.Count > 0)
+                Flush();
+        }
+
+        void OnDisable()
+        {
+            if (_pending.Count > 0)
+                Flush();
+        }
+
+        // Šalje izmijenjene sliceove na GPU i javlja promjenu (2D prikaz se ponovno iscrta).
+        void Flush()
+        {
+            if (_mask == null)
+            {
+                _pending.Clear();
+                return;
+            }
+
+            foreach (int sliceIndex in _pending)
+            {
+                var pixels = _slices.TryGetValue(sliceIndex, out var marked) ? marked : _empty;
+                if (_gpuCopy)
+                {
+                    _staging.SetPixelData(pixels, 0);
+                    _staging.Apply(false);
+                    Graphics.CopyTexture(_staging, 0, 0, _mask, sliceIndex, 0);
+                }
+                else
+                {
+                    _mask.SetPixelData(pixels, 0, sliceIndex);
+                }
+            }
+
+            if (!_gpuCopy)
+                _mask.Apply(false);
+
+            _pending.Clear();
             OnMaskChanged?.Invoke();
         }
 
@@ -95,10 +169,11 @@ namespace VolumeRendering.Runtime.Annotation
 
         void PaintSlice(int sliceIndex, int px, int py, int radius)
         {
-            if (!_dirtySlices.TryGetValue(sliceIndex, out var pixels))
+            // Slice koji nije u _slices na GPU-u je prazan, pa kreće od nula.
+            if (!_slices.TryGetValue(sliceIndex, out var pixels))
             {
-                pixels = _mask.GetPixels32(sliceIndex);
-                _dirtySlices[sliceIndex] = pixels;
+                pixels = new byte[_width * _height];
+                _slices[sliceIndex] = pixels;
             }
 
             int minX = Mathf.Max(0, px - radius);
@@ -114,11 +189,11 @@ namespace VolumeRendering.Runtime.Annotation
                 {
                     int dx = x - px;
                     if (dx * dx + dy * dy <= r2)
-                        pixels[y * _width + x] = Marked;
+                        pixels[y * _width + x] = MaskSerializer.Marked;
                 }
             }
 
-            _mask.SetPixels32(pixels, sliceIndex);
+            _pending.Add(sliceIndex);
         }
 
         public void Clear()
@@ -126,12 +201,9 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null)
                 return;
 
-            var empty = new Color32[_width * _height];
-            foreach (var sliceIndex in _dirtySlices.Keys)
-                _mask.SetPixels32(empty, sliceIndex);
-            _mask.Apply(false);
-            _dirtySlices.Clear();
-            OnMaskChanged?.Invoke();
+            _pending.UnionWith(_slices.Keys);
+            _slices.Clear();
+            Flush();
         }
 
         // Sprema masku na disk (format: MaskSerializer). Prazni sliceovi se ne spremaju.
@@ -146,7 +218,7 @@ namespace VolumeRendering.Runtime.Annotation
             try
             {
                 using (var stream = File.Create(tempPath))
-                    MaskSerializer.Write(stream, _width, _height, _depth, CollectSlices());
+                    MaskSerializer.Write(stream, _width, _height, _depth, _slices);
 
                 if (File.Exists(path))
                     File.Delete(path);
@@ -173,26 +245,23 @@ namespace VolumeRendering.Runtime.Annotation
                 data = MaskSerializer.Read(stream, _width, _height, _depth);
 
             // Isprazni sve što je trenutno označeno (jedino ti sliceovi mogu imati nenulte piksele).
-            var empty = new Color32[_width * _height];
-            foreach (var sliceIndex in _dirtySlices.Keys)
-                _mask.SetPixels32(empty, sliceIndex);
-            _dirtySlices.Clear();
+            _pending.UnionWith(_slices.Keys);
+            _slices.Clear();
 
             foreach (var pair in data.Slices)
             {
-                var pixels = new Color32[_width * _height];
+                var pixels = new byte[_width * _height];
                 for (int i = 0; i < pixels.Length; i++)
                 {
-                    if (pair.Value[i] != 0)
-                        pixels[i] = Marked;
+                    if (pair.Value[i] != MaskSerializer.Unmarked)
+                        pixels[i] = MaskSerializer.Marked;
                 }
 
-                _mask.SetPixels32(pixels, pair.Key);
-                _dirtySlices[pair.Key] = pixels;
+                _slices[pair.Key] = pixels;
+                _pending.Add(pair.Key);
             }
 
-            _mask.Apply(false);
-            OnMaskChanged?.Invoke();
+            Flush();
         }
 
         // Izvoz maske kao stack 8-bit PNG-ova (jedan po neprazom sliceu) u zadanu mapu.
@@ -201,21 +270,7 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null)
                 throw new InvalidOperationException("Maska se ne može izvesti: volumen još nije učitan.");
 
-            return MaskPngExporter.Export(folder, _width, _height, CollectSlices());
-        }
-
-        // CPU kopije dotaknutih sliceova pretvorene u 1 bajt po pikselu (0 ili 255).
-        Dictionary<int, byte[]> CollectSlices()
-        {
-            var slices = new Dictionary<int, byte[]>();
-            foreach (var pair in _dirtySlices)
-            {
-                var bytes = new byte[pair.Value.Length];
-                for (int i = 0; i < bytes.Length; i++)
-                    bytes[i] = pair.Value[i].r != 0 ? MaskSerializer.Marked : MaskSerializer.Unmarked;
-                slices[pair.Key] = bytes;
-            }
-            return slices;
+            return MaskPngExporter.Export(folder, _width, _height, _slices);
         }
     }
 }
