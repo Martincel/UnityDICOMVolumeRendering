@@ -23,6 +23,14 @@ namespace VolumeRendering.Runtime.UI
         Material _extractMaterial;
         RenderTexture _sliceTex;
 
+        // Konvencija koordinata kao u Texture3D: slice i pokriva z ∈ [i/D, (i+1)/D], a njegov voxel
+        // je u središtu, na (i + 0.5)/D. Uzorkovanje na i/(D-1) bi uz bilinearni filter miješalo dva
+        // susjedna slicea. Isto vrijedi za x i y (piksel px je na (px + 0.5)/W).
+        public static float SliceCenterZ(int slice, int depth) => depth > 0 ? (slice + 0.5f) / depth : 0.5f;
+
+        // Teksturna koordinata u [0,1] → indeks piksela (slicea) koji je sadrži.
+        public static int TexelIndex(float u, int size) => Mathf.Clamp(Mathf.FloorToInt(u * size), 0, Mathf.Max(0, size - 1));
+
         public int CurrentSliceIndex { get; private set; }
         public int SliceCount => loader != null ? loader.Depth : 0;
         public int VolumeWidth => loader != null ? loader.Width : 0;
@@ -44,8 +52,20 @@ namespace VolumeRendering.Runtime.UI
                 loader.OnVolumeLoaded -= HandleVolumeLoaded;
             if (maskManager != null)
                 maskManager.OnMaskChanged -= HandleMaskChanged;
+            DestroySliceTexture();
+            if (_extractMaterial != null)
+                Destroy(_extractMaterial);
+        }
+
+        // Release() oslobađa GPU memoriju, ali sam RenderTexture objekt ostaje; Destroy uklanja oboje.
+        void DestroySliceTexture()
+        {
             if (_sliceTex != null)
+            {
                 _sliceTex.Release();
+                Destroy(_sliceTex);
+            }
+            _sliceTex = null;
         }
 
         void HandleMaskChanged() => ShowSlice(CurrentSliceIndex);
@@ -58,8 +78,7 @@ namespace VolumeRendering.Runtime.UI
                 _extractMaterial = new Material(shader);
             }
 
-            if (_sliceTex != null)
-                _sliceTex.Release();
+            DestroySliceTexture();
             _sliceTex = new RenderTexture(loader.Width, loader.Height, 0, RenderTextureFormat.ARGB32)
             {
                 wrapMode = TextureWrapMode.Clamp
@@ -102,7 +121,7 @@ namespace VolumeRendering.Runtime.UI
                 return;
 
             CurrentSliceIndex = Mathf.Clamp(index, 0, loader.Depth - 1);
-            float z = loader.Depth > 1 ? (float)CurrentSliceIndex / (loader.Depth - 1) : 0f;
+            float z = SliceCenterZ(CurrentSliceIndex, loader.Depth);
 
             _extractMaterial.SetTexture("_Volume", loader.LoadedVolume);
             _extractMaterial.SetFloat("_SliceZ", z);

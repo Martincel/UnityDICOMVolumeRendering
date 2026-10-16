@@ -17,6 +17,7 @@ Properties
     [Header(Annotation)]
     [NoScaleOffset] _Mask("Mask (Texture2DArray)", 2DArray) = "" {}
     _MaskDepth("Mask Depth", Int) = 0
+    _MaskZRange("Mask Z Range", Vector) = (1, 0, 0, 0)
     _HighlightColor("Highlight Color", Color) = (1, 0, 0, 0.85)
     _HighlightOccluded("Highlight Occluded", Float) = 0
 
@@ -63,7 +64,7 @@ float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
 float _HighlightOccluded;  // 0 (zadano) = oznaka se vidi kroz tkivo ("probija"); 1 = zaklanja je tkivo ispred
 float _ShowSlicePlane;     // 1 = na ravnini slicea prikaži oštru sivu sliku (za crtanje u 3D)
-float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (slice i = i/(D-1))
+float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (središte slicea i = (i + 0.5)/D)
 float _SlicePlaneOpacity;
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
@@ -71,6 +72,9 @@ float _SlicePlaneOpacity;
 // elemenata (postavlja AnnotationMaskManager nakon učitavanja); 0 dok maska ne postoji.
 UNITY_DECLARE_TEX2DARRAY(_Mask);
 float _MaskDepth;
+// Raspon z (teksturni prostor) sliceova koji imaju oznaku: x = donji rub najnižeg, y = gornji rub
+// najvišeg. Postavlja AnnotationMaskManager; x >= y znači da oznaka nema (zadano).
+float4 _MaskZRange;
 fixed4 _HighlightColor;
 
 struct Ray
@@ -116,6 +120,13 @@ inline float4 transferFunction(float density, float gradMag)
     return tex2D(_Transfer, float2(density, gradMag));
 }
 
+// Indeks slicea maske za z u teksturnom prostoru. Kao u Texture3D, slice i pokriva
+// [i/D, (i+1)/D] i središte mu je na (i + 0.5)/D, pa maska i volumen gledaju isti slice.
+inline float maskSliceIndex(float z)
+{
+    return min(floor(saturate(z) * _MaskDepth), _MaskDepth - 1);
+}
+
 // Vraća 1 ako je pos unutar markirane regije, inače 0. pos.z je [0,1] (isti UVW prostor
 // kao sampleVolume) — svaki element Texture2DArray-a je jedna Z-ravnina volumena, pa
 // nema interpolacije između elemenata (namjerno, vidi plan: diskretno po sliceu je
@@ -125,8 +136,7 @@ inline float sampleMask(float3 pos)
     if (_MaskDepth <= 0)
         return 0;
 
-    float sliceIndex = floor(saturate(pos.z) * (_MaskDepth - 1) + 0.5);
-    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, sliceIndex)).r;
+    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, maskSliceIndex(pos.z))).r;
 }
 
 v2f vert(appdata v)
@@ -148,14 +158,40 @@ float4 frag(v2f i) : SV_Target
     ray.dir = localDir;
     intersection(ray);
 
-    int n = _Iteration * ray.tmax / sqrt(3);
-    float3 localStep = localDir * ray.tmax / n;
+    // Zraka se skraćuje na dio unutar kutije reza (_MinX.._MaxZ): inače tanki sloj (npr. 9 sliceova,
+    // ~2 % visine) pogodi 0 ili 1 uzorak kad zraka prolazi okomito na njega, pa je odozgo gotovo
+    // nevidljiv. Ne skraćuje se ako je vidljivo nešto izvan reza (oznaka uz _ClipMask = 0) ili ako je
+    // aktivna ravnina slicea (ona računa udaljenost od ulaza u kocku).
+    float tStart = 0;
+    float tEnd = ray.tmax;
+    bool trim = _ShowSlicePlane < 0.5 && (_ClipMask > 0.5 || _MaskZRange.x >= _MaskZRange.y);
+    if (trim)
+    {
+        float3 invDir = 1.0 / localDir;
+        float3 lo = float3(_MinX, _MinY, _MinZ) - 0.5;
+        float3 hi = float3(_MaxX, _MaxY, _MaxZ) - 0.5;
+        float3 t1 = (lo - ray.from) * invDir;
+        float3 t2 = (hi - ray.from) * invDir;
+        float3 tNear3 = min(t1, t2);
+        float3 tFar3 = max(t1, t2);
+        tStart = max(0.0, max(tNear3.x, max(tNear3.y, tNear3.z)));
+        tEnd = min(ray.tmax, min(tFar3.x, min(tFar3.y, tFar3.z)));
+        if (tEnd <= tStart)
+            return 0;
+    }
+
+    float segLen = tEnd - tStart;
+    int n = _Iteration * segLen / sqrt(3);
+    // Skraćena zraka dobiva barem nekoliko uzoraka da tanki sloj ostane vidljiv.
+    n = max(n, trim ? 6 : 1);
+    float3 localStep = localDir * segLen / n;
 
     // Jitter: pomakni početak zrake za nasumičnu vrijednost iz noise teksture.
     // Svaki piksel na ekranu uzorkuje drugačiji noise piksel → susjedne zrake
     // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
+    // Pomak je dio jednog koraka duž zrake (localStep već sadrži smjer).
     float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
-    float3 localPos = i.localPos + localDir * localStep * jitter;
+    float3 localPos = i.localPos + localDir * tStart + localStep * jitter;
     float4 output = 0;
 
     // Oštra ravnina slicea: udaljenost (duž zrake od ulaza u kocku) do ravnine z = _SlicePlaneZ.
@@ -165,14 +201,16 @@ float4 frag(v2f i) : SV_Target
     float tPlane = 1e9;
     if (_ShowSlicePlane > 0.5 && abs(localDir.z) > 1e-5)
         tPlane = (_SlicePlaneZ - 0.5 - startPos.z) / localDir.z;
-    float tCur = 0;
-    float dt = ray.tmax / n;
+    float tCur = tStart;
+    float dt = segLen / n;
 
     // Oznaka "kroz tkivo": zraka ne staje na neprozirnom tkivu, nego do kraja prikuplja
     // oznaku zasebno (maskA) i na kraju je slaže preko slike. Isključeno kad je ravnina slicea
     // aktivna (crtanje u 3D) i u načinu "Samo oznaka", gdje oznaka ionako nije zaklonjena.
     float maskA = 0;
-    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0;
+    // Bez ijedne oznake zraka staje na neprozirnom tkivu kao inače (early ray termination).
+    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0
+                && _MaskZRange.x < _MaskZRange.y;
 
     [loop]
     for (int i = 0; i < n; ++i)
@@ -232,8 +270,7 @@ float4 frag(v2f i) : SV_Target
             float4 pc = float4(d, d, d, 1);
             if (_MaskDepth > 0)
             {
-                float sliceIndex = floor(saturate(_SlicePlaneZ) * (_MaskDepth - 1) + 0.5);
-                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, sliceIndex)).r;
+                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, maskSliceIndex(_SlicePlaneZ))).r;
                 if (marked > 0.5)
                     pc.rgb = lerp(pc.rgb, _HighlightColor.rgb, _HighlightColor.a);
             }
@@ -246,7 +283,16 @@ float4 frag(v2f i) : SV_Target
         tCur += dt;
         localPos += localStep;
 
-        if (output.a >= 0.95 && !through) break;
+        if (output.a >= 0.95)
+        {
+            if (!through) break;
+
+            // Neprozirna zraka dalje prikuplja samo oznaku. Stani kad je oznaka već zasićena ili
+            // kad zraka više ne može doći do sliceova s oznakama (izašla je iz raspona i ide dalje od njega).
+            float zNext = localPos.z + 0.5;
+            bool pastMarks = (localDir.z >= 0 && zNext > _MaskZRange.y) || (localDir.z <= 0 && zNext < _MaskZRange.x);
+            if (maskA >= 0.99 || pastMarks) break;
+        }
     }
 
     // Oznaka koja "probija" kroz tkivo: slaže se preko slike s jačinom 0.75, da se tkivo ispod

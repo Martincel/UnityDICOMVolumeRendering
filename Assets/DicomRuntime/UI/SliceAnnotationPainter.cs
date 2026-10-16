@@ -48,8 +48,9 @@ namespace VolumeRendering.Runtime.UI
             if (sliceView.VolumeWidth <= 0 || sliceView.VolumeHeight <= 0)
                 return;
 
-            int px = Mathf.RoundToInt(u * (sliceView.VolumeWidth - 1));
-            int py = Mathf.RoundToInt(v * (sliceView.VolumeHeight - 1));
+            // Piksel koji sadrži točku (središte piksela px je na (px + 0.5)/W, kao u prikazu).
+            int px = SliceViewController.TexelIndex(u, sliceView.VolumeWidth);
+            int py = SliceViewController.TexelIndex(v, sliceView.VolumeHeight);
 
             maskManager.PaintAt(sliceView.CurrentSliceIndex, px, py, brushRadius);
         }

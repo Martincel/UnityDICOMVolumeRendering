@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using VolumeRendering.Runtime;
 
 namespace VolumeRendering
 {
@@ -59,9 +60,22 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
 
     Texture2D texture_;
 
+    // U Playu instanca materijala (RuntimeMaterial), u Editoru asset.
+    Material Mat => RuntimeMaterial.For(GetComponent<Renderer>());
+
     // Dok je true, UpdateTexture() ne prepisuje teksturu — štiti ručno bojanje.
     // Nije [SerializeField] pa se resetira pri svakom domain reloadu (recompile).
     bool paintLock = false;
+
+    void DestroyTexture()
+    {
+        if (texture_ == null) return;
+        if (Application.isPlaying) Destroy(texture_);
+        else DestroyImmediate(texture_);
+        texture_ = null;
+    }
+
+    void OnDestroy() => DestroyTexture();
 
     // ── Public API za Editor skriptu ────────────────────────────────────────
 
@@ -82,7 +96,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
             texture_.SetPixel(x, y, color);
         }
         texture_.Apply(false);
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_Transfer", texture_);
+        Mat.SetTexture("_Transfer", texture_);
     }
 
     // Resetira teksturu na ono što Gradient + gradientInfluence propisuju.
@@ -116,7 +130,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
             return;
         }
 
-        var mat   = GetComponent<Renderer>().sharedMaterial;
+        var mat   = Mat;
         var entry = presetOverrides.Find(p => p.preset == preset);
         if (entry == null)
         {
@@ -145,7 +159,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
             return;
         }
 
-        var mat   = GetComponent<Renderer>().sharedMaterial;
+        var mat   = Mat;
         var saved = presetOverrides.Find(p => p.preset == preset);
 
         if (saved != null)
@@ -179,7 +193,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     // Postavlja gradientInfluence i _GradScale na optimalne vrijednosti za odabrani preset.
     void Apply2DSettings(CTPreset p)
     {
-        var mat = GetComponent<Renderer>().sharedMaterial;
+        var mat = Mat;
         switch (p)
         {
             case CTPreset.Bone:
@@ -241,6 +255,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     public void UpdateTexture()
     {
         if (paintLock) return;  // ne prepiši ručno bojanje
+        DestroyTexture();       // prethodna tekstura inače curi pri svakom pozivu
         texture_ = new Texture2D(TFWidth, TFHeight, TextureFormat.ARGB32, false);
         texture_.wrapMode   = TextureWrapMode.Clamp;
         texture_.filterMode = FilterMode.Bilinear;
@@ -258,7 +273,7 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         }
 
         texture_.Apply(false);
-        GetComponent<Renderer>().sharedMaterial.SetTexture("_Transfer", texture_);
+        Mat.SetTexture("_Transfer", texture_);
     }
 
     // ── Gradijenti za presetove ──────────────────────────────────────────────

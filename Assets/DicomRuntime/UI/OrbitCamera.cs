@@ -15,13 +15,18 @@ namespace VolumeRendering.Runtime.UI
         [SerializeField] Transform target;
         [SerializeField] float rotateSpeed = 0.25f;
         [SerializeField] float zoomSpeed = 0.1f;
+        // Najmanja dopuštena udaljenost; stvarna je veća ako volumen ne stane (vidi EffectiveMinDistance).
         [SerializeField] float minDistance = 4f;
         [SerializeField] float maxDistance = 40f;
 
         // true = okreće lijeva tipka; false = okreće desna (lijeva je slobodna za crtanje).
         public bool LeftButtonOrbits = true;
 
+        // Rezerva iznad polumjera volumena, da kamera ostane izvan kocke.
+        const float VolumeMargin = 1.05f;
+
         Camera _cam;
+        float _effectiveMinDistance;
         float _yaw, _pitch, _distance;
         float _startYaw, _startPitch, _startDistance;
         bool _dragging;
@@ -40,9 +45,11 @@ namespace VolumeRendering.Runtime.UI
                 return;
             }
 
+            _effectiveMinDistance = EffectiveMinDistance();
+
             // Sferne koordinate iz trenutnog položaja kamere u odnosu na cilj.
             Vector3 toTarget = target.position - transform.position;
-            _distance = Mathf.Max(minDistance, toTarget.magnitude);
+            _distance = Mathf.Max(_effectiveMinDistance, toTarget.magnitude);
             Vector3 dir = toTarget.normalized;
             _pitch = Mathf.Asin(Mathf.Clamp(-dir.y, -1f, 1f)) * Mathf.Rad2Deg;   // 90 = gleda ravno dolje
             _yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
@@ -50,6 +57,25 @@ namespace VolumeRendering.Runtime.UI
             _startYaw = _yaw;
             _startPitch = _pitch;
             _startDistance = _distance;
+        }
+
+        // Unutar kocke volumena prednje strane ostaju iza kamere, a Cull Back odbaci ostale, pa volumen
+        // nestane. Kamera zato ne smije bliže od polumjera opisane kugle volumena (pola dijagonale),
+        // mjereno od mete. Veličina se čita s renderera volumena (shader VolumeRendering/Basic), pa
+        // vrijedi za svaku skalu; bez njega ostaje serijalizirani minDistance.
+        float EffectiveMinDistance()
+        {
+            foreach (var r in FindObjectsOfType<Renderer>())
+            {
+                var mat = r.sharedMaterial;
+                if (mat == null || mat.shader == null || mat.shader.name != "VolumeRendering/Basic")
+                    continue;
+
+                var bounds = r.bounds;
+                float radius = (bounds.center - target.position).magnitude + bounds.extents.magnitude;
+                return Mathf.Max(minDistance, radius * VolumeMargin);
+            }
+            return minDistance;
         }
 
         void LateUpdate()
@@ -82,7 +108,7 @@ namespace VolumeRendering.Runtime.UI
 
             float scroll = Input.mouseScrollDelta.y;
             if (inView && !overUi && !Mathf.Approximately(scroll, 0f))
-                _distance = Mathf.Clamp(_distance * (1f - scroll * zoomSpeed), minDistance, maxDistance);
+                _distance = Mathf.Clamp(_distance * (1f - scroll * zoomSpeed), _effectiveMinDistance, maxDistance);
 
             if (Input.GetKeyDown(KeyCode.R))
             {

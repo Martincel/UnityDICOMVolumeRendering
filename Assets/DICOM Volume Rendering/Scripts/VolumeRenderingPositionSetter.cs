@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using VolumeRendering.Runtime;
 
 namespace VolumeRendering
 {
@@ -27,7 +28,7 @@ public class VolumeRenderingPositionSetter : MonoBehaviour
         if (!target) return;
 
         var renderer = GetComponent<Renderer>();
-        var mat = renderer.sharedMaterial;
+        var mat = RuntimeMaterial.For(renderer);   // u Playu instanca, u Editoru asset
         var wpos = target.position;
         var wpos4 = new Vector4(wpos.x, wpos.y, wpos.z, 1f);
         var lpos = transform.worldToLocalMatrix * wpos4;
