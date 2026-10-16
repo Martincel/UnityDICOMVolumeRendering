@@ -32,7 +32,8 @@ public class Texture2DArrayToTexture3DConverterEditor : Editor
     bool Convert()
     {
         var converter  = target as Texture2DArrayToTexture3DConverter;
-        var tex2dArray = converter.texture2DArray;
+        // Kopija: Reverse na serijaliziranoj listi okretao bi redoslijed pri svakom Convertu.
+        var tex2dArray = new System.Collections.Generic.List<Texture2D>(converter.texture2DArray);
         tex2dArray.Reverse();
 
         if (tex2dArray.Count == 0)
