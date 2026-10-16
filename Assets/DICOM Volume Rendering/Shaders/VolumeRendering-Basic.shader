@@ -17,6 +17,7 @@ Properties
     [Header(Annotation)]
     [NoScaleOffset] _Mask("Mask (Texture2DArray)", 2DArray) = "" {}
     _MaskDepth("Mask Depth", Int) = 0
+    _MaskZRange("Mask Z Range", Vector) = (1, 0, 0, 0)
     _HighlightColor("Highlight Color", Color) = (1, 0, 0, 0.85)
     _HighlightOccluded("Highlight Occluded", Float) = 0
 
@@ -71,6 +72,9 @@ float _SlicePlaneOpacity;
 // elemenata (postavlja AnnotationMaskManager nakon učitavanja); 0 dok maska ne postoji.
 UNITY_DECLARE_TEX2DARRAY(_Mask);
 float _MaskDepth;
+// Raspon z (teksturni prostor) sliceova koji imaju oznaku: x = donji rub najnižeg, y = gornji rub
+// najvišeg. Postavlja AnnotationMaskManager; x >= y znači da oznaka nema (zadano).
+float4 _MaskZRange;
 fixed4 _HighlightColor;
 
 struct Ray
@@ -179,7 +183,9 @@ float4 frag(v2f i) : SV_Target
     // oznaku zasebno (maskA) i na kraju je slaže preko slike. Isključeno kad je ravnina slicea
     // aktivna (crtanje u 3D) i u načinu "Samo oznaka", gdje oznaka ionako nije zaklonjena.
     float maskA = 0;
-    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0;
+    // Bez ijedne oznake zraka staje na neprozirnom tkivu kao inače (early ray termination).
+    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0
+                && _MaskZRange.x < _MaskZRange.y;
 
     [loop]
     for (int i = 0; i < n; ++i)
@@ -252,7 +258,16 @@ float4 frag(v2f i) : SV_Target
         tCur += dt;
         localPos += localStep;
 
-        if (output.a >= 0.95 && !through) break;
+        if (output.a >= 0.95)
+        {
+            if (!through) break;
+
+            // Neprozirna zraka dalje prikuplja samo oznaku. Stani kad je oznaka već zasićena ili
+            // kad zraka više ne može doći do sliceova s oznakama (izašla je iz raspona i ide dalje od njega).
+            float zNext = localPos.z + 0.5;
+            bool pastMarks = (localDir.z >= 0 && zNext > _MaskZRange.y) || (localDir.z <= 0 && zNext < _MaskZRange.x);
+            if (maskA >= 0.99 || pastMarks) break;
+        }
     }
 
     // Oznaka koja "probija" kroz tkivo: slaže se preko slike s jačinom 0.75, da se tkivo ispod

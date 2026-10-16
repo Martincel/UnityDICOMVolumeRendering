@@ -103,6 +103,29 @@ namespace VolumeRendering.Runtime.Annotation
                 volumeMaterial.SetTexture("_Mask", _mask);
                 volumeMaterial.SetFloat("_MaskDepth", _depth);
             }
+            UpdateMarkedRange();
+        }
+
+        // Javlja shaderu raspon z-ova sa oznakama, da u načinu "oznaka kroz tkivo" zraka može stati
+        // čim prođe taj raspon (a bez oznaka odmah na neprozirnom tkivu). _slices sadrži samo sliceove
+        // u koje se crtalo ili koji su učitani; kist ne briše, pa je svaki od njih označen.
+        void UpdateMarkedRange()
+        {
+            if (volumeMaterial == null)
+                return;
+
+            int min = int.MaxValue, max = -1;
+            foreach (int sliceIndex in _slices.Keys)
+            {
+                if (sliceIndex < min) min = sliceIndex;
+                if (sliceIndex > max) max = sliceIndex;
+            }
+
+            // Slice i pokriva z ∈ [i/D, (i+1)/D] (vidi SliceViewController.SliceCenterZ).
+            var range = max < 0
+                ? new Vector4(1f, 0f, 0f, 0f)
+                : new Vector4((float)min / _depth, (float)(max + 1) / _depth, 0f, 0f);
+            volumeMaterial.SetVector("_MaskZRange", range);
         }
 
         // sliceIndex = Z sloj u koji se crta (trenutno vidljivi slice iz SliceViewControllera).
@@ -160,6 +183,7 @@ namespace VolumeRendering.Runtime.Annotation
                 _mask.Apply(false);
 
             _pending.Clear();
+            UpdateMarkedRange();
             OnMaskChanged?.Invoke();
         }
 
