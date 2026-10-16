@@ -154,19 +154,9 @@ namespace VolumeRendering.Runtime.UI
             {
                 // Između dva uzorka miša crtaj niz točaka da potez ne bude isprekidan.
                 if (_hasLast && _lastSlice == slice)
-                {
-                    float dist = Vector2.Distance(new Vector2(_lastPx, _lastPy), new Vector2(px, py));
-                    int steps = Mathf.CeilToInt(dist / Mathf.Max(1f, brushRadius * 0.5f));
-                    for (int i = 1; i < steps; i++)
-                    {
-                        float t = (float)i / steps;
-                        maskManager.PaintAt(slice,
-                            Mathf.RoundToInt(Mathf.Lerp(_lastPx, px, t)),
-                            Mathf.RoundToInt(Mathf.Lerp(_lastPy, py, t)),
-                            brushRadius);
-                    }
-                }
-                maskManager.PaintAt(slice, px, py, brushRadius);
+                    maskManager.PaintStroke(slice, _lastPx, _lastPy, px, py, brushRadius);
+                else
+                    maskManager.PaintAt(slice, px, py, brushRadius);
                 _lastPx = px;
                 _lastPy = py;
                 _lastSlice = slice;

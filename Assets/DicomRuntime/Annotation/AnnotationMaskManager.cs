@@ -156,6 +156,23 @@ namespace VolumeRendering.Runtime.Annotation
             // Na GPU ide u LateUpdate, jednom po frameu za sve poteze u tom frameu.
         }
 
+        // Potez od prethodne do nove točke na istom sliceu: točke s korakom ≈ radius/2 da potez ne ostane
+        // isprekidan pri brzom pomicanju miša. Završna točka (toX, toY) uvijek se crta.
+        public void PaintStroke(int sliceIndex, int fromX, int fromY, int toX, int toY, int radius)
+        {
+            float dist = Vector2.Distance(new Vector2(fromX, fromY), new Vector2(toX, toY));
+            int steps = Mathf.CeilToInt(dist / Mathf.Max(1f, radius * 0.5f));
+            for (int i = 1; i < steps; i++)
+            {
+                float t = (float)i / steps;
+                PaintAt(sliceIndex,
+                    Mathf.RoundToInt(Mathf.Lerp(fromX, toX, t)),
+                    Mathf.RoundToInt(Mathf.Lerp(fromY, toY, t)),
+                    radius);
+            }
+            PaintAt(sliceIndex, toX, toY, radius);
+        }
+
         void LateUpdate()
         {
             if (_pending.Count > 0)
