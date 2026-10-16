@@ -154,8 +154,9 @@ float4 frag(v2f i) : SV_Target
     // Jitter: pomakni početak zrake za nasumičnu vrijednost iz noise teksture.
     // Svaki piksel na ekranu uzorkuje drugačiji noise piksel → susjedne zrake
     // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
+    // Pomak je dio jednog koraka duž zrake (localStep već sadrži smjer).
     float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
-    float3 localPos = i.localPos + localDir * localStep * jitter;
+    float3 localPos = i.localPos + localStep * jitter;
     float4 output = 0;
 
     // Oštra ravnina slicea: udaljenost (duž zrake od ulaza u kocku) do ravnine z = _SlicePlaneZ.
