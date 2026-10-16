@@ -158,15 +158,40 @@ float4 frag(v2f i) : SV_Target
     ray.dir = localDir;
     intersection(ray);
 
-    int n = _Iteration * ray.tmax / sqrt(3);
-    float3 localStep = localDir * ray.tmax / n;
+    // Zraka se skraćuje na dio unutar kutije reza (_MinX.._MaxZ): inače tanki sloj (npr. 9 sliceova,
+    // ~2 % visine) pogodi 0 ili 1 uzorak kad zraka prolazi okomito na njega, pa je odozgo gotovo
+    // nevidljiv. Ne skraćuje se ako je vidljivo nešto izvan reza (oznaka uz _ClipMask = 0) ili ako je
+    // aktivna ravnina slicea (ona računa udaljenost od ulaza u kocku).
+    float tStart = 0;
+    float tEnd = ray.tmax;
+    bool trim = _ShowSlicePlane < 0.5 && (_ClipMask > 0.5 || _MaskZRange.x >= _MaskZRange.y);
+    if (trim)
+    {
+        float3 invDir = 1.0 / localDir;
+        float3 lo = float3(_MinX, _MinY, _MinZ) - 0.5;
+        float3 hi = float3(_MaxX, _MaxY, _MaxZ) - 0.5;
+        float3 t1 = (lo - ray.from) * invDir;
+        float3 t2 = (hi - ray.from) * invDir;
+        float3 tNear3 = min(t1, t2);
+        float3 tFar3 = max(t1, t2);
+        tStart = max(0.0, max(tNear3.x, max(tNear3.y, tNear3.z)));
+        tEnd = min(ray.tmax, min(tFar3.x, min(tFar3.y, tFar3.z)));
+        if (tEnd <= tStart)
+            return 0;
+    }
+
+    float segLen = tEnd - tStart;
+    int n = _Iteration * segLen / sqrt(3);
+    // Skraćena zraka dobiva barem nekoliko uzoraka da tanki sloj ostane vidljiv.
+    n = max(n, trim ? 6 : 1);
+    float3 localStep = localDir * segLen / n;
 
     // Jitter: pomakni početak zrake za nasumičnu vrijednost iz noise teksture.
     // Svaki piksel na ekranu uzorkuje drugačiji noise piksel → susjedne zrake
     // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
     // Pomak je dio jednog koraka duž zrake (localStep već sadrži smjer).
     float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
-    float3 localPos = i.localPos + localStep * jitter;
+    float3 localPos = i.localPos + localDir * tStart + localStep * jitter;
     float4 output = 0;
 
     // Oštra ravnina slicea: udaljenost (duž zrake od ulaza u kocku) do ravnine z = _SlicePlaneZ.
@@ -176,8 +201,8 @@ float4 frag(v2f i) : SV_Target
     float tPlane = 1e9;
     if (_ShowSlicePlane > 0.5 && abs(localDir.z) > 1e-5)
         tPlane = (_SlicePlaneZ - 0.5 - startPos.z) / localDir.z;
-    float tCur = 0;
-    float dt = ray.tmax / n;
+    float tCur = tStart;
+    float dt = segLen / n;
 
     // Oznaka "kroz tkivo": zraka ne staje na neprozirnom tkivu, nego do kraja prikuplja
     // oznaku zasebno (maskA) i na kraju je slaže preko slike. Isključeno kad je ravnina slicea
