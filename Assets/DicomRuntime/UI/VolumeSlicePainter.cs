@@ -35,6 +35,13 @@ namespace VolumeRendering.Runtime.UI
 
         public void SetBrushRadius(float radius) => brushRadius = Mathf.Max(1, Mathf.RoundToInt(radius));
 
+        // VR: kontroler crta zrakom (PaintWithRay), pa se miš tada isključuje da klik u Game viewu ne crta usput.
+        public bool UseMouse { get; set; } = true;
+        public bool DrawingActive => _active;
+        public void SetDrawingMode(bool on) => SetActive(on);
+
+        bool _rayPressed;
+
         void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
 
         void OnEnable()
@@ -135,6 +142,9 @@ namespace VolumeRendering.Runtime.UI
             if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
                 sliceView.PreviousSlice();
 
+            if (!UseMouse)
+                return;
+
             Vector3 mouse = Input.mousePosition;
             bool inView = viewCamera.pixelRect.Contains(mouse);
             bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
@@ -151,25 +161,61 @@ namespace VolumeRendering.Runtime.UI
             }
 
             if (_painting && TryHitSlice(mouse, slice, depth, out int px, out int py))
-            {
-                // Između dva uzorka miša crtaj niz točaka da potez ne bude isprekidan.
-                if (_hasLast && _lastSlice == slice)
-                    maskManager.PaintStroke(slice, _lastPx, _lastPy, px, py, brushRadius);
-                else
-                    maskManager.PaintAt(slice, px, py, brushRadius);
-                _lastPx = px;
-                _lastPy = py;
-                _lastSlice = slice;
-                _hasLast = true;
-            }
+                PaintPixel(slice, px, py);
         }
 
-        // Zraka kroz piksel → lokalni prostor volumena → presjek s ravninom z = (slice + 0.5)/D - 0.5.
-        // worldToLocalMatrix (ne InverseTransformDirection) jer volumen ima neuniformnu skalu.
+        // Između dva uzorka (miša ili kontrolera) crtaj niz točaka da potez ne bude isprekidan.
+        void PaintPixel(int slice, int px, int py)
+        {
+            if (_hasLast && _lastSlice == slice)
+                maskManager.PaintStroke(slice, _lastPx, _lastPy, px, py, brushRadius);
+            else
+                maskManager.PaintAt(slice, px, py, brushRadius);
+            _lastPx = px;
+            _lastPy = py;
+            _lastSlice = slice;
+            _hasLast = true;
+        }
+
+        // Crtanje zrakom (VR kontroler): isti presjek s ravninom slicea kao za miš. Vraća true ako zraka
+        // pogađa ravninu; worldHit je tada točka pogotka u svjetskom prostoru (za oznaku na kraju zrake).
+        // Potez se prekida kad se okidač pusti. Radi samo dok je uključeno "Crtanje u 3D".
+        public bool PaintWithRay(Ray ray, bool pressed, out Vector3 worldHit)
+        {
+            worldHit = default;
+            if (!_active || volume == null || sliceView == null || maskManager == null)
+            {
+                _rayPressed = false;
+                return false;
+            }
+
+            int depth = sliceView.SliceCount;
+            if (depth <= 0)
+                return false;
+
+            int slice = sliceView.CurrentSliceIndex;
+            bool hit = TryHitSlice(ray, slice, depth, out int px, out int py, out Vector3 localHit);
+            if (hit)
+                worldHit = volume.TransformPoint(localHit);
+
+            if (!pressed || !_rayPressed)
+                _hasLast = false;
+            _rayPressed = pressed;
+
+            if (pressed && hit)
+                PaintPixel(slice, px, py);
+            return hit;
+        }
+
         bool TryHitSlice(Vector3 mouse, int slice, int depth, out int px, out int py)
+            => TryHitSlice(viewCamera.ScreenPointToRay(mouse), slice, depth, out px, out py, out _);
+
+        // Zraka → lokalni prostor volumena → presjek s ravninom z = (slice + 0.5)/D - 0.5.
+        // worldToLocalMatrix (ne InverseTransformDirection) jer volumen ima neuniformnu skalu.
+        bool TryHitSlice(Ray r, int slice, int depth, out int px, out int py, out Vector3 localHit)
         {
             px = py = 0;
-            Ray r = viewCamera.ScreenPointToRay(mouse);
+            localHit = default;
             Matrix4x4 w2l = volume.worldToLocalMatrix;
             Vector3 o = w2l.MultiplyPoint3x4(r.origin);
             Vector3 d = w2l.MultiplyVector(r.direction);
@@ -184,6 +230,8 @@ namespace VolumeRendering.Runtime.UI
             Vector3 hit = o + d * t;
             if (Mathf.Abs(hit.x) > 0.5f || Mathf.Abs(hit.y) > 0.5f)
                 return false;
+
+            localHit = hit;
 
             // Isto mapiranje kao shader (pos.xy = local + 0.5) i kao 2D painter (piksel koji sadrži točku).
             px = SliceViewController.TexelIndex(hit.x + 0.5f, sliceView.VolumeWidth);
