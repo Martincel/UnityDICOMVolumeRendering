@@ -46,8 +46,8 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
   sceni Game view je prikazivao izrezano jedno oko, a `OrbitCamera` nije reagirala (pixelRect kamere je bio
   veličine teksture oka). Martin: "prikaz loš, model miruje".
 - Sad je *Initialize XR on Startup* isključen, a `VrRig` u `Awake` sam pokreće XR (`InitializeLoaderSync` +
-  `StartSubsystems`) i gasi ga u `OnDestroy`. XR radi samo u VR sceni. **Provjeriti u headsetu** da VR scena i
-  dalje radi (u Consoleu `[VrRig] XR pokrenut: ...`).
+  `StartSubsystems`) i gasi ga u `OnDestroy`. XR radi samo u VR sceni. Potvrđeno u headsetu (Martin, 2026-11-02):
+  VR scena pokreće XR (`[VrRig] XR pokrenut: OpenXRLoader`) i slika se vidi.
 - Usporedba s bazom grane (`5493615`, isti dataset, isti kutovi kamere): renderer izgleda isto (presvijetao
   Soft Tissue, stepenice na kraju serije zbog rupa u podacima). Regresije u shaderu nema.
 - `_Iteration` u zajedničkom materijalu je u `b711ac3` spušten sa 100 na 50 (vjerojatno zbog performansi u VR-u);
