@@ -23,8 +23,16 @@ namespace VolumeRendering.Runtime
         // Korisno za velike datasete koji bi premašili memoriju.
         [SerializeField, Min(1)] int downsampleFactor = 1;
 
+        // Transform volumena (quad s materijalom). Ako je postavljen i applyPhysicalAspect je uključen,
+        // loader nakon učitavanja postavlja localScale prema stvarnim proporcijama serije u mm.
+        // Najveća komponenta autorske skale ostaje referentna veličina (npr. 12.43), mijenja se samo omjer.
+        [SerializeField] Transform volumeTransform;
+        [SerializeField] bool applyPhysicalAspect = true;
+
         // Otkazuje učitavanje u tijeku (npr. na OnDisable / novi load / korisnička akcija).
         CancellationTokenSource _cts;
+
+        float _referenceScale; // najveća komponenta localScale zapamćena u Awake
 
         // Izloženo nakon uspješnog učitavanja — do sad ništa nije čuvalo volumen/dimenzije
         // izvan lokalnih varijabli LoadAsync. Runtime UI sloj (slice scrollbar, anotacije)
@@ -34,11 +42,25 @@ namespace VolumeRendering.Runtime
         public int Height { get; private set; }
         public int Depth { get; private set; }
 
+        // Fizička geometrija serije (x = stupci, y = redovi, z = sliceovi), Vector3.zero ako je nepoznata
+        // (nedostaje PixelSpacing ili pozicije sliceova).
+        public Vector3 VoxelSpacingMm { get; private set; }
+        public Vector3 PhysicalSizeMm { get; private set; }
+
         // Okida se na main threadu odmah nakon što je LoadedVolume/Width/Height/Depth postavljen.
         public event Action OnVolumeLoaded;
 
         // U Playu radi s instancom materijala, ne s assetom (vidi RuntimeMaterial).
-        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+        void Awake()
+        {
+            volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
+            if (volumeTransform != null)
+            {
+                Vector3 scale = volumeTransform.localScale;
+                _referenceScale = Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+            }
+        }
 
         // Ulaz s diska (Faza 0). Potpis nepromijenjen — zove ga DicomLoadTest.
         public void LoadFromFolder(string folderPath)
@@ -111,6 +133,34 @@ namespace VolumeRendering.Runtime
             if (LoadedVolume != null)
                 Destroy(LoadedVolume);
             LoadedVolume = null;
+        }
+
+        // Razmak voksela i fizička veličina iz builderova izračuna; skala volumena prema proporcijama.
+        // Mora biti PRIJE OnVolumeLoaded: pretplatnici (maska, 2D prikaz) tada već vide konačnu skalu.
+        void ApplyGeometry(DicomVolumeBuilder builder, int w, int h, int d)
+        {
+            if (builder.ColumnSpacingMm <= 0 || builder.RowSpacingMm <= 0 || builder.SliceSpacingMm <= 0)
+            {
+                VoxelSpacingMm = Vector3.zero;
+                PhysicalSizeMm = Vector3.zero;
+                Debug.LogWarning("[DicomVolumeLoader] Nema PixelSpacing ili razmaka sliceova — fizičke proporcije " +
+                                 "nisu poznate, skala volumena ostaje kakva je u sceni.");
+                return;
+            }
+
+            VoxelSpacingMm = new Vector3((float)builder.ColumnSpacingMm, (float)builder.RowSpacingMm, (float)builder.SliceSpacingMm);
+            double[] sizeMm = VolumeGeometry.PhysicalSizeMm(w, h, d,
+                builder.ColumnSpacingMm, builder.RowSpacingMm, builder.SliceSpacingMm);
+            PhysicalSizeMm = new Vector3((float)sizeMm[0], (float)sizeMm[1], (float)sizeMm[2]);
+            Debug.Log($"[DicomVolumeLoader] Razmak voksela {VoxelSpacingMm.x:0.###}×{VoxelSpacingMm.y:0.###}×{VoxelSpacingMm.z:0.###} mm, " +
+                      $"veličina {PhysicalSizeMm.x:0.#}×{PhysicalSizeMm.y:0.#}×{PhysicalSizeMm.z:0.#} mm.");
+
+            if (!applyPhysicalAspect || volumeTransform == null || _referenceScale <= 0f)
+                return;
+
+            double[] aspect = VolumeGeometry.Aspect(sizeMm);
+            volumeTransform.localScale = new Vector3(
+                (float)aspect[0], (float)aspect[1], (float)aspect[2]) * _referenceScale;
         }
 
         // Glavni async lanac. CancellationToken se provlači do svih I/O i CPU faza.
@@ -236,6 +286,7 @@ namespace VolumeRendering.Runtime
             Width = w;
             Height = h;
             Depth = d;
+            ApplyGeometry(builder, w, h, d);
             OnVolumeLoaded?.Invoke();
 
             // Tek nakon događaja: pretplatnici su do tada prešli na novu teksturu.

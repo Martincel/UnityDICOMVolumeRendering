@@ -6161,6 +6161,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   volumeMaterial: {fileID: 2100000, guid: fac9380be039d42d6b22514ac17d4857, type: 2}
   downsampleFactor: 1
+  volumeTransform: {fileID: 1288704135}
+  applyPhysicalAspect: 1
 --- !u!114 &1967823718
 MonoBehaviour:
   m_ObjectHideFlags: 0
