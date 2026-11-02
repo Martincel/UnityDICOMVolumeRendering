@@ -19,6 +19,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] Transform volume;
         [SerializeField] VolumeSlicePainter painter;
         [SerializeField] SliceViewController sliceView;
+        // Loader postavlja skalu volumena prema fizičkim proporcijama serije; ako nije povezan, traži se u sceni.
+        [SerializeField] DicomVolumeLoader loader;
 
         [Header("Zraka")]
         [SerializeField] Material rayMaterial;
@@ -66,6 +68,11 @@ namespace VolumeRendering.Runtime.Xr
             if (volume != null)
                 _baseScale = volume.localScale;
 
+            if (loader == null)
+                loader = FindObjectOfType<DicomVolumeLoader>();
+            if (loader != null)
+                loader.OnVolumeLoaded += HandleVolumeLoaded;
+
             if (painter != null)
             {
                 painter.UseMouse = false;
@@ -79,8 +86,21 @@ namespace VolumeRendering.Runtime.Xr
                 _status = VrLabel.Create(transform, "VrStatus", Color.white);
         }
 
+        // Loader je upravo postavio skalu prema proporcijama serije. Uzmi je kao novu osnovu i vrati
+        // skaliranje kontrolerom, da ga učitavanje ne poništi, a proporcije ostanu.
+        void HandleVolumeLoaded()
+        {
+            if (volume == null)
+                return;
+            _baseScale = volume.localScale;
+            volume.localScale = _baseScale * _scaleMul;
+        }
+
         void OnDestroy()
         {
+            if (loader != null)
+                loader.OnVolumeLoaded -= HandleVolumeLoaded;
+
             if (painter != null)
                 painter.UseMouse = true;
         }

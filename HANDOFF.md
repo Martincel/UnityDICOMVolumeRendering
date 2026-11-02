@@ -17,20 +17,15 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
 | 6 | `e70ef03` | MIP, izopovršina, headlight osvjetljenje (gradijent u shaderu, 6 varijanti); `RenderStyleController` + red gumba u 3D sceni |
 | 7 | `3cc3155` | Kosa ravnina reza: `_ClipPlane`, `ClipPlaneController`, neaktivni objekt `ClipPlaneQuad` u 3D sceni |
 
-## Na čekanju
-- **Korak 4b (`Xr/VrVolumeController.cs`)**: nije napravljen, jer druga sesija ima necommitane izmjene u toj
-  datoteci u glavnom checkoutu. Kad ih commita: na `OnVolumeLoaded` ponovno uzeti `_baseScale` iz
-  `volume.localScale` i primijeniti `_scaleMul`. Dok se to ne napravi, skaliranje kontrolerom nakon učitavanja
-  vraća staru osnovnu skalu i kvari proporcije.
-- **Sukob scena pri spajanju:** u glavnom checkoutu je druga sesija obrisala `Volume Rendering.unity` (3D scena je
-  postala `Volume Rendering 1.unity`, a original s istim GUID-om `Volume Rendering VR.unity`). Moje izmjene scene
-  (reference `volumeTransform` na loaderu, red gumba `RenderStyleRow`, objekt `ClipPlaneQuad`) su u staroj datoteci,
-  pa će se pri spajanju sukobiti (izmjena protiv brisanja). Pri spajanju zadržati njihove scene i ta tri dijela
-  ponoviti u `Volume Rendering 1.unity` (ili ručno u Unityju; `RenderStyleController` i `ClipPlaneController` su gotovi).
-- **VR scena** (`Volume Rendering VR.unity`) nije u ovoj grani (u gitu je samo 3D scena). Ručno: na
-  `DicomVolumeLoader` postaviti `Volume Transform` na mesh `Volume/Volume`; način prikaza i osvjetljenje se
-  tamo mijenjaju u Inspectoru (`Style`, `Lighting`, `Iso Value HU` na `VolumeRenderingWithTransferFunction`;
-  rade i za vrijeme Playa), jer VR nema Canvas s gumbima.
+## Korak 4b i spajanje s `feature/vr-vive` (2026-11-02)
+- Druga sesija je commitala `b711ac3` (VR scena, ulaz kontrolera); `feature/vr-vive` je spojen u ovu granu (`12a181a`).
+  Git je sam pratio preimenovanje scene (`Volume Rendering.unity` → `Volume Rendering 1.unity`), pa su moje scenske
+  izmjene (loader referenca, `RenderStyleRow`, `ClipPlaneQuad`) u `Volume Rendering 1.unity`. Provjeriti u Unityju.
+- **Korak 4b:** `VrVolumeController` ima polje `loader` (ako je prazno, traži ga u sceni); na `OnVolumeLoaded`
+  uzima `volume.localScale` kao novu `_baseScale` i primjenjuje `_scaleMul`. U VR sceni su postavljeni
+  `loader` na kontroleru te `Volume Transform` (mesh `Volume/Volume`) i `Apply Physical Aspect` na loaderu.
+- U VR sceni nema gumba za način prikaza: `Style`, `Lighting`, `Iso Value HU` na `VolumeRenderingWithTransferFunction`
+  mijenjaju se u Inspectoru (rade i tijekom Playa).
 
 ## Što je provjereno, a što nije
 - `dotnet test`: `MaskSerializerTests` 21/21, `VolumeGeometryTests` 23/23. Na računalu je samo .NET 10 runtime,
