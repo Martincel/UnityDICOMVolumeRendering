@@ -24,8 +24,35 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
 - **Korak 4b:** `VrVolumeController` ima polje `loader` (ako je prazno, traži ga u sceni); na `OnVolumeLoaded`
   uzima `volume.localScale` kao novu `_baseScale` i primjenjuje `_scaleMul`. U VR sceni su postavljeni
   `loader` na kontroleru te `Volume Transform` (mesh `Volume/Volume`) i `Apply Physical Aspect` na loaderu.
-- U VR sceni nema gumba za način prikaza: `Style`, `Lighting`, `Iso Value HU` na `VolumeRenderingWithTransferFunction`
-  mijenjaju se u Inspectoru (rade i tijekom Playa).
+- Način prikaza, osvjetljenje, prag, preset, "Samo oznaka" i kosa ravnina u VR-u: vidi "VR izbornik" ispod.
+
+## VR izbornik (2026-11-02, `234df32`, `7a9fe4a`, `d894e57`)
+Raspored A (Martinova odluka): panel iznad lijevog kontrolera, bira se zrakom iz desnog. Bez XRI-ja i bez novih
+paketa; panel je od Quad primitiva i TextMesha (`VrMenu`, na objektu `VrVolumeController` u VR sceni), pogodak se
+računa presjekom zrake s ravninom panela (bez collidera). U Unity 6 + XRI fazi ide world-space Canvas.
+
+| Tipka | Što radi |
+|---|---|
+| Lijevi menu | otvori/zatvori panel |
+| Desni menu | crtanje u 3D (dosad su to radile obje menu tipke) |
+| Desni okidač, panel otvoren | klik na stavku (držanje na −/+ ponavlja, sve brže); ne hvata i ne crta |
+| Desni touchpad, panel otvoren | ništa (kist i skala tek kad je panel zatvoren) |
+| Grip, lijevi okidač, lijevi touchpad | kao prije (hvatanje, sliceovi) |
+
+Stavke: **Preset** `<` `>` (klik na naziv = sljedeći; bez `Custom`), **Način** (slaganje → MIP → izopovršina),
+**Osvjetljenje**, **Izopovršina** `-`/`+` po 50 HU (−1000…3000), **Samo oznaka** (isto stanje kao gumb na Canvasu,
+preko `SliceClipController.CycleMaskOnly`), **Ravnina** uključi/isključi + **Postavi**.
+- Kosa ravnina: prvo uključivanje (ili "Postavi") ulazi u postavljanje. Ravnina tada prati desni kontroler (normala
+  = smjer zrake, vidi se dio dalje od ruke, žuti obrub 20 × 20 cm), sljedeći pritisak desnog okidača je zamrzne i
+  veže za volumen, pa je hvatanje i skaliranje volumena ne pomiču. Rez se vidi uživo i tijekom postavljanja.
+- Nakon zatvaranja panela dok je desni okidač stisnut, okidač čeka otpuštanje (ne počinje hvatanje ni potez).
+- Klik daje kratki haptički impuls na desnom kontroleru.
+- Poza panela (`Panel Offset` 0/0,1/0,02 m, `Panel Euler` 40° oko X u prostoru grip poze) je procjena; ako panel
+  stoji nezgodno, štimati na `VrMenu` u Inspectoru tijekom Playa (mijenja se pri prvom otvaranju, pa nakon izmjene
+  zaustaviti/pokrenuti Play).
+- Provjereno bez headseta (Play, MCP): kompilacija bez grešaka, scena bez nedostajućih skripti, sve stavke mijenjaju
+  `Preset`/`Style`/`Lighting`/`IsoValueHU`, ključne riječi i `_IsoValue`/`_MaskOnly`/`_ClipPlaneOn` na instanci
+  materijala; ravnina se veže za `Volume`. **Nije provjereno:** ulaz s Wanda, čitljivost i položaj panela u headsetu.
 
 ## Što je provjereno, a što nije
 - `dotnet test`: `MaskSerializerTests` 21/21, `VolumeGeometryTests` 23/23. Na računalu je samo .NET 10 runtime,
@@ -71,7 +98,9 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 3. 2D prikaz slicea, crtanje maske u 2D i 3D, Spremi/Učitaj masku, "kroz tkivo", tanki sloj (9 sliceova).
 4. Kamera unutar volumena (3D scena: ugasiti `OrbitCamera` i micati kameru ručno; u VR-u nagnuti glavu u model).
 5. MIP, izopovršina (prag `Iso Value HU`, zadano 300), osvjetljenje on/off; oznaka vidljiva u svim načinima.
+   U VR-u sve iz izbornika (lijevi menu), uključujući preset i "Samo oznaka".
 6. Kosa ravnina: aktivirati `ClipPlaneQuad`, rotirati; rez prati ravninu, maska se reže prema `_ClipMask`.
+   U VR-u: izbornik → Ravnina/Postavi; nakon postavljanja uhvatiti i skalirati volumen, rez ostaje na istom mjestu.
 7. VR: hvatanje i skaliranje nakon učitavanja ne kvari proporcije (treba korak 4b); `VrFrameStats` usporediti
    osvjetljenje uključeno/isključeno (6 dodatnih uzoraka po vidljivom uzorku).
 8. Stari asset iz Converter scene (RGBA32) i dalje se prikazuje.
@@ -99,12 +128,8 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
 ## Sljedeće
-1. **Upravljanje funkcijama iz VR-a** (Martin, 2026-11-02): u headsetu se sad ne može promijeniti CT preset, način
-   prikaza (Composite/MIP/izopovršina), osvjetljenje, prag izopovršine, kosa ravnina ni "Samo oznaka"; sve je u
-   Inspectoru. Treba izbornik u VR-u (npr. world-space panel na lijevom kontroleru, biranje zrakom desnog), bez
-   XR Interaction Toolkita (projekt ga nema; ulaz ide preko `UnityEngine.XR.InputDevices` kao u `VrVolumeController`).
-   API postoji: `VolumeRenderingWithTransferFunction.preset` + `ApplyPreset()`, `Style`, `Lighting`, `IsoValueHU`;
-   `RenderStyleController` je primjer za 3D scenu. Prije izrade predložiti raspored tipki/izbornika Martinu.
-2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5 i 7 se lakše provjere kad postoji izbornik iz 1.).
+1. **VR izbornik u headsetu** (izrađen, vidi "VR izbornik"): Martin provjerava ulaz s Wanda, čitljivost i položaj
+   panela; po potrebi štimati `Panel Offset`/`Panel Euler`.
+2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
 4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
