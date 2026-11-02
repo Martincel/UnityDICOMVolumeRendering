@@ -5,7 +5,8 @@ using VolumeRendering.Runtime.UI;
 namespace VolumeRendering.Runtime.Xr
 {
     // Upravljanje volumenom kontrolerima (HTC Vive Pro 2 preko OpenXR-a):
-    //   okidač (bilo koja ruka) — uhvati volumen i pomiči/okreći ga rukom; u crtanju hvata samo
+    //   okidač (bilo koja ruka) — uhvati volumen i pomiči/okreći ga rukom (okret pojačan rotationGain,
+    //                             oko središta volumena); u crtanju hvata samo
     //                             lijevi, jer desni crta
     //   grip (bilo koja ruka)  — također hvata, u oba načina
     //   lijevi trackpad/stick  — gore/dolje listaju sliceove (dulje držanje = brže)
@@ -37,6 +38,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField, Min(1)] float brushRadius = 8f;
         [SerializeField] float brushSpeed = 15f;
         [SerializeField] float scaleSpeed = 0.8f;
+        // Okret volumena po stupnju okreta ruke dok se drži (1 = prati ruku; 2 = 90° zgloba daje 180°).
+        [SerializeField, Range(1f, 4f)] float rotationGain = 2f;
         [SerializeField] Vector2 scaleRange = new Vector2(0.2f, 5f);
         [SerializeField] float stickThreshold = 0.6f;
         [SerializeField] float deadzone = 0.2f;
@@ -52,11 +55,11 @@ namespace VolumeRendering.Runtime.Xr
         Vector3 _baseScale;
         float _scaleMul = 1f;
 
-        // Hvatanje: poza volumena u odnosu na ruku u trenutku hvatanja.
+        // Hvatanje: poza ruke u prošlom okviru; volumen se pomiče za promjenu od tada.
         Transform _grabHand;
         XRNode _grabNode;
-        Vector3 _grabPos;
-        Quaternion _grabRot;
+        Vector3 _grabPrevPos;
+        Quaternion _grabPrevRot;
 
         bool _prevLeftGrab, _prevRightGrab, _prevToggle;
         // Nakon hvatanja desnim okidačem crtanje čeka da se okidač pusti, da paljenje crtanja
@@ -202,8 +205,19 @@ namespace VolumeRendering.Runtime.Xr
             if (_grabHand != null)
             {
                 // Pomiče se samo poza (pozicija i rotacija), ne skala, pa neuniformna skala volumena ostaje.
-                volume.rotation = _grabHand.rotation * _grabRot;
-                volume.position = _grabHand.position + _grabHand.rotation * _grabPos;
+                // Pomak ruke ide 1:1, a okret ruke se pojačava (rotationGain) i okreće volumen oko njegova
+                // središta, pa model ne odlijeće u stranu i ne treba okretati zglob do kraja. Primjenjuje se
+                // promjena od prošlog okvira (mali kutovi), pa nema skoka ni kad okret ruke prijeđe 180°.
+                Quaternion delta = _grabHand.rotation * Quaternion.Inverse(_grabPrevRot);
+                delta.ToAngleAxis(out float angle, out Vector3 axis);
+                if (angle > 180f)
+                    angle -= 360f;
+                if (!float.IsInfinity(axis.x) && Mathf.Abs(angle) > 1e-4f)
+                    volume.rotation = Quaternion.AngleAxis(angle * rotationGain, axis) * volume.rotation;
+                volume.position += _grabHand.position - _grabPrevPos;
+
+                _grabPrevRot = _grabHand.rotation;
+                _grabPrevPos = _grabHand.position;
             }
         }
 
@@ -213,9 +227,8 @@ namespace VolumeRendering.Runtime.Xr
                 return;
             _grabHand = hand;
             _grabNode = node;
-            Quaternion inv = Quaternion.Inverse(hand.rotation);
-            _grabRot = inv * volume.rotation;
-            _grabPos = inv * (volume.position - hand.position);
+            _grabPrevRot = hand.rotation;
+            _grabPrevPos = hand.position;
         }
 
         // ---- sliceovi, kist, veličina ----
