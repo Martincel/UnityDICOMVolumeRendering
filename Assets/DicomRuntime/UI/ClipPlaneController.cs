@@ -9,7 +9,8 @@ namespace VolumeRendering.Runtime.UI
     // Točka ide kroz worldToLocalMatrix, a normala kroz transponiranu localToWorldMatrix: ravnina je
     // kovektor, pa to jedino daje točan rez i uz neuniformnu skalu volumena.
     // Dok je komponenta isključena, rez je isključen. U Playu je materijal instanca (RuntimeMaterial).
-    // Ovdje se ravnina pomiče u Editoru/3D sceni; hvatanje rukom dolazi s XRI.
+    // U 3D sceni se ravnina pomiče u Editoru; u VR sceni je postavlja VrMenu (poza desnog kontrolera).
+    // Pravo hvatanje rukom dolazi s XRI.
     public class ClipPlaneController : MonoBehaviour
     {
         [SerializeField] Transform volume;
@@ -20,6 +21,13 @@ namespace VolumeRendering.Runtime.UI
         static readonly int ClipPlaneOnId = Shader.PropertyToID("_ClipPlaneOn");
 
         void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
+        // Za komponentu dodanu u runtimeu (VR izbornik), kad polja nisu postavljena u sceni.
+        public void Bind(Transform volumeTransform, Material material)
+        {
+            volume = volumeTransform;
+            volumeMaterial = RuntimeMaterial.Resolve(material);
+        }
 
         void OnDisable()
         {

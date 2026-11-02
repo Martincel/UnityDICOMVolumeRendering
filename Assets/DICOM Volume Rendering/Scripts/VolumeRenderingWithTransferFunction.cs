@@ -173,6 +173,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         set { isoValueHU = value; ApplyRenderStyle(); }
     }
 
+    // Za izbornike u runtimeu (VR): odabir preseta odmah ga i primijeni.
+    public CTPreset Preset
+    {
+        get => preset;
+        set { preset = value; ApplyPreset(); }
+    }
+
     // Ključne riječi (MODE_MIP / MODE_ISO / LIGHTING_ON) i parametri idu na materijal. Dimenzije za korak
     // gradijenta se čitaju s teksture ako je već postavljena (Converter asset); runtime loader ih
     // postavlja sam nakon učitavanja.
