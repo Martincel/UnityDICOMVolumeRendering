@@ -279,6 +279,7 @@ namespace VolumeRendering.Runtime
             Texture3D tex = builder.CreateTexture(buffer);
             int w = buffer.Width, h = buffer.Height, d = buffer.Depth;
             volumeMaterial.SetTexture("_Volume", tex);
+            volumeMaterial.SetVector("_VolumeDims", new Vector4(w, h, d, 0f)); // korak gradijenta u shaderu
             swUpload.Stop();
 
             var previousVolume = LoadedVolume;

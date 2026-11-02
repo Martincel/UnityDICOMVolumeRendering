@@ -20,6 +20,14 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         Anatomical  // Sve odjednom: bijele kosti, bež meko tkivo, crvene žile
     }
 
+    // Način prikaza: slaganje po transfer funkciji (zadano), najveća gustoća duž zrake ili prva izopovršina.
+    public enum RenderStyle
+    {
+        Composite,
+        Mip,
+        Isosurface
+    }
+
     // Sve postavke materijala + gradient za jedan preset.
     [System.Serializable]
     public class CTPresetSettings
@@ -53,6 +61,23 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     // 1 = samo površine tkiva vidljive (alpha = 0 za unutrašnjost)
     [SerializeField, Range(0f, 1f)]
     float gradientInfluence = 0f;
+
+    [SerializeField]
+    RenderStyle renderStyle = RenderStyle.Composite;
+
+    // Headlight osvjetljenje (gradijent gustoće se računa u shaderu). Izopovršina je uvijek osvijetljena.
+    [SerializeField]
+    bool lighting = false;
+
+    // Prag izopovršine u HU (pretvara se istom formulom kao pri parsiranju sliceva).
+    [SerializeField, Range(-1000f, 3000f)]
+    float isoValueHU = 300f;
+
+    // Prozor sive skale za MIP u HU: ispod min je crno, iznad max bijelo.
+    [SerializeField, Range(-1000f, 3000f)]
+    float mipMinHU = -200f;
+    [SerializeField, Range(-1000f, 3000f)]
+    float mipMaxHU = 1500f;
 
     // Lista spremljenih presetova — popunjava se desnim klikom → "Save Current Settings to Preset"
     [SerializeField]
@@ -115,7 +140,64 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
 
     // ── Unity lifecycle ──────────────────────────────────────────────────────
 
-    void Start()  => UpdateTexture();
+    void Start()
+    {
+        UpdateTexture();
+        ApplyRenderStyle();
+    }
+
+    // Promjena u Inspectoru tijekom Playa. Izvan Playa se ne dira asset materijala.
+    void OnValidate()
+    {
+        if (Application.isPlaying && GetComponent<Renderer>() != null)
+            ApplyRenderStyle();
+    }
+
+    // ── Način prikaza i osvjetljenje ─────────────────────────────────────────
+
+    public RenderStyle Style
+    {
+        get => renderStyle;
+        set { renderStyle = value; ApplyRenderStyle(); }
+    }
+
+    public bool Lighting
+    {
+        get => lighting;
+        set { lighting = value; ApplyRenderStyle(); }
+    }
+
+    public float IsoValueHU
+    {
+        get => isoValueHU;
+        set { isoValueHU = value; ApplyRenderStyle(); }
+    }
+
+    // Ključne riječi (MODE_MIP / MODE_ISO / LIGHTING_ON) i parametri idu na materijal. Dimenzije za korak
+    // gradijenta se čitaju s teksture ako je već postavljena (Converter asset); runtime loader ih
+    // postavlja sam nakon učitavanja.
+    public void ApplyRenderStyle()
+    {
+        var mat = Mat;
+        if (mat == null) return;
+
+        SetKeyword(mat, "MODE_MIP", renderStyle == RenderStyle.Mip);
+        SetKeyword(mat, "MODE_ISO", renderStyle == RenderStyle.Isosurface);
+        SetKeyword(mat, "LIGHTING_ON", lighting);
+
+        mat.SetFloat("_IsoValue", VolumeGeometry.HuToDensity(isoValueHU));
+        mat.SetVector("_MipWindow", new Vector4(
+            VolumeGeometry.HuToDensity(mipMinHU), VolumeGeometry.HuToDensity(mipMaxHU), 0f, 0f));
+
+        if (mat.GetTexture("_Volume") is Texture3D volume)
+            mat.SetVector("_VolumeDims", new Vector4(volume.width, volume.height, volume.depth, 0f));
+    }
+
+    static void SetKeyword(Material mat, string keyword, bool on)
+    {
+        if (on) mat.EnableKeyword(keyword);
+        else    mat.DisableKeyword(keyword);
+    }
 
     void Update()
     {

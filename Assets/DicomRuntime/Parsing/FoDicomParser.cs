@@ -12,8 +12,8 @@ namespace VolumeRendering.Runtime
     // OSIM Path C koji zahtijeva main thread (Texture2D.LoadImage). Path C je za sada preskočen.
     public class FoDicomParser : IDicomParser
     {
-        const double HU_MIN   = -1000.0;
-        const double HU_RANGE =  4000.0; // HU_MAX(3000) - HU_MIN(-1000)
+        const double HU_MIN   = VolumeGeometry.HuMin;
+        const double HU_RANGE = VolumeGeometry.HuRange;
 
         public DicomSliceData Parse(byte[] dicomBytes)
         {

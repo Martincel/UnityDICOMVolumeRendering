@@ -115,6 +115,18 @@ namespace VolumeGeometryTests
             Assert.Equal((ushort)expected, VolumeGeometry.PackUnorm16(value));
         }
 
+        [Theory]
+        [InlineData(-1000.0, 0f)]
+        [InlineData(0.0, 0.25f)]
+        [InlineData(700.0, 0.425f)]
+        [InlineData(3000.0, 1f)]
+        [InlineData(-2000.0, 0f)]
+        [InlineData(5000.0, 1f)]
+        public void HuToDensity_MapsFixedWindow(double hu, float expected)
+        {
+            Assert.Equal(expected, VolumeGeometry.HuToDensity(hu), 5);
+        }
+
         [Fact]
         public void PackUnorm16_IsMonotonic()
         {

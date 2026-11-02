@@ -31,6 +31,12 @@ Properties
     _ClipMask("Clip Mask", Float) = 0
     _MaskOnly("Mask Only", Float) = 0
 
+    [Header(Display Mode)]
+    // Dimenzije teksture volumena (w, h, d) za korak gradijenta; postavlja DicomVolumeLoader / VolumeRenderingWithTransferFunction.
+    _VolumeDims("Volume Dims", Vector) = (1, 1, 1, 0)
+    _IsoValue("Iso Value (density)", Range(0, 1)) = 0.35
+    _MipWindow("MIP Window (low, high)", Vector) = (0.2, 0.625, 0, 0)
+
     [Header(Slice Plane)]
     _ShowSlicePlane("Show Slice Plane", Float) = 0
     _SlicePlaneZ("Slice Plane Z", Range(0, 1)) = 0
@@ -66,6 +72,20 @@ float _HighlightOccluded;  // 0 (zadano) = oznaka se vidi kroz tkivo ("probija")
 float _ShowSlicePlane;     // 1 = na ravnini slicea prikaži oštru sivu sliku (za crtanje u 3D)
 float _SlicePlaneZ;        // z ravnine u teksturnom prostoru, [0,1] (središte slicea i = (i + 0.5)/D)
 float _SlicePlaneOpacity;
+float4 _VolumeDims;   // xyz = broj voksela po osi
+float _IsoValue;      // prag izopovršine u prostoru gustoće [0,1]
+float4 _MipWindow;    // x = donja, y = gornja gustoća prozora sive skale za MIP
+
+// Način prikaza je odabran ključnim riječima (VolumeRenderingWithTransferFunction.RenderStyle):
+// nijedna = slaganje (composite), MODE_MIP = najveća gustoća duž zrake, MODE_ISO = prva izopovršina.
+// LIGHTING_ON = headlight osvjetljenje (izopovršina je uvijek osvijetljena).
+#if defined(MODE_MIP)
+    static const int STYLE = 1;
+#elif defined(MODE_ISO)
+    static const int STYLE = 2;
+#else
+    static const int STYLE = 0;
+#endif
 
 // Anotacija (Zadatak 2): zaseban Texture2DArray, jedan element po Z-sliceu — NE dijeli
 // kanale s _Volume (vidi AnnotationMaskManager.cs za obrazloženje). _MaskDepth = broj
@@ -135,6 +155,32 @@ inline float sampleMask(float3 pos)
     return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, maskSliceIndex(pos.z))).r;
 }
 
+// Gradijent gustoće (centralne razlike nad .r, 6 uzoraka) u lokalnom prostoru volumena. Razlika je
+// podijeljena razmakom uzoraka po osi, jer voksel nije kubičan (različit broj voksela po osi).
+float3 densityGradient(float3 sp)
+{
+    float3 e = 1.0 / _VolumeDims.xyz;
+    float dx = tex3Dlod(_Volume, float4(sp + float3(e.x, 0, 0), 0)).r - tex3Dlod(_Volume, float4(sp - float3(e.x, 0, 0), 0)).r;
+    float dy = tex3Dlod(_Volume, float4(sp + float3(0, e.y, 0), 0)).r - tex3Dlod(_Volume, float4(sp - float3(0, e.y, 0), 0)).r;
+    float dz = tex3Dlod(_Volume, float4(sp + float3(0, 0, e.z), 0)).r - tex3Dlod(_Volume, float4(sp - float3(0, 0, e.z), 0)).r;
+    return float3(dx, dy, dz) / (2.0 * e);
+}
+
+// Faktor osvjetljenja (headlight): ambijentalni pod 0.5 da volumen ne potamni, difuzno po |N·V|
+// (dvostrano, jer je unutrašnjost tkiva iz svake strane "površina") i blagi Blinn-Phong odsjaj.
+// Gradijent je kovektor: u svijet ide kroz unutarnju transponiranu matricu (točno i uz neuniformnu skalu).
+// viewDirWorld = jedinični vektor od uzorka prema kameri.
+float lightingFactor(float3 sp, float3 viewDirWorld)
+{
+    float3 nWorld = mul(densityGradient(sp), (float3x3)unity_WorldToObject);
+    float len = length(nWorld);
+    if (len < 1e-6)
+        return 1.0;
+
+    float ndv = abs(dot(nWorld / len, viewDirWorld));
+    return 0.5 + 0.5 * ndv + 0.25 * pow(ndv, 24.0);
+}
+
 v2f vert(appdata v)
 {
     v2f o;
@@ -151,6 +197,13 @@ float4 frag(v2f i) : SV_Target
     // Svi t-ovi niže mjere se od kamere.
     float3 camLocal = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1.0)).xyz;
     float3 localDir = normalize(i.localPos.xyz - camLocal);
+
+    // MIP i izopovršina ne rade uz ravninu slicea (crtanje u 3D) ni uz "Samo oznaka": tada slaganje.
+    bool mip = STYLE == 1 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5;
+    bool iso = STYLE == 2 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5;
+    #if defined(LIGHTING_ON) || defined(MODE_ISO)
+    float3 viewDirWorld = -normalize(mul((float3x3)unity_ObjectToWorld, localDir));
+    #endif
 
     float2 cube = boxRange(camLocal, localDir, -0.5, 0.5);
     float tStart = max(cube.x, 0.0);   // kamera unutar kocke: početak je u kameri
@@ -202,8 +255,13 @@ float4 frag(v2f i) : SV_Target
     // aktivna (crtanje u 3D) i u načinu "Samo oznaka", gdje oznaka ionako nije zaklonjena.
     float maskA = 0;
     // Bez ijedne oznake zraka staje na neprozirnom tkivu kao inače (early ray termination).
-    bool through = _HighlightOccluded < 0.5 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0
+    // U MIP i izopovršini oznaka se uvijek prikuplja zasebno, da ostane vidljiva u svim načinima.
+    bool through = (_HighlightOccluded < 0.5 || mip || iso) && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5 && _MaskDepth > 0
                 && _MaskZRange.x < _MaskZRange.y;
+
+    float mipMax = 0;
+    float3 prevSp = localPos + 0.5;   // prethodni uzorak (za bisekciju izopovršine)
+    float prevVol = 0;
 
     [loop]
     for (int i = 0; i < n; ++i)
@@ -228,6 +286,46 @@ float4 frag(v2f i) : SV_Target
         float gradMag = saturate(vg.y * _GradScale);
         float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
 
+        #if defined(LIGHTING_ON)
+        // Osvjetljenje samo za vidljive uzorke (alpha > ~0.004): 6 dodatnih uzoraka nije jeftino.
+        // MIP ne slaže uzorke, a izopovršina osvjetljava tek pogodak.
+        if (!mip && !iso && color.a > 0.004)
+            color.rgb *= lightingFactor(sp, viewDirWorld);
+        #endif
+
+        if (mip)
+        {
+            // MIP: samo pamtimo najveću gustoću, slika se slaže nakon petlje.
+            mipMax = max(mipMax, volume);
+            color = 0;
+        }
+        #if defined(MODE_ISO)
+        else if (iso && volume >= _IsoValue)
+        {
+            // Prvi uzorak iznad praga + jedan korak bisekcije između njega i prethodnog uzorka.
+            float3 hitSp = sp;
+            float hitVol = volume;
+            if (i > 0 && prevVol < _IsoValue)
+            {
+                float3 midSp = 0.5 * (prevSp + sp);
+                float midVol = sampleVolume(midSp).x;
+                if (midVol >= _IsoValue)
+                {
+                    hitSp = midSp;
+                    hitVol = midVol;
+                }
+            }
+
+            float hitGrad = saturate(sampleVolumeRaw(hitSp).y * _GradScale);
+            color.rgb = transferFunction(hitVol, hitGrad).rgb * _Intensity * lightingFactor(hitSp, viewDirWorld);
+            color.a = 1.0;
+        }
+        else if (iso)
+        {
+            color = 0;
+        }
+        #endif
+
         // Markirana regija "probija" kroz normalnu transfer funkciju — vidljiva čak i
         // preko gustoće/tkiva koje bi inače bilo skoro prozirno. Uz _ClipMask = 1 poštuje
         // isti rez kao volumen (SliceClipController), inače ostaje vidljiva cijela.
@@ -251,6 +349,8 @@ float4 frag(v2f i) : SV_Target
         }
 
         output += (1.0 - output.a) * color;
+        prevSp = sp;
+        prevVol = volume;
         }
 
         // Ravnina slicea: kad zraka u ovom koraku prijeđe ravninu, složi njezinu boju (siva
@@ -288,6 +388,12 @@ float4 frag(v2f i) : SV_Target
         }
     }
 
+    if (mip)
+    {
+        float g = saturate((mipMax - _MipWindow.x) / max(_MipWindow.y - _MipWindow.x, 1e-4));
+        output = float4(g, g, g, saturate(g * 4.0));
+    }
+
     // Oznaka koja "probija" kroz tkivo: slaže se preko slike s jačinom 0.75, da se tkivo ispod
     // još naslućuje (struktura oko oznake ostaje vidljiva).
     if (through && maskA > 0)
@@ -322,6 +428,8 @@ Pass
     CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_local _ MODE_MIP MODE_ISO
+    #pragma multi_compile_local _ LIGHTING_ON
     ENDCG
 }
 

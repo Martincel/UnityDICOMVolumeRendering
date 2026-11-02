@@ -10,6 +10,19 @@ namespace VolumeRendering.Runtime
         // vjerojatno nedostaje slice (ili je serija spojena iz više akvizicija).
         public const double SpacingTolerance = 0.10;
 
+        // Fiksni HU prozor u koji se mapira gustoća volumena (R kanal teksture). Presetovi prijenosne
+        // funkcije su kalibrirani na njega, pa se ne mijenja po datasetu.
+        public const double HuMin = -1000.0;
+        public const double HuMax = 3000.0;
+        public const double HuRange = HuMax - HuMin;
+
+        // HU → gustoća u [0,1], ista formula kao pri parsiranju sliceva.
+        public static float HuToDensity(double hu)
+        {
+            double t = (hu - HuMin) / HuRange;
+            return (float)(t < 0 ? 0 : t > 1 ? 1 : t);
+        }
+
         // Razmak sliceova = medijan razmaka susjednih pozicija duž normale. Medijan (ne prosjek)
         // jer jedna rupa u seriji ne smije povući razmak prema gore.
         // `positions` mora biti sortiran uzlazno (to builder već radi). maxRelativeDeviation je najveće
