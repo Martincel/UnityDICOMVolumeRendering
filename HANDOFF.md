@@ -50,6 +50,11 @@ preko `SliceClipController.CycleMaskOnly`), **Ravnina** uključi/isključi + **P
 - Poza panela (`Panel Offset` 0/0,1/0,02 m, `Panel Euler` 40° oko X u prostoru grip poze) je procjena; ako panel
   stoji nezgodno, štimati na `VrMenu` u Inspectoru tijekom Playa (mijenja se pri prvom otvaranju, pa nakon izmjene
   zaustaviti/pokrenuti Play).
+- Martin je izbornik potvrdio u headsetu (2026-11-02): prikaz i meni rade.
+- **Okretanje (`75bcf2e`):** hvatanje je bilo nezgrapno (volumen je pratio ruku 1:1 i okretao se oko ruke). Sad se
+  pomak ruke prenosi 1:1, a okret ruke se pojačava (`Rotation Gain` na `VrVolumeController`, zadano 2: 90° zgloba
+  = 180° modela) i volumen se okreće oko svog središta. Primjenjuje se promjena od prošlog okvira, pa nema skoka.
+  Čeka potvrdu u headsetu; ako je 2 previše/premalo, mijenja se u Inspectoru (1–4).
 - Provjereno bez headseta (Play, MCP): kompilacija bez grešaka, scena bez nedostajućih skripti, sve stavke mijenjaju
   `Preset`/`Style`/`Lighting`/`IsoValueHU`, ključne riječi i `_IsoValue`/`_MaskOnly`/`_ClipPlaneOn` na instanci
   materijala; ravnina se veže za `Volume`. **Nije provjereno:** ulaz s Wanda, čitljivost i položaj panela u headsetu.
@@ -128,8 +133,8 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
 ## Sljedeće
-1. **VR izbornik u headsetu** (izrađen, vidi "VR izbornik"): Martin provjerava ulaz s Wanda, čitljivost i položaj
-   panela; po potrebi štimati `Panel Offset`/`Panel Euler`.
+1. **Okretanje u headsetu** (`75bcf2e`): potvrditi da je okretanje lakše; po potrebi štimati `Rotation Gain`.
+   VR izbornik je potvrđen.
 2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
 4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
