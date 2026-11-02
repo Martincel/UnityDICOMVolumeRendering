@@ -10,8 +10,11 @@ namespace VolumeRendering.Runtime.Xr
     //   grip (bilo koja ruka)  — također hvata, u oba načina
     //   lijevi trackpad/stick  — gore/dolje listaju sliceove (dulje držanje = brže)
     //   desni trackpad/stick   — gore/dolje veličina kista, lijevo/desno veličina volumena
-    //   menu/primary (bilo koja ruka) — uključi/isključi "Crtanje u 3D" (ravnina slicea + rez)
+    //   menu/primary (bilo koja ruka) — uključi/isključi "Crtanje u 3D" (ravnina slicea + rez);
+    //                             ako na objektu postoji VrMenu, samo desni (lijevi otvara izbornik)
     //   desni okidač u crtanju — crta po ravnini slicea u smjeru zrake iz desnog kontrolera
+    // Dok VrMenu drži desnu ruku (panel otvoren ili se postavlja kosa ravnina), desni okidač ne hvata
+    // ni ne crta, a desni trackpad ne mijenja kist ni veličinu; nakon toga okidač čeka da se pusti.
     // Miš se ugasi (VolumeSlicePainter.UseMouse = false), a maska, shader i spremanje ostaju isti.
     public class VrVolumeController : MonoBehaviour
     {
@@ -60,11 +63,23 @@ namespace VolumeRendering.Runtime.Xr
         // dok je okidač još stisnut ne započne potez samo od sebe.
         bool _waitRightTriggerRelease;
         bool _leftTrigger, _rightTrigger;
+        // Desni okidač za hvatanje i crtanje: false dok ga drži izbornik i dok se nakon toga ne pusti.
+        bool _rightTriggerFree, _rightTriggerBlocked;
+        bool _menuBusy;
         float _stepHold, _stepTimer;
         TextMesh _status;
+        VrMenu _menu;
+
+        public VrRig Rig => rig;
+
+        // Zraka iz desnog (ili bilo kojeg) kontrolera; dijele je crtanje i VrMenu.
+        public Ray PointerRay(Transform hand) =>
+            new Ray(hand.position, hand.rotation * Quaternion.Euler(rayEulerOffset) * Vector3.forward);
 
         void Start()
         {
+            _menu = GetComponent<VrMenu>();
+
             if (volume != null)
                 _baseScale = volume.localScale;
 
@@ -126,6 +141,13 @@ namespace VolumeRendering.Runtime.Xr
 
             _leftTrigger = ReadTrigger(XRNode.LeftHand, _leftTrigger);
             _rightTrigger = ReadTrigger(XRNode.RightHand, _rightTrigger);
+
+            _menuBusy = _menu != null && _menu.isActiveAndEnabled && _menu.Tick(_rightTrigger);
+            if (_menuBusy)
+                _rightTriggerBlocked = true;
+            else if (!_rightTrigger)
+                _rightTriggerBlocked = false;
+            _rightTriggerFree = _rightTrigger && !_rightTriggerBlocked;
 
             HandleGrab();
             HandleSliceStep();
@@ -227,7 +249,7 @@ namespace VolumeRendering.Runtime.Xr
         void HandleBrushAndScale()
         {
             Vector2 a = ReadAxis(XRNode.RightHand);
-            if (_grabHand != null)
+            if (_grabHand != null || _menuBusy)
                 return;
 
             // Djeluje samo dominantna os, da jedan pokret ne mijenja i kist i veličinu odjednom.
@@ -250,28 +272,30 @@ namespace VolumeRendering.Runtime.Xr
 
         void HandleDrawing()
         {
-            bool toggle = ReadButton(XRNode.LeftHand, CommonUsages.primaryButton)
-                       || ReadButton(XRNode.LeftHand, CommonUsages.menuButton)
-                       || ReadButton(XRNode.RightHand, CommonUsages.primaryButton)
+            // Lijevu menu tipku koristi VrMenu za otvaranje izbornika.
+            bool toggle = ReadButton(XRNode.RightHand, CommonUsages.primaryButton)
                        || ReadButton(XRNode.RightHand, CommonUsages.menuButton);
+            if (_menu == null || !_menu.isActiveAndEnabled)
+                toggle |= ReadButton(XRNode.LeftHand, CommonUsages.primaryButton)
+                       || ReadButton(XRNode.LeftHand, CommonUsages.menuButton);
             if (toggle && !_prevToggle)
                 painter.SetDrawingMode(!painter.DrawingActive);
             _prevToggle = toggle;
 
             Transform hand = rig.RightHand;
-            if (!painter.DrawingActive || hand == null)
+            if (!painter.DrawingActive || hand == null || _menuBusy)
             {
                 painter.PaintWithRay(default, false, out _);
                 _line.enabled = false;
                 return;
             }
 
-            bool trigger = _rightTrigger;
+            bool trigger = _rightTriggerFree;
             if (!trigger)
                 _waitRightTriggerRelease = false;
             bool pressed = _grabHand == null && trigger && !_waitRightTriggerRelease;
-            Vector3 dir = hand.rotation * Quaternion.Euler(rayEulerOffset) * Vector3.forward;
-            var ray = new Ray(hand.position, dir);
+            var ray = PointerRay(hand);
+            Vector3 dir = ray.direction;
 
             bool hit = painter.PaintWithRay(ray, pressed, out Vector3 worldHit);
 
@@ -291,7 +315,7 @@ namespace VolumeRendering.Runtime.Xr
             if (ReadButton(node, CommonUsages.gripButton))
                 return true;
             bool triggerGrabs = !painter.DrawingActive || node == XRNode.LeftHand;
-            return triggerGrabs && (node == XRNode.LeftHand ? _leftTrigger : _rightTrigger);
+            return triggerGrabs && (node == XRNode.LeftHand ? _leftTrigger : _rightTriggerFree);
         }
 
         bool ReadTrigger(XRNode node, bool wasPressed)
