@@ -10,6 +10,13 @@ namespace VolumeRendering.Runtime
     //   CreateTexture() — poziva se iz main threada (Unity Texture3D API zahtijeva main thread)
     public class DicomVolumeBuilder
     {
+        // Geometrija izračunata u BuildColors (iz stvarno učitanih sliceova, pa downsampleFactor
+        // automatski ulazi u razmak). 0 = nepoznato (nedostaje PixelSpacing ili pozicije sliceova).
+        public double ColumnSpacingMm { get; private set; }       // razmak između stupaca (x)
+        public double RowSpacingMm { get; private set; }          // razmak između redova (y)
+        public double SliceSpacingMm { get; private set; }        // razmak između sliceova (z)
+        public double SliceSpacingDeviation { get; private set; } // najveće relativno odstupanje od medijana
+
         // Color32 (4 B/voxel) umjesto Color (16 B/voxel):
         // 512×512×501 u Color[] bi bio ~2.1 GB — preko .NET limita od 2 GB po arrayu (OutOfMemory).
         // U Color32[] je ~525 MB. Tekstura je ionako RGBA32 (8 bita po kanalu), pa float
@@ -27,7 +34,8 @@ namespace VolumeRendering.Runtime
             // rowDir i colDir prva odn. druga trojka iz ImageOrientationPatient. Ta projekcija je
             // monotona duž osi skeniranja bez obzira na orijentaciju pacijenta, pa daje anatomski
             // ispravan redoslijed. Ako geometrija nije dostupna, padamo na SliceLocation → InstanceNumber.
-            var sorted = SortSlicesSpatially(volumeData.Slices);
+            var sorted = SortSlicesSpatially(volumeData.Slices, out double[] positions);
+            ComputeSpacing(sorted, positions);
 
             w = volumeData.Width;
             h = volumeData.Height;
@@ -71,7 +79,8 @@ namespace VolumeRendering.Runtime
         // Sortira sliceove po prostornoj poziciji duž normale ravnine slice-a.
         // Preferira ImagePositionPatient projiciran na normalu (iz ImageOrientationPatient).
         // Fallback (ako serija nema geometriju): SliceLocation → InstanceNumber.
-        static DicomSliceData[] SortSlicesSpatially(DicomSliceData[] slices)
+        // positions: pozicija svakog (već sortiranog) slicea u mm duž normale; u fallbacku SliceLocation.
+        static DicomSliceData[] SortSlicesSpatially(DicomSliceData[] slices, out double[] positions)
         {
             // Orijentacija je po DICOM-u konstantna unutar serije — uzmi normalu iz prvog
             // slice-a koji ima validan ImageOrientationPatient.
@@ -101,17 +110,36 @@ namespace VolumeRendering.Runtime
 
             if (allHaveGeometry)
             {
-                return slices
+                var ordered = slices
                     .OrderBy(s => ProjectOntoNormal(s.ImagePositionPatient, normal))
                     .ToArray();
+                positions = ordered.Select(s => ProjectOntoNormal(s.ImagePositionPatient, normal)).ToArray();
+                return ordered;
             }
 
             Debug.LogWarning("[DicomVolumeBuilder] ImagePositionPatient/Orientation nedostaje na nekim " +
                              "sliceovima — fallback na SliceLocation → InstanceNumber. Provjeri redoslijed volumena.");
-            return slices
+            var fallback = slices
                 .OrderBy(s => s.SliceLocation)
                 .ThenBy(s => s.InstanceNumber)
                 .ToArray();
+            positions = fallback.Select(s => (double)s.SliceLocation).ToArray();
+            return fallback;
+        }
+
+        // Razmaci voksela iz PixelSpacing prvog slicea i pozicija sortiranih sliceova.
+        void ComputeSpacing(DicomSliceData[] sorted, double[] positions)
+        {
+            var ps = sorted[0].PixelSpacing;
+            RowSpacingMm = ps != null && ps[0] > 0 ? ps[0] : 0;
+            ColumnSpacingMm = ps != null && ps[1] > 0 ? ps[1] : 0;
+
+            SliceSpacingMm = VolumeGeometry.SliceSpacing(positions, out double deviation);
+            SliceSpacingDeviation = deviation;
+
+            if (SliceSpacingMm > 0 && deviation > VolumeGeometry.SpacingTolerance)
+                Debug.LogWarning($"[DicomVolumeBuilder] Razmak sliceova nije ujednačen (odstupanje do {deviation:P0} " +
+                                 $"od medijana {SliceSpacingMm:0.###} mm) — vjerojatno nedostaju sliceovi, proporcije su približne.");
         }
 
         // Skalarna projekcija pozicije na normalu (dot product). Monotona duž osi skeniranja.

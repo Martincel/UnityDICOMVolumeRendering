@@ -1,0 +1,4 @@
+bin/
+obj/
+# korijenski .gitignore ignorira *.csproj (Unity generirani), ali ovaj je ručno napisan
+!*.csproj

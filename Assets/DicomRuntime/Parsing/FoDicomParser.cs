@@ -39,6 +39,7 @@ namespace VolumeRendering.Runtime
                 // tada ostavljamo null pa sort pada na SliceLocation → InstanceNumber.
                 double[] ipp = TryGetDoubles(dataset, DicomTag.ImagePositionPatient,    3);
                 double[] iop = TryGetDoubles(dataset, DicomTag.ImageOrientationPatient, 6);
+                double[] pixelSpacing = TryGetDoubles(dataset, DicomTag.PixelSpacing, 2);
 
                 if (bitsAlloc != 8 && bitsAlloc != 16) bitsAlloc = 16;
 
@@ -85,7 +86,8 @@ namespace VolumeRendering.Runtime
                     InstanceNumber          = instNum,
                     SeriesInstanceUID       = seriesUid,
                     ImagePositionPatient    = ipp,
-                    ImageOrientationPatient = iop
+                    ImageOrientationPatient = iop,
+                    PixelSpacing            = pixelSpacing
                 };
             }
             catch (Exception e)
