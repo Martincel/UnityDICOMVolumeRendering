@@ -99,6 +99,12 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
 ## Sljedeće
-1. Ručna provjera iznad u 3D sceni (Unity ima otvorenu `Volume Rendering 1.unity`), pa u headsetu.
-2. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
-3. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+1. **Upravljanje funkcijama iz VR-a** (Martin, 2026-11-02): u headsetu se sad ne može promijeniti CT preset, način
+   prikaza (Composite/MIP/izopovršina), osvjetljenje, prag izopovršine, kosa ravnina ni "Samo oznaka"; sve je u
+   Inspectoru. Treba izbornik u VR-u (npr. world-space panel na lijevom kontroleru, biranje zrakom desnog), bez
+   XR Interaction Toolkita (projekt ga nema; ulaz ide preko `UnityEngine.XR.InputDevices` kao u `VrVolumeController`).
+   API postoji: `VolumeRenderingWithTransferFunction.preset` + `ApplyPreset()`, `Style`, `Lighting`, `IsoValueHU`;
+   `RenderStyleController` je primjer za 3D scenu. Prije izrade predložiti raspored tipki/izbornika Martinu.
+2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5 i 7 se lakše provjere kad postoji izbornik iz 1.).
+3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
+4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
