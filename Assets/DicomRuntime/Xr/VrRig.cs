@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Management;
 
 namespace VolumeRendering.Runtime.Xr
 {
@@ -25,6 +26,41 @@ namespace VolumeRendering.Runtime.Xr
 
         bool _originSet;
         float _handCheckTime = -1f;
+        bool _startedXr;
+
+        // XR se ne pokreće sam pri startu (Initialize XR on Startup je isključen), jer bi inače
+        // preuzeo glavnu kameru i u 3D sceni. Pokreće ga rig, pa radi samo u VR sceni.
+        void Awake()
+        {
+            var manager = XRGeneralSettings.Instance != null ? XRGeneralSettings.Instance.Manager : null;
+            if (manager == null)
+            {
+                Debug.LogWarning("[VrRig] XR Plug-in Management nije postavljen, XR se ne pokreće.");
+                return;
+            }
+            if (manager.activeLoader != null)
+                return;
+
+            manager.InitializeLoaderSync();
+            if (manager.activeLoader == null)
+            {
+                Debug.LogWarning("[VrRig] XR se nije pokrenuo (je li SteamVR upaljen i headset spojen?).");
+                return;
+            }
+            manager.StartSubsystems();
+            _startedXr = true;
+            Debug.Log($"[VrRig] XR pokrenut: {manager.activeLoader.name}");
+        }
+
+        void OnDestroy()
+        {
+            if (!_startedXr)
+                return;
+
+            var manager = XRGeneralSettings.Instance.Manager;
+            manager.StopSubsystems();
+            manager.DeinitializeLoader();
+        }
 
         void Start()
         {
