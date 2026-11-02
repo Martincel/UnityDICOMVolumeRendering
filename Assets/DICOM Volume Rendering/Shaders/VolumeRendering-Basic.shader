@@ -28,6 +28,10 @@ Properties
     _MaxY("MaxY", Range(0, 1)) = 1.0
     _MinZ("MinZ", Range(0, 1)) = 0.0
     _MaxZ("MaxZ", Range(0, 1)) = 1.0
+    // Kosa ravnina reza u lokalnom prostoru volumena (ClipPlaneController): vidi se strana gdje je
+    // dot(xyz, p) + w >= 0, p u rasponu [-0.5, 0.5] po osi.
+    _ClipPlane("Clip Plane (local)", Vector) = (0, 0, 0, 0)
+    _ClipPlaneOn("Clip Plane On", Float) = 0
     _ClipMask("Clip Mask", Float) = 0
     _MaskOnly("Mask Only", Float) = 0
 
@@ -66,6 +70,8 @@ int _Iteration;
 float _Intensity;
 float _GradScale;
 float _MinX, _MaxX, _MinY, _MaxY, _MinZ, _MaxZ;
+float4 _ClipPlane;
+float _ClipPlaneOn;
 float _ClipMask; // 1 = oznaka se reže zajedno s volumenom, 0 = uvijek vidljiva
 float _MaskOnly; // 0 = normalan prikaz, 1 = samo označeno (gustoća tkiva), 2 = samo označeno (puna boja)
 float _HighlightOccluded;  // 0 (zadano) = oznaka se vidi kroz tkivo ("probija"); 1 = zaklanja je tkivo ispred
@@ -112,12 +118,18 @@ float2 boxRange(float3 from, float3 dir, float3 lo, float3 hi)
 
 // Jedno uzorkovanje vraća i gustoću (.r) i pre-computed gradMag (.g).
 // Converter bake-a gradijent u G kanal pri konverziji → nema runtime centralnih razlika.
+// Strana kose ravnine koja ostaje vidljiva: 1 = zadržano, 0 = odrezano. pos je u teksturnom prostoru [0,1].
+inline float inClipPlane(float3 pos)
+{
+    return _ClipPlaneOn > 0.5 ? step(0.0, dot(_ClipPlane.xyz, pos - 0.5) + _ClipPlane.w) : 1.0;
+}
+
 inline float inClipBox(float3 pos)
 {
     float x = step(pos.x, _MaxX) * step(_MinX, pos.x);
     float y = step(pos.y, _MaxY) * step(_MinY, pos.y);
     float z = step(pos.z, _MaxZ) * step(_MinZ, pos.z);
-    return x * y * z;
+    return x * y * z * inClipPlane(pos);
 }
 
 inline float2 sampleVolumeRaw(float3 pos)
@@ -224,6 +236,29 @@ float4 frag(v2f i) : SV_Target
         tEnd = min(tEnd, clip.y);
         if (tEnd <= tStart)
             return 0;
+
+        // Kosa ravnina sužava zraku na dio u zadržanoj poluravnini: f(t) = a * t + b >= 0.
+        // Bez ovoga bi tanki sloj uz kosu ravninu pogodio premalo uzoraka.
+        if (_ClipPlaneOn > 0.5)
+        {
+            float a = dot(_ClipPlane.xyz, localDir);
+            float b = dot(_ClipPlane.xyz, camLocal) + _ClipPlane.w;
+            if (abs(a) < 1e-6)
+            {
+                if (b < 0)
+                    return 0;
+            }
+            else
+            {
+                float tPlaneCut = -b / a;
+                if (a > 0)
+                    tStart = max(tStart, tPlaneCut);
+                else
+                    tEnd = min(tEnd, tPlaneCut);
+            }
+            if (tEnd <= tStart)
+                return 0;
+        }
     }
 
     float segLen = tEnd - tStart;
@@ -358,7 +393,7 @@ float4 frag(v2f i) : SV_Target
         if (tPlane >= tCur && tPlane < tCur + dt)
         {
             float3 pp = startPos + localDir * tPlane + 0.5;
-            float inside = step(_MinX, pp.x) * step(pp.x, _MaxX) * step(_MinY, pp.y) * step(pp.y, _MaxY);
+            float inside = step(_MinX, pp.x) * step(pp.x, _MaxX) * step(_MinY, pp.y) * step(pp.y, _MaxY) * inClipPlane(pp);
             float d = tex3D(_Volume, float3(pp.xy, _SlicePlaneZ)).r;
             float4 pc = float4(d, d, d, 1);
             if (_MaskDepth > 0)
