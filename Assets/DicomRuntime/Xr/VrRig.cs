@@ -13,28 +13,96 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] Transform head;
         [SerializeField] Transform leftHand;
         [SerializeField] Transform rightHand;
+        // Jednostavan model kontrolera (kvadar duž drške), da se u headsetu vidi gdje su ruke.
+        [SerializeField] bool showControllerModels = true;
+        // Natpis s FPS-om iznad lijevog kontrolera i zapis u Console (VrFrameStats); doda se sam
+        // ako ga na objektu još nema, da VR scena ne ovisi o ručnom dodavanju komponente.
+        [SerializeField] bool showFrameStats = true;
 
+        public Transform Head => head;
         public Transform LeftHand => leftHand;
         public Transform RightHand => rightHand;
 
         bool _originSet;
+        float _handCheckTime = -1f;
+
+        void Start()
+        {
+            if (showControllerModels)
+            {
+                // Wandovi su jednaki, a SteamVR ulogu lijeve/desne ruke dodjeljuje sam (i zna je
+                // zamijeniti kad se upali drugi kontroler), pa boja pokazuje koji je koji.
+                CreateControllerModel(leftHand, new Color(0.3f, 0.6f, 1f));
+                CreateControllerModel(rightHand, new Color(1f, 0.55f, 0.2f));
+            }
+            if (showFrameStats && GetComponent<VrFrameStats>() == null)
+                gameObject.AddComponent<VrFrameStats>();
+        }
 
         void OnEnable()
         {
             // Dodatno ažuriranje tik prije renderiranja, da kamera ne kasni za glavom za jedan okvir.
             Application.onBeforeRender += UpdatePoses;
+            InputDevices.deviceConnected += OnDeviceConnected;
+            InputDevices.deviceDisconnected += OnDeviceDisconnected;
+
+            var devices = new List<InputDevice>();
+            InputDevices.GetDevices(devices);
+            Debug.Log($"[VrRig] XR uređaja pri pokretanju: {devices.Count}");
+            foreach (var d in devices)
+                OnDeviceConnected(d);
         }
 
         void OnDisable()
         {
             Application.onBeforeRender -= UpdatePoses;
+            InputDevices.deviceConnected -= OnDeviceConnected;
+            InputDevices.deviceDisconnected -= OnDeviceDisconnected;
         }
 
         void Update()
         {
             if (!_originSet)
+            {
                 _originSet = TrySetFloorOrigin();
+                if (_originSet)
+                    _handCheckTime = Time.unscaledTime + 5f;
+            }
+            if (_handCheckTime > 0f && Time.unscaledTime >= _handCheckTime)
+            {
+                _handCheckTime = -1f;
+                WarnIfMissing(XRNode.LeftHand);
+                WarnIfMissing(XRNode.RightHand);
+            }
             UpdatePoses();
+        }
+
+        // Zapis u Console je jedini način da se bez headseta vidi je li runtime uopće dao kontrolere.
+        static void OnDeviceConnected(InputDevice d)
+            => Debug.Log($"[VrRig] Uređaj spojen: \"{d.name}\" ({d.characteristics})");
+
+        static void OnDeviceDisconnected(InputDevice d)
+            => Debug.Log($"[VrRig] Uređaj odspojen: \"{d.name}\" ({d.characteristics})");
+
+        static void WarnIfMissing(XRNode node)
+        {
+            if (!InputDevices.GetDeviceAtXRNode(node).isValid)
+                Debug.LogWarning($"[VrRig] Nema uređaja za {node} ni 5 s nakon pokretanja XR-a. Provjeri jesu li kontroleri upaljeni u SteamVR-u i je li u OpenXR postavkama uključen HTC Vive Controller Profile.");
+        }
+
+        static void CreateControllerModel(Transform hand, Color color)
+        {
+            if (hand == null || hand.GetComponentInChildren<Renderer>() != null)
+                return;
+
+            // Grip poza je u sredini drške; kvadar ide malo naprijed, prema vrhu kontrolera.
+            var model = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            model.name = "ControllerModel";
+            Destroy(model.GetComponent<Collider>());
+            model.transform.SetParent(hand, false);
+            model.transform.localPosition = new Vector3(0f, 0f, 0.03f);
+            model.transform.localScale = new Vector3(0.035f, 0.035f, 0.16f);
+            model.GetComponent<Renderer>().material.color = color;
         }
 
         // XR subsustav se podiže tek nakon Starta, pa se podno ishodište pokušava postaviti u Updateu

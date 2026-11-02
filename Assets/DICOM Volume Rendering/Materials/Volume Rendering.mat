@@ -44,8 +44,9 @@ Material:
     - _ClipMask: 0
     - _GradScale: 4
     - _GradStep: 0.001
+    - _HighlightOccluded: 0
     - _Intensity: 2.5
-    - _Iteration: 100
+    - _Iteration: 50
     - _MaskDepth: 501
     - _MaskOnly: 0
     - _MaxX: 1
@@ -61,4 +62,5 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _HighlightColor: {r: 1, g: 0, b: 0, a: 0.85}
+    - _MaskZRange: {r: 1, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
