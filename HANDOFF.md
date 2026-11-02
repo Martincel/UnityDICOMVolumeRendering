@@ -41,6 +41,18 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
 - Upozorenje "PlayerLoop internal function has been called recursively" u Consoleu je izazvao MCP snimak zaslona
   tijekom Playa, ne projekt.
 
+## Ispravak: XR se pokretao i u 3D sceni (`0e6a876`)
+- `b711ac3` je uključio *Initialize XR on Startup*, pa je OpenXR preuzimao glavnu kameru u svakoj sceni: u 3D
+  sceni Game view je prikazivao izrezano jedno oko, a `OrbitCamera` nije reagirala (pixelRect kamere je bio
+  veličine teksture oka). Martin: "prikaz loš, model miruje".
+- Sad je *Initialize XR on Startup* isključen, a `VrRig` u `Awake` sam pokreće XR (`InitializeLoaderSync` +
+  `StartSubsystems`) i gasi ga u `OnDestroy`. XR radi samo u VR sceni. **Provjeriti u headsetu** da VR scena i
+  dalje radi (u Consoleu `[VrRig] XR pokrenut: ...`).
+- Usporedba s bazom grane (`5493615`, isti dataset, isti kutovi kamere): renderer izgleda isto (presvijetao
+  Soft Tissue, stepenice na kraju serije zbog rupa u podacima). Regresije u shaderu nema.
+- `_Iteration` u zajedničkom materijalu je u `b711ac3` spušten sa 100 na 50 (vjerojatno zbog performansi u VR-u);
+  to vrijedi i za 3D scenu. Ostavljeno kako jest, odluka za Martina.
+
 ## Nalaz: `series-000003` nije pravilna serija
 Serija sadrži **dvije akvizicije** (AcquisitionNumber 1: 115 sliceova, z −641…−101; AcquisitionNumber 2: 136
 sliceova, z −641…+64), a obje imaju rupe (razmaci 2,5–20 mm). U sortiranom volumenu je 53 para sliceova na istoj
