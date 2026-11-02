@@ -30,12 +30,28 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
 ## Što je provjereno, a što nije
 - `dotnet test`: `MaskSerializerTests` 21/21, `VolumeGeometryTests` 23/23. Na računalu je samo .NET 10 runtime,
   pa se pokreće s `DOTNET_ROLL_FORWARD=Major` (csproj ostaje na net8.0).
-- **Ništa od C# koda u Unityju i nijedan shader nisu kompajlirani ni pokrenuti** (Unity MCP nije bio spojen).
-  Prvo otvaranje vjerojatno pokaže greške u Consoleu ili shaderu: popraviti odmah. `.meta` datoteke novih
-  skripti su ručno napisane (nasumični GUID-ovi).
-- Scena je uređena kao tekst (YAML): klonirani red gumbi `RenderStyleRow` (Controls panel je povećan s 486 na
-  534), `ClipPlaneQuad` (neaktivan) i reference na loaderu. Ako Unity prijavi grešku pri učitavanju scene,
-  `git checkout` scene i ponoviti te tri stvari ručno.
+- **Unity, 2026-11-02 (preko MCP-a):** C# se kompajlira bez grešaka i upozorenja. Shader `VolumeRendering/Basic`
+  je kompajliran u svih 6 varijanti (`_`/`MODE_MIP`/`MODE_ISO` × `LIGHTING_ON`): bez grešaka. Imao je 5 upozorenja
+  (gradijentno uzorkovanje u petlji s promjenjivim brojem koraka); ispravljeno u `71de3ee` (`tex3Dlod`/`tex2Dlod`/
+  `UNITY_SAMPLE_TEX2DARRAY_LOD` s LOD 0, teksture nemaju mipmape pa je izgled isti).
+- Obje scene se otvaraju bez nedostajućih skripti; `RenderStyleRow` (2 gumba), `ClipPlaneQuad` (neaktivan), loader
+  (`volumeTransform`, `applyPhysicalAspect`) i `VrVolumeController.loader` su povezani.
+- Play u 3D sceni (`series-000003`): bez grešaka; format RG32, 512×512×251, učitavanje ~9 s; razmak voksela
+  0,902×0,902×2,5 mm, veličina 462×462×627,5 mm, lokalna skala mesha 9,15 × 9,15 × 12,43; volumen se prikazuje.
+- Upozorenje "PlayerLoop internal function has been called recursively" u Consoleu je izazvao MCP snimak zaslona
+  tijekom Playa, ne projekt.
+
+## Nalaz: `series-000003` nije pravilna serija
+Serija sadrži **dvije akvizicije** (AcquisitionNumber 1: 115 sliceova, z −641…−101; AcquisitionNumber 2: 136
+sliceova, z −641…+64), a obje imaju rupe (razmaci 2,5–20 mm). U sortiranom volumenu je 53 para sliceova na istoj
+poziciji, pa se dvije akvizicije isprepliću. To je postojeće stanje puta podataka (nije posljedica ove grane);
+sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
+- Posljedica za proporcije: Z = 251 × 2,5 mm (medijan) = 627,5 mm, a stvarni raspon je 705 mm. Z je sad
+  najveća os, pa volumen više ne izgleda kao ručna skala 12,43 : 11,56 : 5,63 (koja je bila procjena; fizički
+  je ova serija dulja nego šira). Stavka 1 ručne liste za ovaj dataset zato ne može "proći" doslovno.
+- Ispravak (zaseban posao, odluka otvorena): odabir serije razdvaja i po AcquisitionNumber, ili se duplikati
+  pozicija odbacuju; za seriju s rupama razmak računati kao raspon/(n−1) umjesto medijana, da ukupna duljina
+  bude točna.
 
 ## Ručna provjera (3D scena, pa VR)
 1. Isti dataset: proporcije oko 12.43 : 11.56 : 5.63; Console ispisuje format (RG32), razmak i veličinu u mm.
@@ -61,12 +77,16 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
   površina je crna.
 - Zasebno (nije u ovom planu): undo kista i postavljanje volumena ispred glave.
 
+## Raspored checkouta (od 2026-11-02)
+- Grana `feature/volume-format` je checkoutana u worktreeu `.claude/worktrees/renderer-upgrade-continue-2fea64`;
+  tamo se uređuje i commita.
+- Glavni checkout (`C:\Dicom\UnityDICOMVolumeRendering`, otvoren u Unityju) je na **detached HEAD** na vrhu te grane.
+  Nakon svakog commita: `git -C C:\Dicom\UnityDICOMVolumeRendering checkout --detach feature/volume-format`.
+  Ne raditi izmjene izravno u glavnom checkoutu dok je detached (commit ne bi završio na grani).
+- Worktree `unity-vr-project-comparison-acb557` je detached na `6a232e5` i više se ne koristi.
+- Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
+
 ## Sljedeće
-1. Grana je u worktreeu `.claude/worktrees/unity-vr-project-comparison-acb557`, a Unity je otvoren na glavnom checkoutu
-   (`feature/vr-vive`). Za test spojiti `feature/volume-format` u `feature/vr-vive` tamo (grana već sadrži vr-vive, pa je to
-   fast-forward) ili otvoriti worktree u Unityju. Prije toga u glavnom checkoutu ne smije biti necommitanih izmjena.
-2. Upaliti Unity i MCP server (Window → MCP for Unity → Start Server); pročitati Console i popraviti greške
-   kompajliranja i shadera (popravi pa javi). Provjeriti da je scena `Volume Rendering 1.unity` zadržala izmjene (red gumba,
-   `ClipPlaneQuad`, loader referenca).
-3. Ručna provjera iznad u 3D sceni, pa u headsetu.
-4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+1. Ručna provjera iznad u 3D sceni (Unity ima otvorenu `Volume Rendering 1.unity`), pa u headsetu.
+2. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
+3. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
