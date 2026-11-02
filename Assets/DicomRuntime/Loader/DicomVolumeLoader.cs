@@ -13,7 +13,7 @@ namespace VolumeRendering.Runtime
     //
     // Raspored threadova:
     //   InitializeAsync, GetSliceDataAsync — main thread (FileSource je sync, HttpSource je async)
-    //   Parsiranje + BuildColors            — background thread (Task.Run)
+    //   Parsiranje + Build                  — background thread (Task.Run)
     //   CreateTexture + postavljanje na mat — main thread (Unity API zahtjev)
     public class DicomVolumeLoader : MonoBehaviour
     {
@@ -153,14 +153,17 @@ namespace VolumeRendering.Runtime
             //    Stopwatch po fazi (parse / build) MJERI raspodjelu prije bilo kakve optimizacije —
             //    ne pretpostavljamo gdje odlazi vrijeme, nego damo da brojke odgovore.
             DicomVolumeData volumeData = null;
-            Color32[] colors = null;
-            int w = 0, h = 0, d = 0;
+            VolumeBuffer buffer = null;
             long parseMs = 0, buildMs = 0;
+
+            // Format se bira ovdje, na main threadu (SystemInfo nije dostupan iz Task.Run).
+            // Builder je isti za gradnju i upload da geometrija (razmaci voksela) ostane na njemu.
+            bool use16Bit = DicomVolumeBuilder.SupportsRg32;
+            var builder = new DicomVolumeBuilder();
 
             await Task.Run(() =>
             {
                 var parser  = new FoDicomParser();
-                var builder = new DicomVolumeBuilder();
 
                 // ── FAZA: PARSE (paralelno) ──────────────────────────────────
                 // Parse dominira (~61% na 501-datasetu), a FoDicomParser.Parse je stateless
@@ -205,16 +208,16 @@ namespace VolumeRendering.Runtime
                     Height = slices[0].Height
                 };
 
-                // ── FAZA: BUILD (sort + Color32[] + gradient) ────────────────
+                // ── FAZA: BUILD (sort + pakiranje + gradient) ────────────────
                 var swBuild = Stopwatch.StartNew();
-                colors = builder.BuildColors(volumeData, out w, out h, out d);
+                buffer = builder.Build(volumeData, use16Bit);
                 swBuild.Stop();
                 buildMs = swBuild.ElapsedMilliseconds;
             }, ct);
 
             ct.ThrowIfCancellationRequested();
 
-            if (volumeData == null || colors == null)
+            if (volumeData == null || buffer == null)
             {
                 Debug.LogError("[DicomVolumeLoader] Parsiranje nije uspjelo — nema validnih sliceova.");
                 return;
@@ -223,8 +226,8 @@ namespace VolumeRendering.Runtime
             // 5. Kreiraj Texture3D i postavi na materijal — mora biti na main threadu
             // ── FAZA: UPLOAD (Texture3D create + Apply na GPU) ───────────────
             var swUpload = Stopwatch.StartNew();
-            var builder2 = new DicomVolumeBuilder();
-            Texture3D tex = builder2.CreateTexture(colors, w, h, d);
+            Texture3D tex = builder.CreateTexture(buffer);
+            int w = buffer.Width, h = buffer.Height, d = buffer.Depth;
             volumeMaterial.SetTexture("_Volume", tex);
             swUpload.Stop();
 
@@ -241,7 +244,7 @@ namespace VolumeRendering.Runtime
 
             swTotal.Stop();
             Debug.Log(
-                $"[DicomVolumeLoader] Gotovo. {w}×{h}×{d} volumen za {swTotal.ElapsedMilliseconds} ms " +
+                $"[DicomVolumeLoader] Gotovo. {w}×{h}×{d} volumen ({buffer.Format}) za {swTotal.ElapsedMilliseconds} ms " +
                 $"(parse={parseMs} ms, build={buildMs} ms, upload={swUpload.ElapsedMilliseconds} ms).");
         }
     }

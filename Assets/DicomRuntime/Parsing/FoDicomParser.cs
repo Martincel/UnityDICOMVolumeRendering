@@ -133,6 +133,8 @@ namespace VolumeRendering.Runtime
             return result;
         }
 
+        // Poznato ograničenje: RenderImage vraća 8-bitnu prikaznu sliku, pa je gustoća iz ovog puta
+        // efektivno 8-bitna (256 koraka unutar prozora slicea) čak i u RG32 teksturi.
         static float[] ExtractPathB(byte[] bgra, int pixelCount, double winLow, double winWidth)
         {
             float[] result = new float[pixelCount];

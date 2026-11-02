@@ -4,12 +4,27 @@ using UnityEngine;
 
 namespace VolumeRendering.Runtime
 {
+    // Izgrađeni voxeli spremni za upload. Točno jedno od polja je popunjeno, ovisno o Format:
+    //   RG32   → Rg16   (R = gustoća, G = magnituda gradijenta, po 16 bita, 2 ushorta po voxelu)
+    //   RGBA32 → Rgba8  (fallback za GPU bez RG32; R = gustoća, G = gradijent, po 8 bita)
+    public class VolumeBuffer
+    {
+        public TextureFormat Format;
+        public ushort[] Rg16;
+        public Color32[] Rgba8;
+        public int Width, Height, Depth;
+    }
+
     // Gradi Texture3D iz DicomVolumeData.
     // Podjela odgovornosti po threadovima:
-    //   BuildColors() — poziva se iz Task.Run (background thread), intenzivno CPU
+    //   Build() — poziva se iz Task.Run (background thread), intenzivno CPU
     //   CreateTexture() — poziva se iz main threada (Unity Texture3D API zahtijeva main thread)
     public class DicomVolumeBuilder
     {
+        // Podržava li GPU 16-bitni RG format. Mora se pozvati na main threadu (SystemInfo),
+        // prije Task.Run; rezultat se predaje u Build().
+        public static bool SupportsRg32 => SystemInfo.SupportsTextureFormat(TextureFormat.RG32);
+
         // Geometrija izračunata u BuildColors (iz stvarno učitanih sliceova, pa downsampleFactor
         // automatski ulazi u razmak). 0 = nepoznato (nedostaje PixelSpacing ili pozicije sliceova).
         public double ColumnSpacingMm { get; private set; }       // razmak između stupaca (x)
@@ -17,11 +32,12 @@ namespace VolumeRendering.Runtime
         public double SliceSpacingMm { get; private set; }        // razmak između sliceova (z)
         public double SliceSpacingDeviation { get; private set; } // najveće relativno odstupanje od medijana
 
-        // Color32 (4 B/voxel) umjesto Color (16 B/voxel):
+        // 4 B/voxel u oba formata (RG32: 2 × ushort, RGBA32: Color32) umjesto Color (16 B/voxel):
         // 512×512×501 u Color[] bi bio ~2.1 GB — preko .NET limita od 2 GB po arrayu (OutOfMemory).
-        // U Color32[] je ~525 MB. Tekstura je ionako RGBA32 (8 bita po kanalu), pa float
-        // međukorak ne donosi preciznost — kvantizacija bi se svejedno dogodila pri uploadu.
-        public Color32[] BuildColors(DicomVolumeData volumeData, out int w, out int h, out int d)
+        // Ovako je ~525 MB. Gustoća i gradijent se računaju u floatu i kvantiziraju tek pri
+        // pakiranju. RG32 daje 65536 koraka umjesto 256 (~0.06 HU umjesto ~15,6 HU po koraku na
+        // fiksnom prozoru −1000…3000 HU).
+        public VolumeBuffer Build(DicomVolumeData volumeData, bool use16Bit)
         {
             // Sortiranje po prostornoj poziciji (DICOM C.7.6.2), ne po SliceLocation/InstanceNumber.
             //
@@ -37,21 +53,29 @@ namespace VolumeRendering.Runtime
             var sorted = SortSlicesSpatially(volumeData.Slices, out double[] positions);
             ComputeSpacing(sorted, positions);
 
-            w = volumeData.Width;
-            h = volumeData.Height;
-            d = sorted.Length;
+            int width = volumeData.Width;
+            int height = volumeData.Height;
+            int depth = sorted.Length;
 
             // Gustoće kao float[][] — gradient se računa iz punih float vrijednosti,
-            // PRIJE 8-bit kvantizacije, pa ne gubi preciznost prelaskom na Color32.
-            var density = new float[d][];
-            for (int z = 0; z < d; z++)
+            // PRIJE kvantizacije, pa ne gubi preciznost pri pakiranju.
+            var density = new float[depth][];
+            for (int z = 0; z < depth; z++)
                 density[z] = sorted[z].NormalizedDensity;
 
-            var colors = new Color32[w * h * d];
+            var buffer = new VolumeBuffer
+            {
+                Format = use16Bit ? TextureFormat.RG32 : TextureFormat.RGBA32,
+                Width = width, Height = height, Depth = depth
+            };
+            if (use16Bit) buffer.Rg16 = new ushort[width * height * depth * 2];
+            else          buffer.Rgba8 = new Color32[width * height * depth];
 
-            int width = w, height = h, depth = d; // out parametri ne smiju u lambdu
+            var rg16 = buffer.Rg16;
+            var rgba8 = buffer.Rgba8;
 
-            Debug.Log($"[DicomVolumeBuilder] Gradim {width}×{height}×{depth} volumen (gustoća + gradient, paralelno)...");
+            Debug.Log($"[DicomVolumeBuilder] Gradim {width}×{height}×{depth} volumen, format {buffer.Format} " +
+                      "(gustoća + gradient, paralelno)...");
 
             // Jedan prolaz: R = gustoća, G = gradient magnitude.
             // Z-slojevi su međusobno neovisni (gradient samo ČITA susjedne sliceove),
@@ -65,15 +89,24 @@ namespace VolumeRendering.Runtime
                 {
                     float dens = slice[y * width + x];
                     float grad = GradientBaker.Compute(density, x, y, z, width, height, depth);
-                    colors[baseIdx + y * width + x] = new Color32(
-                        (byte)(dens * 255f + 0.5f),
-                        (byte)(grad * 255f + 0.5f),
-                        0, 255);
+                    int voxel = baseIdx + y * width + x;
+                    if (rg16 != null)
+                    {
+                        rg16[voxel * 2]     = VolumeGeometry.PackUnorm16(dens);
+                        rg16[voxel * 2 + 1] = VolumeGeometry.PackUnorm16(grad);
+                    }
+                    else
+                    {
+                        rgba8[voxel] = new Color32(
+                            (byte)(dens * 255f + 0.5f),
+                            (byte)(grad * 255f + 0.5f),
+                            0, 255);
+                    }
                 }
             });
 
             Debug.Log("[DicomVolumeBuilder] Volumen izgrađen.");
-            return colors;
+            return buffer;
         }
 
         // Sortira sliceove po prostornoj poziciji duž normale ravnine slice-a.
@@ -159,15 +192,16 @@ namespace VolumeRendering.Runtime
             };
         }
 
-        // Kreira Texture3D na main threadu iz prethodno izgrađenog Color32[] polja.
+        // Kreira Texture3D na main threadu iz prethodno izgrađenog VolumeBuffera.
         // SetPixelData kopira bajte direktno u teksturu (bez float→byte konverzije koju radi SetPixels).
         // makeNoLongerReadable=true oslobađa CPU kopiju i štedi ~50% memorije.
-        public Texture3D CreateTexture(Color32[] colors, int w, int h, int d)
+        public Texture3D CreateTexture(VolumeBuffer buffer)
         {
-            var tex = new Texture3D(w, h, d, TextureFormat.RGBA32, false);
+            var tex = new Texture3D(buffer.Width, buffer.Height, buffer.Depth, buffer.Format, false);
             tex.filterMode = FilterMode.Bilinear;
             tex.wrapMode   = TextureWrapMode.Clamp;
-            tex.SetPixelData(colors, 0);
+            if (buffer.Rg16 != null) tex.SetPixelData(buffer.Rg16, 0);
+            else                     tex.SetPixelData(buffer.Rgba8, 0);
             tex.Apply(false, true); // false = ne generiraj mipmape, true = oslobodi CPU kopiju
             return tex;
         }
