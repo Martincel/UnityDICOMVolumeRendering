@@ -132,9 +132,11 @@ inline float inClipBox(float3 pos)
     return x * y * z * inClipPlane(pos);
 }
 
+// Uzorkovanje u petlji ide s eksplicitnim LOD-om 0: derivacije su nedefinirane u petlji s promjenjivim
+// brojem koraka, a teksture (volumen, TF, maska) ionako nemaju mipmape.
 inline float2 sampleVolumeRaw(float3 pos)
 {
-    float4 s = tex3D(_Volume, pos);
+    float4 s = tex3Dlod(_Volume, float4(pos, 0));
     return float2(s.r, s.g);
 }
 
@@ -145,7 +147,7 @@ inline float2 sampleVolume(float3 pos)
 
 inline float4 transferFunction(float density, float gradMag)
 {
-    return tex2D(_Transfer, float2(density, gradMag));
+    return tex2Dlod(_Transfer, float4(density, gradMag, 0, 0));
 }
 
 // Indeks slicea maske za z u teksturnom prostoru. Kao u Texture3D, slice i pokriva
@@ -164,7 +166,7 @@ inline float sampleMask(float3 pos)
     if (_MaskDepth <= 0)
         return 0;
 
-    return UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pos.xy, maskSliceIndex(pos.z))).r;
+    return UNITY_SAMPLE_TEX2DARRAY_LOD(_Mask, float3(pos.xy, maskSliceIndex(pos.z)), 0).r;
 }
 
 // Gradijent gustoće (centralne razlike nad .r, 6 uzoraka) u lokalnom prostoru volumena. Razlika je
@@ -394,11 +396,11 @@ float4 frag(v2f i) : SV_Target
         {
             float3 pp = startPos + localDir * tPlane + 0.5;
             float inside = step(_MinX, pp.x) * step(pp.x, _MaxX) * step(_MinY, pp.y) * step(pp.y, _MaxY) * inClipPlane(pp);
-            float d = tex3D(_Volume, float3(pp.xy, _SlicePlaneZ)).r;
+            float d = tex3Dlod(_Volume, float4(pp.xy, _SlicePlaneZ, 0)).r;
             float4 pc = float4(d, d, d, 1);
             if (_MaskDepth > 0)
             {
-                float marked = UNITY_SAMPLE_TEX2DARRAY(_Mask, float3(pp.xy, maskSliceIndex(_SlicePlaneZ))).r;
+                float marked = UNITY_SAMPLE_TEX2DARRAY_LOD(_Mask, float3(pp.xy, maskSliceIndex(_SlicePlaneZ)), 0).r;
                 if (marked > 0.5)
                     pc.rgb = lerp(pc.rgb, _HighlightColor.rgb, _HighlightColor.a);
             }
