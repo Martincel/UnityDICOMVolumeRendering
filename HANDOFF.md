@@ -62,7 +62,11 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
 - Zasebno (nije u ovom planu): undo kista i postavljanje volumena ispred glave.
 
 ## Sljedeće
-1. Martin otvara projekt u Unityju, ispravlja eventualne greške kompajliranja i shadera.
-2. Ručna provjera iznad u 3D sceni, pa u headsetu zajedno s izmjenama druge sesije.
-3. Korak 4b nakon commita druge sesije.
-4. Merge `feature/volume-format` u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+1. Grana je u worktreeu `.claude/worktrees/unity-vr-project-comparison-acb557`, a Unity je otvoren na glavnom checkoutu
+   (`feature/vr-vive`). Za test spojiti `feature/volume-format` u `feature/vr-vive` tamo (grana već sadrži vr-vive, pa je to
+   fast-forward) ili otvoriti worktree u Unityju. Prije toga u glavnom checkoutu ne smije biti necommitanih izmjena.
+2. Upaliti Unity i MCP server (Window → MCP for Unity → Start Server); pročitati Console i popraviti greške
+   kompajliranja i shadera (popravi pa javi). Provjeriti da je scena `Volume Rendering 1.unity` zadržala izmjene (red gumba,
+   `ClipPlaneQuad`, loader referenca).
+3. Ručna provjera iznad u 3D sceni, pa u headsetu.
+4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
