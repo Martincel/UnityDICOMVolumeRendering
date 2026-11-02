@@ -22,6 +22,11 @@ Unity 6 + XRI + stereo makroi tek nakon što ovo prođe u headsetu.
   datoteci u glavnom checkoutu. Kad ih commita: na `OnVolumeLoaded` ponovno uzeti `_baseScale` iz
   `volume.localScale` i primijeniti `_scaleMul`. Dok se to ne napravi, skaliranje kontrolerom nakon učitavanja
   vraća staru osnovnu skalu i kvari proporcije.
+- **Sukob scena pri spajanju:** u glavnom checkoutu je druga sesija obrisala `Volume Rendering.unity` (3D scena je
+  postala `Volume Rendering 1.unity`, a original s istim GUID-om `Volume Rendering VR.unity`). Moje izmjene scene
+  (reference `volumeTransform` na loaderu, red gumba `RenderStyleRow`, objekt `ClipPlaneQuad`) su u staroj datoteci,
+  pa će se pri spajanju sukobiti (izmjena protiv brisanja). Pri spajanju zadržati njihove scene i ta tri dijela
+  ponoviti u `Volume Rendering 1.unity` (ili ručno u Unityju; `RenderStyleController` i `ClipPlaneController` su gotovi).
 - **VR scena** (`Volume Rendering VR.unity`) nije u ovoj grani (u gitu je samo 3D scena). Ručno: na
   `DicomVolumeLoader` postaviti `Volume Transform` na mesh `Volume/Volume`; način prikaza i osvjetljenje se
   tamo mijenjaju u Inspectoru (`Style`, `Lighting`, `Iso Value HU` na `VolumeRenderingWithTransferFunction`;
