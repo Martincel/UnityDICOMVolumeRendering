@@ -35,8 +35,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         [Range(0f, 1f)]   public float minZ = 0f, maxZ = 1f;
     }
 
-    public const int TFWidth  = 100;
+    // 1024 stupca: gustoća je 16-bitna, a pri 100 stupaca jedan stupac TF-a pokriva ~40 HU.
+    public const int TFWidth  = 1024;
     public const int TFHeight = 64;
+
+    // Radijus četkice u Editoru je zadan u pikselima TF-a širine 100; pri većoj širini se razvlači po x
+    // da kružni potez na previewu ostane iste veličine.
+    const int BrushReferenceWidth = 100;
 
     [SerializeField]
     CTPreset preset = CTPreset.Custom;
@@ -87,12 +92,14 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     {
         if (texture_ == null) return;
         paintLock = true;   // blokiraj UpdateTexture dok je bojanje aktivno
-        int r2 = radius * radius;
-        for (int x = cx - radius; x <= cx + radius; x++)
+        float radiusX = radius * (float)TFWidth / BrushReferenceWidth;
+        for (int x = Mathf.CeilToInt(cx - radiusX); x <= cx + radiusX; x++)
         for (int y = cy - radius; y <= cy + radius; y++)
         {
             if (x < 0 || x >= TFWidth || y < 0 || y >= TFHeight) continue;
-            if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r2) continue;
+            float nx = (x - cx) / radiusX;
+            float ny = (float)(y - cy) / radius;
+            if (nx * nx + ny * ny > 1f) continue;
             texture_.SetPixel(x, y, color);
         }
         texture_.Apply(false);
@@ -260,6 +267,9 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         texture_.wrapMode   = TextureWrapMode.Clamp;
         texture_.filterMode = FilterMode.Bilinear;
 
+        // Jedno polje za cijelu teksturu (redak po redak, y je vanjska petlja) umjesto
+        // 65k SetPixel poziva.
+        var pixels = new Color32[TFWidth * TFHeight];
         for (int x = 0; x < TFWidth; x++)
         {
             Color c = gradient.Evaluate((float)x / TFWidth);
@@ -268,10 +278,11 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 // gradFactor = 1 uvijek kad je gradientInfluence=0 → isti kao stari 1D TF
                 // gradFactor = y/63 kad je gradientInfluence=1 → samo rubovi su opaque
                 float gradFactor = Mathf.Lerp(1f, (float)y / (TFHeight - 1), gradientInfluence);
-                texture_.SetPixel(x, y, new Color(c.r, c.g, c.b, c.a * gradFactor));
+                pixels[y * TFWidth + x] = new Color(c.r, c.g, c.b, c.a * gradFactor);
             }
         }
 
+        texture_.SetPixels32(pixels);
         texture_.Apply(false);
         Mat.SetTexture("_Transfer", texture_);
     }
