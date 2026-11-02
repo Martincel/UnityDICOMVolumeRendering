@@ -5,11 +5,13 @@ using VolumeRendering.Runtime.UI;
 namespace VolumeRendering.Runtime.Xr
 {
     // Upravljanje volumenom kontrolerima (HTC Vive Pro 2 preko OpenXR-a):
-    //   grip (bilo koja ruka)  — uhvati volumen i pomiči/okreći ga rukom
+    //   okidač (bilo koja ruka) — uhvati volumen i pomiči/okreći ga rukom; u crtanju hvata samo
+    //                             lijevi, jer desni crta
+    //   grip (bilo koja ruka)  — također hvata, u oba načina
     //   lijevi trackpad/stick  — gore/dolje listaju sliceove (dulje držanje = brže)
     //   desni trackpad/stick   — gore/dolje veličina kista, lijevo/desno veličina volumena
-    //   lijevi menu/primary    — uključi/isključi "Crtanje u 3D" (ravnina slicea + rez)
-    //   desni okidač           — crta po ravnini slicea u smjeru zrake iz desnog kontrolera
+    //   menu/primary (bilo koja ruka) — uključi/isključi "Crtanje u 3D" (ravnina slicea + rez)
+    //   desni okidač u crtanju — crta po ravnini slicea u smjeru zrake iz desnog kontrolera
     // Miš se ugasi (VolumeSlicePainter.UseMouse = false), a maska, shader i spremanje ostaju isti.
     public class VrVolumeController : MonoBehaviour
     {
@@ -33,6 +35,13 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] Vector2 scaleRange = new Vector2(0.2f, 5f);
         [SerializeField] float stickThreshold = 0.6f;
         [SerializeField] float deadzone = 0.2f;
+        // Okidač se čita analogno: "klik" Wanda (TriggerButton) javlja se tek na samom kraju poteza,
+        // pa ga djelomičan pritisak ne aktivira. Dva praga daju histerezu, da stanje ne treperi.
+        [SerializeField, Range(0f, 1f)] float triggerPressAt = 0.55f;
+        [SerializeField, Range(0f, 1f)] float triggerReleaseAt = 0.35f;
+
+        [Header("Natpis")]
+        [SerializeField] bool showStatusLabel = true;
 
         LineRenderer _line;
         Vector3 _baseScale;
@@ -44,8 +53,13 @@ namespace VolumeRendering.Runtime.Xr
         Vector3 _grabPos;
         Quaternion _grabRot;
 
-        bool _prevLeftGrip, _prevRightGrip, _prevToggle;
+        bool _prevLeftGrab, _prevRightGrab, _prevToggle;
+        // Nakon hvatanja desnim okidačem crtanje čeka da se okidač pusti, da paljenje crtanja
+        // dok je okidač još stisnut ne započne potez samo od sebe.
+        bool _waitRightTriggerRelease;
+        bool _leftTrigger, _rightTrigger;
         float _stepHold, _stepTimer;
+        TextMesh _status;
 
         void Start()
         {
@@ -61,6 +75,8 @@ namespace VolumeRendering.Runtime.Xr
             }
 
             CreateLine();
+            if (showStatusLabel)
+                _status = VrLabel.Create(transform, "VrStatus", Color.white);
         }
 
         void OnDestroy()
@@ -88,33 +104,58 @@ namespace VolumeRendering.Runtime.Xr
             if (rig == null || volume == null || painter == null)
                 return;
 
+            _leftTrigger = ReadTrigger(XRNode.LeftHand, _leftTrigger);
+            _rightTrigger = ReadTrigger(XRNode.RightHand, _rightTrigger);
+
             HandleGrab();
             HandleSliceStep();
             HandleBrushAndScale();
             HandleDrawing();
         }
 
+        void LateUpdate()
+        {
+            if (_status == null)
+                return;
+
+            // U VR-u se Canvas (Screen Space Overlay) ne vidi, pa slice i kist pišu iznad desnog
+            // kontrolera, onog koji crta; vidljivo samo dok je crtanje uključeno.
+            Transform hand = rig != null ? rig.RightHand : null;
+            bool show = painter != null && painter.DrawingActive && hand != null && rig.Head != null;
+            _status.gameObject.SetActive(show);
+            if (!show)
+                return;
+
+            string slice = sliceView != null && sliceView.SliceCount > 0
+                ? $"Slice {sliceView.CurrentSliceIndex + 1}/{sliceView.SliceCount}"
+                : "Slice -";
+            _status.text = $"{slice}\nKist {Mathf.RoundToInt(brushRadius)} px";
+            VrLabel.PlaceAbove(_status.transform, hand, rig.Head);
+        }
+
         // ---- hvatanje i pomicanje ----
 
         void HandleGrab()
         {
-            bool left = ReadButton(XRNode.LeftHand, CommonUsages.gripButton);
-            bool right = ReadButton(XRNode.RightHand, CommonUsages.gripButton);
+            bool left = ReadGrab(XRNode.LeftHand);
+            bool right = ReadGrab(XRNode.RightHand);
 
             if (_grabHand == null)
             {
-                if (right && !_prevRightGrip)
+                if (right && !_prevRightGrab)
                     BeginGrab(rig.RightHand, XRNode.RightHand);
-                else if (left && !_prevLeftGrip)
+                else if (left && !_prevLeftGrab)
                     BeginGrab(rig.LeftHand, XRNode.LeftHand);
             }
-            else if (!ReadButton(_grabNode, CommonUsages.gripButton))
+            else if (!ReadGrab(_grabNode))
             {
                 _grabHand = null;
+                if (_rightTrigger)
+                    _waitRightTriggerRelease = true;
             }
 
-            _prevLeftGrip = left;
-            _prevRightGrip = right;
+            _prevLeftGrab = left;
+            _prevRightGrab = right;
 
             if (_grabHand != null)
             {
@@ -190,7 +231,9 @@ namespace VolumeRendering.Runtime.Xr
         void HandleDrawing()
         {
             bool toggle = ReadButton(XRNode.LeftHand, CommonUsages.primaryButton)
-                       || ReadButton(XRNode.LeftHand, CommonUsages.menuButton);
+                       || ReadButton(XRNode.LeftHand, CommonUsages.menuButton)
+                       || ReadButton(XRNode.RightHand, CommonUsages.primaryButton)
+                       || ReadButton(XRNode.RightHand, CommonUsages.menuButton);
             if (toggle && !_prevToggle)
                 painter.SetDrawingMode(!painter.DrawingActive);
             _prevToggle = toggle;
@@ -203,7 +246,10 @@ namespace VolumeRendering.Runtime.Xr
                 return;
             }
 
-            bool pressed = _grabHand == null && ReadButton(XRNode.RightHand, CommonUsages.triggerButton);
+            bool trigger = _rightTrigger;
+            if (!trigger)
+                _waitRightTriggerRelease = false;
+            bool pressed = _grabHand == null && trigger && !_waitRightTriggerRelease;
             Vector3 dir = hand.rotation * Quaternion.Euler(rayEulerOffset) * Vector3.forward;
             var ray = new Ray(hand.position, dir);
 
@@ -218,6 +264,26 @@ namespace VolumeRendering.Runtime.Xr
         }
 
         // ---- čitanje kontrolera ----
+
+        // Grip na Wandu je nezgodan za dulje držanje, pa hvata i okidač; u crtanju desni okidač crta.
+        bool ReadGrab(XRNode node)
+        {
+            if (ReadButton(node, CommonUsages.gripButton))
+                return true;
+            bool triggerGrabs = !painter.DrawingActive || node == XRNode.LeftHand;
+            return triggerGrabs && (node == XRNode.LeftHand ? _leftTrigger : _rightTrigger);
+        }
+
+        bool ReadTrigger(XRNode node, bool wasPressed)
+        {
+            var device = InputDevices.GetDeviceAtXRNode(node);
+            if (!device.isValid)
+                return false;
+            if (device.TryGetFeatureValue(CommonUsages.trigger, out float value))
+                return value >= (wasPressed ? triggerReleaseAt : triggerPressAt);
+            // Runtime bez analognog okidača: ostaje klik.
+            return device.TryGetFeatureValue(CommonUsages.triggerButton, out bool pressed) && pressed;
+        }
 
         static bool ReadButton(XRNode node, InputFeatureUsage<bool> usage)
         {
