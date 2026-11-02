@@ -77,21 +77,17 @@ float _MaskDepth;
 float4 _MaskZRange;
 fixed4 _HighlightColor;
 
-struct Ray
+// Presjek zrake (from + t * dir) s osno poravnatom kutijom [lo, hi]: x = ulaz, y = izlaz (parametar t).
+// Ulaz je negativan kad je ishodište zrake unutar kutije; izlaz <= ulaz znači da zraka promašuje kutiju.
+float2 boxRange(float3 from, float3 dir, float3 lo, float3 hi)
 {
-    float3 from;
-    float3 dir;
-    float tmax;
-};
-
-void intersection(inout Ray ray)
-{
-    float3 invDir = 1.0 / ray.dir;
-    float3 t1 = (-0.5 - ray.from) * invDir;
-    float3 t2 = (+0.5 - ray.from) * invDir;
-    float3 tmax3 = max(t1, t2);
-    float2 tmax2 = min(tmax3.xx, tmax3.yz);
-    ray.tmax = min(tmax2.x, tmax2.y);
+    float3 invDir = 1.0 / dir;
+    float3 t1 = (lo - from) * invDir;
+    float3 t2 = (hi - from) * invDir;
+    float3 tNear3 = min(t1, t2);
+    float3 tFar3 = max(t1, t2);
+    return float2(max(tNear3.x, max(tNear3.y, tNear3.z)),
+                  min(tFar3.x, min(tFar3.y, tFar3.z)));
 }
 
 // Jedno uzorkovanje vraća i gustoću (.r) i pre-computed gradMag (.g).
@@ -150,32 +146,29 @@ v2f vert(appdata v)
 
 float4 frag(v2f i) : SV_Target
 {
-    float3 worldDir = i.worldPos - _WorldSpaceCameraPos;
-    float3 localDir = normalize(mul(unity_WorldToObject, worldDir));
+    // Zraka počinje u kameri (u lokalnom prostoru volumena), a ne na prednjoj plohi kocke. Crta se
+    // stražnja ploha (Cull Front), pa volumen ostaje vidljiv i kad je kamera ili glava unutar kocke.
+    // Svi t-ovi niže mjere se od kamere.
+    float3 camLocal = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1.0)).xyz;
+    float3 localDir = normalize(i.localPos.xyz - camLocal);
 
-    Ray ray;
-    ray.from = i.localPos;
-    ray.dir = localDir;
-    intersection(ray);
+    float2 cube = boxRange(camLocal, localDir, -0.5, 0.5);
+    float tStart = max(cube.x, 0.0);   // kamera unutar kocke: početak je u kameri
+    float tEnd = cube.y;
+    if (tEnd <= tStart)
+        return 0;
 
     // Zraka se skraćuje na dio unutar kutije reza (_MinX.._MaxZ): inače tanki sloj (npr. 9 sliceova,
     // ~2 % visine) pogodi 0 ili 1 uzorak kad zraka prolazi okomito na njega, pa je odozgo gotovo
     // nevidljiv. Ne skraćuje se ako je vidljivo nešto izvan reza (oznaka uz _ClipMask = 0) ili ako je
-    // aktivna ravnina slicea (ona računa udaljenost od ulaza u kocku).
-    float tStart = 0;
-    float tEnd = ray.tmax;
+    // aktivna ravnina slicea (ona računa udaljenost od kamere).
     bool trim = _ShowSlicePlane < 0.5 && (_ClipMask > 0.5 || _MaskZRange.x >= _MaskZRange.y);
     if (trim)
     {
-        float3 invDir = 1.0 / localDir;
-        float3 lo = float3(_MinX, _MinY, _MinZ) - 0.5;
-        float3 hi = float3(_MaxX, _MaxY, _MaxZ) - 0.5;
-        float3 t1 = (lo - ray.from) * invDir;
-        float3 t2 = (hi - ray.from) * invDir;
-        float3 tNear3 = min(t1, t2);
-        float3 tFar3 = max(t1, t2);
-        tStart = max(0.0, max(tNear3.x, max(tNear3.y, tNear3.z)));
-        tEnd = min(ray.tmax, min(tFar3.x, min(tFar3.y, tFar3.z)));
+        float2 clip = boxRange(camLocal, localDir,
+            float3(_MinX, _MinY, _MinZ) - 0.5, float3(_MaxX, _MaxY, _MaxZ) - 0.5);
+        tStart = max(tStart, clip.x);
+        tEnd = min(tEnd, clip.y);
         if (tEnd <= tStart)
             return 0;
     }
@@ -191,13 +184,13 @@ float4 frag(v2f i) : SV_Target
     // počinju na blago različitim pozicijama → banding artefakti se rasipaju.
     // Pomak je dio jednog koraka duž zrake (localStep već sadrži smjer).
     float jitter = tex2D(_NoiseTex, i.vertex.xy / 64.0).r;
-    float3 localPos = i.localPos + localDir * tStart + localStep * jitter;
+    float3 localPos = camLocal + localDir * tStart + localStep * jitter;
     float4 output = 0;
 
-    // Oštra ravnina slicea: udaljenost (duž zrake od ulaza u kocku) do ravnine z = _SlicePlaneZ.
+    // Oštra ravnina slicea: udaljenost (duž zrake od kamere) do ravnine z = _SlicePlaneZ.
     // Računa se prije petlje jer `i` u petlji zasjenjuje v2f. Ako zraka ne siječe ravninu, tPlane
     // ostaje vrlo velik i ravnina se ne crta.
-    float3 startPos = i.localPos;
+    float3 startPos = camLocal;
     float tPlane = 1e9;
     if (_ShowSlicePlane > 0.5 && abs(localDir.z) > 1e-5)
         tPlane = (_SlicePlaneZ - 0.5 - startPos.z) / localDir.z;
@@ -320,7 +313,7 @@ Tags
 
 Pass
 {
-    Cull Back
+    Cull Front
     ZWrite Off
     ZTest LEqual
     Blend [_BlendSrc] [_BlendDst]
