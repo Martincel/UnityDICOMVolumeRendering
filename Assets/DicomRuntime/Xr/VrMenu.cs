@@ -9,7 +9,8 @@ namespace VolumeRendering.Runtime.Xr
     // Izbornik u headsetu, bez XR Interaction Toolkita: panel iznad lijevog kontrolera, bira se zrakom
     // iz desnog i desnim okidačem.
     //   lijevi menu — otvori/zatvori panel (desni menu i dalje pali crtanje u 3D)
-    //   stavke      — CT preset, način prikaza, osvjetljenje, prag izopovršine, "Samo oznaka", kosa ravnina
+    //   stavke      — CT preset, način prikaza, osvjetljenje, prag izopovršine, HU pojas (tkiva + granice),
+    //                 "Samo oznaka", kosa ravnina
     // Dok je panel otvoren (ili se postavlja ravnina), desna ruka pripada izborniku: VrVolumeController
     // tada desnim okidačem ne hvata ni ne crta, a desni touchpad ne mijenja kist ni skalu.
     //
@@ -185,6 +186,30 @@ namespace VolumeRendering.Runtime.Xr
                 return;
             float hu = Mathf.Round(volumeRendering.IsoValueHU / isoStepHU + steps) * isoStepHU;
             volumeRendering.IsoValueHU = Mathf.Clamp(hu, isoRangeHU.x, isoRangeHU.y);
+        }
+
+        // Isključen → pluća → mast → meko tkivo → žile s kontrastom → kost → isključen.
+        public void CycleTissueBand()
+        {
+            if (volumeRendering == null)
+                return;
+            var tissue = volumeRendering.HuBandEnabled ? volumeRendering.HuBandTissue : VolumeRenderingWithTransferFunction.TissueBand.Custom;
+            int count = Enum.GetValues(typeof(VolumeRenderingWithTransferFunction.TissueBand)).Length;
+            volumeRendering.SetTissueBand((VolumeRenderingWithTransferFunction.TissueBand)(((int)tissue + 1) % count));
+        }
+
+        // Ručno pomicanje granice (isti korak kao prag izopovršine); uključuje pojas ako je bio isključen.
+        public void ChangeBand(int steps, bool lower)
+        {
+            if (volumeRendering == null)
+                return;
+            float current = lower ? volumeRendering.HuBandMinHU : volumeRendering.HuBandMaxHU;
+            float hu = Mathf.Round(current / isoStepHU + steps) * isoStepHU;
+            if (lower)
+                volumeRendering.HuBandMinHU = hu;
+            else
+                volumeRendering.HuBandMaxHU = hu;
+            volumeRendering.HuBandEnabled = true;
         }
 
         public void CycleMaskOnly()
@@ -401,8 +426,15 @@ namespace VolumeRendering.Runtime.Xr
                 y => Row(y, () => "Način: " + StyleName(volumeRendering.Style), CycleStyle),
                 y => Row(y, () => volumeRendering.Lighting ? "Osvjetljenje: uključeno" : "Osvjetljenje: isključeno",
                          ToggleLighting),
-                y => Row(y, () => $"Izopovršina: {volumeRendering.IsoValueHU:0} HU", null,
+                y => Row(y, () => volumeRendering.HuBandEnabled
+                             ? "Izopovršina: pojas"
+                             : $"Izopovršina: {volumeRendering.IsoValueHU:0} HU", null,
                          ("-", () => ChangeIso(-1), SmallButton, true), ("+", () => ChangeIso(1), SmallButton, true)),
+                y => Row(y, BandName, CycleTissueBand),
+                y => Row(y, () => $"Pojas od: {volumeRendering.HuBandMinHU:0} HU", null,
+                         ("-", () => ChangeBand(-1, true), SmallButton, true), ("+", () => ChangeBand(1, true), SmallButton, true)),
+                y => Row(y, () => $"Pojas do: {volumeRendering.HuBandMaxHU:0} HU", null,
+                         ("-", () => ChangeBand(-1, false), SmallButton, true), ("+", () => ChangeBand(1, false), SmallButton, true)),
             };
             if (sliceClip != null)
                 rows.Add(y => Row(y, MaskOnlyName, CycleMaskOnly));
@@ -517,6 +549,21 @@ namespace VolumeRendering.Runtime.Xr
             VolumeRenderingWithTransferFunction.CTPreset.Anatomical => "anatomski",
             _ => "ručno"
         };
+
+        string BandName()
+        {
+            if (!volumeRendering.HuBandEnabled)
+                return "Pojas HU: isključen";
+            return "Pojas HU: " + volumeRendering.HuBandTissue switch
+            {
+                VolumeRenderingWithTransferFunction.TissueBand.Lung => "pluća",
+                VolumeRenderingWithTransferFunction.TissueBand.Fat => "mast",
+                VolumeRenderingWithTransferFunction.TissueBand.SoftTissue => "meko tkivo",
+                VolumeRenderingWithTransferFunction.TissueBand.ContrastVessels => "žile (kontrast)",
+                VolumeRenderingWithTransferFunction.TissueBand.Bone => "kost",
+                _ => "ručno"
+            };
+        }
 
         static string StyleName(VolumeRenderingWithTransferFunction.RenderStyle style) => style switch
         {
