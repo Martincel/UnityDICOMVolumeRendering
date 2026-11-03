@@ -397,8 +397,12 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
   u Unityju u prvoj lokalnoj sesiji koja ga spoji. Scene se u cloudu ne diraju.
 - .NET 8 SDK u cloudu (provjereno: postojeći testovi 21/21 i 23/23 prolaze):
   ```bash
-  curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0 --install-dir "$HOME/.dotnet"
+  curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
   ```
+  ```bash
+  bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "$HOME/.dotnet"
+  ```
+  (Skriptu prvo preuzeti pa pokrenuti: `curl … | bash` cloud sesije blokiraju.)
   ```bash
   export PATH="$HOME/.dotnet:$PATH"
   ```
@@ -666,6 +670,26 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 7. **ML:** postoji li GPU računalo na LAN-u i je li namjena nekomercijalna (licenca nnInteractive težina)?
 
 ---
+
+## Bilješke za kasnije
+
+- **Rezerva za memoriju: vokseli s GPU-a umjesto trajne CPU kopije** (Martin, 2026-11-03: "zasad kao
+  bilješka").
+  - Kad: ako +263…525 MB RAM-a za `loader.Voxels` postane problem (veće serije, slabije računalo, VR
+    proces blizu limita).
+  - Kako:
+    1. `keepVoxelsOnCpu = false`.
+    2. Na klik se iz `_Volume` (`Texture3D`) izreže samo potrebni dio: 2D = jedan slice, 3D = ROI kocka.
+       Radi se blitom ili compute shaderom u `RenderTexture` (`RGHalf`/`RFloat`, ne ARGB32 iz 2D prikaza,
+       koji je 8-bitan).
+    3. Dio se vrati na CPU s `AsyncGPUReadback`.
+    4. Algoritam radi nad tim malim nizom kao i dosad (`RegionGrow2D` već prima sirovi niz).
+  - Cijena: +1–3 framea kašnjenja po kliku i više koda (asinkroni lanac, pretvorba formata). Algoritmi
+    se ne mijenjaju.
+- **Zatvaranje rupa (S3) treba granicu veličine** (nalaz pri pregledu S3). `FillHoles` zatvara svaku
+  rupu u regiji (i u T prije erozije), pa klik u masno tkivo oko bubrega može označiti i bubreg, ako je
+  masnoća oko njega zatvorena unutar ROI-a. Prijedlog za S4/S8: zatvarati samo rupe manje od N mm²
+  (npr. 200 mm²) i provjeriti na stvarnim podacima.
 
 ## 7. Izvori
 
