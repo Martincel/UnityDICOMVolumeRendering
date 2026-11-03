@@ -40,6 +40,8 @@ Properties
     _VolumeDims("Volume Dims", Vector) = (1, 1, 1, 0)
     _IsoValue("Iso Value (density)", Range(0, 1)) = 0.35
     _MipWindow("MIP Window (low, high)", Vector) = (0.2, 0.625, 0, 0)
+    // x = donja, y = gornja gustoća, z = 1 uključeno; postavlja VolumeRenderingWithTransferFunction iz HU.
+    _HuBand("HU Band (low, high, on)", Vector) = (0, 1, 0, 0)
 
     [Header(Slice Plane)]
     _ShowSlicePlane("Show Slice Plane", Float) = 0
@@ -81,6 +83,10 @@ float _SlicePlaneOpacity;
 float4 _VolumeDims;   // xyz = broj voksela po osi
 float _IsoValue;      // prag izopovršine u prostoru gustoće [0,1]
 float4 _MipWindow;    // x = donja, y = gornja gustoća prozora sive skale za MIP
+// HU pojas: kad je uključen (z > 0.5), prikazuje se samo gustoća u [x, y]. U slaganju se ostali uzorci
+// preskaču, MIP traži najveću gustoću unutar pojasa (i sivu skalu razvlači preko pojasa), a izopovršina
+// je prva ploha gdje zraka uđe u pojas. Oznaka (maska) i ravnina slicea ga ne poštuju.
+float4 _HuBand;
 
 // Način prikaza je odabran ključnim riječima (VolumeRenderingWithTransferFunction.RenderStyle):
 // nijedna = slaganje (composite), MODE_MIP = najveća gustoća duž zrake, MODE_ISO = prva izopovršina.
@@ -215,6 +221,9 @@ float4 frag(v2f i) : SV_Target
     // MIP i izopovršina ne rade uz ravninu slicea (crtanje u 3D) ni uz "Samo oznaka": tada slaganje.
     bool mip = STYLE == 1 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5;
     bool iso = STYLE == 2 && _ShowSlicePlane < 0.5 && _MaskOnly < 0.5;
+    bool bandOn = _HuBand.z > 0.5;
+    // Uz HU pojas izopovršina je donja granica pojasa (prag izopovršine se tada ne koristi).
+    float isoValue = bandOn ? _HuBand.x : _IsoValue;
     #if defined(LIGHTING_ON) || defined(MODE_ISO)
     float3 viewDirWorld = -normalize(mul((float3x3)unity_ObjectToWorld, localDir));
     #endif
@@ -321,7 +330,8 @@ float4 frag(v2f i) : SV_Target
         float2 vg = (maskOnly && _ClipMask < 0.5) ? sampleVolumeRaw(sp) : sampleVolume(sp);  // .x = gustoća, .y = gradMag (pre-computed)
         float volume  = vg.x;
         float gradMag = saturate(vg.y * _GradScale);
-        float4 color  = transferFunction(volume, gradMag) * volume * _Intensity;
+        bool outBand  = bandOn && (volume < _HuBand.x || volume > _HuBand.y);
+        float4 color  = outBand ? 0 : transferFunction(volume, gradMag) * volume * _Intensity;
 
         #if defined(LIGHTING_ON)
         // Osvjetljenje samo za vidljive uzorke (alpha > ~0.004): 6 dodatnih uzoraka nije jeftino.
@@ -333,20 +343,21 @@ float4 frag(v2f i) : SV_Target
         if (mip)
         {
             // MIP: samo pamtimo najveću gustoću, slika se slaže nakon petlje.
-            mipMax = max(mipMax, volume);
+            if (!outBand)
+                mipMax = max(mipMax, volume);
             color = 0;
         }
         #if defined(MODE_ISO)
-        else if (iso && volume >= _IsoValue)
+        else if (iso && volume >= isoValue && !outBand)
         {
             // Prvi uzorak iznad praga + jedan korak bisekcije između njega i prethodnog uzorka.
             float3 hitSp = sp;
             float hitVol = volume;
-            if (i > 0 && prevVol < _IsoValue)
+            if (i > 0 && prevVol < isoValue)
             {
                 float3 midSp = 0.5 * (prevSp + sp);
                 float midVol = sampleVolume(midSp).x;
-                if (midVol >= _IsoValue)
+                if (midVol >= isoValue)
                 {
                     hitSp = midSp;
                     hitVol = midVol;
@@ -427,7 +438,8 @@ float4 frag(v2f i) : SV_Target
 
     if (mip)
     {
-        float g = saturate((mipMax - _MipWindow.x) / max(_MipWindow.y - _MipWindow.x, 1e-4));
+        float2 window = bandOn ? _HuBand.xy : _MipWindow.xy;
+        float g = saturate((mipMax - window.x) / max(window.y - window.x, 1e-4));
         output = float4(g, g, g, saturate(g * 4.0));
     }
 

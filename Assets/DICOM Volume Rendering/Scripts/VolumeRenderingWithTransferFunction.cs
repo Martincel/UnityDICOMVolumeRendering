@@ -28,6 +28,32 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         Isosurface
     }
 
+    // Gotovi HU pojasevi za tkiva (vidi TissueBandRangeHU). Custom = ručne granice.
+    public enum TissueBand
+    {
+        Custom,
+        Lung,
+        Fat,
+        SoftTissue,
+        ContrastVessels,
+        Bone
+    }
+
+    // Rasponi su namjerno nešto širi od tabličnih vrijednosti (djelomični volumen i šum na rubovima):
+    //   pluća −700…−600, mast −120…−90, mišić +35…+55, jetra ~60, krv +13…+50, spužvasta kost +300…+400,
+    //   kortikalna kost +500…+1900 (Hounsfield scale, Wikipedia); aorta u CT angiografiji ≥ 250 HU,
+    //   granice lumena u literaturi 80…180 HU. Krv bez kontrasta (~40 HU) ima istu gustoću kao mišić, pa
+    //   se žile mogu izdvojiti samo u kontrastnoj seriji, i tada se preklapaju sa spužvastom kosti.
+    public static Vector2 TissueBandRangeHU(TissueBand band) => band switch
+    {
+        TissueBand.Lung => new Vector2(-950f, -500f),
+        TissueBand.Fat => new Vector2(-150f, -50f),
+        TissueBand.SoftTissue => new Vector2(20f, 80f),
+        TissueBand.ContrastVessels => new Vector2(150f, 500f),
+        TissueBand.Bone => new Vector2(300f, 3000f),
+        _ => new Vector2(-1000f, 3000f)
+    };
+
     // Sve postavke materijala + gradient za jedan preset.
     [System.Serializable]
     public class CTPresetSettings
@@ -72,6 +98,16 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     // Prag izopovršine u HU (pretvara se istom formulom kao pri parsiranju sliceva).
     [SerializeField, Range(-1000f, 3000f)]
     float isoValueHU = 300f;
+
+    // HU pojas: prikazuje se samo gustoća između donje i gornje granice (u svim načinima prikaza).
+    [SerializeField]
+    bool huBandEnabled = false;
+    [SerializeField]
+    TissueBand huBandTissue = TissueBand.Custom;
+    [SerializeField, Range(-1000f, 3000f)]
+    float huBandMinHU = 150f;
+    [SerializeField, Range(-1000f, 3000f)]
+    float huBandMaxHU = 500f;
 
     // Prozor sive skale za MIP u HU: ispod min je crno, iznad max bijelo.
     [SerializeField, Range(-1000f, 3000f)]
@@ -173,6 +209,41 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         set { isoValueHU = value; ApplyRenderStyle(); }
     }
 
+    public bool HuBandEnabled
+    {
+        get => huBandEnabled;
+        set { huBandEnabled = value; ApplyRenderStyle(); }
+    }
+
+    public TissueBand HuBandTissue => huBandTissue;
+
+    // Ručna promjena granice prebacuje pojas na Custom; donja ne može prijeći gornju i obrnuto.
+    public float HuBandMinHU
+    {
+        get => huBandMinHU;
+        set { huBandMinHU = Mathf.Clamp(value, -1000f, huBandMaxHU); huBandTissue = TissueBand.Custom; ApplyRenderStyle(); }
+    }
+
+    public float HuBandMaxHU
+    {
+        get => huBandMaxHU;
+        set { huBandMaxHU = Mathf.Clamp(value, huBandMinHU, 3000f); huBandTissue = TissueBand.Custom; ApplyRenderStyle(); }
+    }
+
+    // Postavlja granice gotovog pojasa i uključuje ga; Custom samo isključuje pojas (granice ostaju).
+    public void SetTissueBand(TissueBand band)
+    {
+        huBandTissue = band;
+        huBandEnabled = band != TissueBand.Custom;
+        if (huBandEnabled)
+        {
+            Vector2 range = TissueBandRangeHU(band);
+            huBandMinHU = range.x;
+            huBandMaxHU = range.y;
+        }
+        ApplyRenderStyle();
+    }
+
     // Za izbornike u runtimeu (VR): odabir preseta odmah ga i primijeni.
     public CTPreset Preset
     {
@@ -195,6 +266,10 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         mat.SetFloat("_IsoValue", VolumeGeometry.HuToDensity(isoValueHU));
         mat.SetVector("_MipWindow", new Vector4(
             VolumeGeometry.HuToDensity(mipMinHU), VolumeGeometry.HuToDensity(mipMaxHU), 0f, 0f));
+        mat.SetVector("_HuBand", new Vector4(
+            VolumeGeometry.HuToDensity(Mathf.Min(huBandMinHU, huBandMaxHU)),
+            VolumeGeometry.HuToDensity(Mathf.Max(huBandMinHU, huBandMaxHU)),
+            huBandEnabled ? 1f : 0f, 0f));
 
         if (mat.GetTexture("_Volume") is Texture3D volume)
             mat.SetVector("_VolumeDims", new Vector4(volume.width, volume.height, volume.depth, 0f));
