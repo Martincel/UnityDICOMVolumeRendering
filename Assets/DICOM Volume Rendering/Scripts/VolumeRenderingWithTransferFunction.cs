@@ -16,8 +16,16 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         Lung,
         Brain,
         BloodVessels,
-        MaxIntensityProjection,
+        AllTissue,
         Anatomical  // Sve odjednom: bijele kosti, bež meko tkivo, crvene žile
+    }
+
+    // Način prikaza: slaganje po transfer funkciji (zadano), najveća gustoća duž zrake ili prva izopovršina.
+    public enum RenderStyle
+    {
+        Composite,
+        Mip,
+        Isosurface
     }
 
     // Sve postavke materijala + gradient za jedan preset.
@@ -35,8 +43,13 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         [Range(0f, 1f)]   public float minZ = 0f, maxZ = 1f;
     }
 
-    public const int TFWidth  = 100;
+    // 1024 stupca: gustoća je 16-bitna, a pri 100 stupaca jedan stupac TF-a pokriva ~40 HU.
+    public const int TFWidth  = 1024;
     public const int TFHeight = 64;
+
+    // Radijus četkice u Editoru je zadan u pikselima TF-a širine 100; pri većoj širini se razvlači po x
+    // da kružni potez na previewu ostane iste veličine.
+    const int BrushReferenceWidth = 100;
 
     [SerializeField]
     CTPreset preset = CTPreset.Custom;
@@ -48,6 +61,23 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     // 1 = samo površine tkiva vidljive (alpha = 0 za unutrašnjost)
     [SerializeField, Range(0f, 1f)]
     float gradientInfluence = 0f;
+
+    [SerializeField]
+    RenderStyle renderStyle = RenderStyle.Composite;
+
+    // Headlight osvjetljenje (gradijent gustoće se računa u shaderu). Izopovršina je uvijek osvijetljena.
+    [SerializeField]
+    bool lighting = false;
+
+    // Prag izopovršine u HU (pretvara se istom formulom kao pri parsiranju sliceva).
+    [SerializeField, Range(-1000f, 3000f)]
+    float isoValueHU = 300f;
+
+    // Prozor sive skale za MIP u HU: ispod min je crno, iznad max bijelo.
+    [SerializeField, Range(-1000f, 3000f)]
+    float mipMinHU = -200f;
+    [SerializeField, Range(-1000f, 3000f)]
+    float mipMaxHU = 1500f;
 
     // Lista spremljenih presetova — popunjava se desnim klikom → "Save Current Settings to Preset"
     [SerializeField]
@@ -87,12 +117,14 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
     {
         if (texture_ == null) return;
         paintLock = true;   // blokiraj UpdateTexture dok je bojanje aktivno
-        int r2 = radius * radius;
-        for (int x = cx - radius; x <= cx + radius; x++)
+        float radiusX = radius * (float)TFWidth / BrushReferenceWidth;
+        for (int x = Mathf.CeilToInt(cx - radiusX); x <= cx + radiusX; x++)
         for (int y = cy - radius; y <= cy + radius; y++)
         {
             if (x < 0 || x >= TFWidth || y < 0 || y >= TFHeight) continue;
-            if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r2) continue;
+            float nx = (x - cx) / radiusX;
+            float ny = (float)(y - cy) / radius;
+            if (nx * nx + ny * ny > 1f) continue;
             texture_.SetPixel(x, y, color);
         }
         texture_.Apply(false);
@@ -108,7 +140,71 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
 
     // ── Unity lifecycle ──────────────────────────────────────────────────────
 
-    void Start()  => UpdateTexture();
+    void Start()
+    {
+        UpdateTexture();
+        ApplyRenderStyle();
+    }
+
+    // Promjena u Inspectoru tijekom Playa. Izvan Playa se ne dira asset materijala.
+    void OnValidate()
+    {
+        if (Application.isPlaying && GetComponent<Renderer>() != null)
+            ApplyRenderStyle();
+    }
+
+    // ── Način prikaza i osvjetljenje ─────────────────────────────────────────
+
+    public RenderStyle Style
+    {
+        get => renderStyle;
+        set { renderStyle = value; ApplyRenderStyle(); }
+    }
+
+    public bool Lighting
+    {
+        get => lighting;
+        set { lighting = value; ApplyRenderStyle(); }
+    }
+
+    public float IsoValueHU
+    {
+        get => isoValueHU;
+        set { isoValueHU = value; ApplyRenderStyle(); }
+    }
+
+    // Za izbornike u runtimeu (VR): odabir preseta odmah ga i primijeni.
+    public CTPreset Preset
+    {
+        get => preset;
+        set { preset = value; ApplyPreset(); }
+    }
+
+    // Ključne riječi (MODE_MIP / MODE_ISO / LIGHTING_ON) i parametri idu na materijal. Dimenzije za korak
+    // gradijenta se čitaju s teksture ako je već postavljena (Converter asset); runtime loader ih
+    // postavlja sam nakon učitavanja.
+    public void ApplyRenderStyle()
+    {
+        var mat = Mat;
+        if (mat == null) return;
+
+        SetKeyword(mat, "MODE_MIP", renderStyle == RenderStyle.Mip);
+        SetKeyword(mat, "MODE_ISO", renderStyle == RenderStyle.Isosurface);
+        SetKeyword(mat, "LIGHTING_ON", lighting);
+
+        mat.SetFloat("_IsoValue", VolumeGeometry.HuToDensity(isoValueHU));
+        mat.SetVector("_MipWindow", new Vector4(
+            VolumeGeometry.HuToDensity(mipMinHU), VolumeGeometry.HuToDensity(mipMaxHU), 0f, 0f));
+
+        if (mat.GetTexture("_Volume") is Texture3D volume)
+            mat.SetVector("_VolumeDims", new Vector4(volume.width, volume.height, volume.depth, 0f));
+    }
+
+    static void SetKeyword(Material mat, string keyword, bool on)
+    {
+        if (on) mat.EnableKeyword(keyword);
+        else    mat.DisableKeyword(keyword);
+    }
 
     void Update()
     {
@@ -233,8 +329,8 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 mat.SetFloat("_Intensity", 3f);
                 break;
 
-            case CTPreset.MaxIntensityProjection:
-                // MIP prikazuje sve gustoće podjednako → gradient nije relevantan.
+            case CTPreset.AllTissue:
+                // Sve gustoće prikazane podjednako (slaganje sprijeda prema natrag, nije pravi MIP) → gradient nije relevantan.
                 gradientInfluence = 0f;
                 mat.SetFloat("_GradScale", 5f);
                 mat.SetFloat("_Intensity", 1f);
@@ -260,6 +356,9 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
         texture_.wrapMode   = TextureWrapMode.Clamp;
         texture_.filterMode = FilterMode.Bilinear;
 
+        // Jedno polje za cijelu teksturu (redak po redak, y je vanjska petlja) umjesto
+        // 65k SetPixel poziva.
+        var pixels = new Color32[TFWidth * TFHeight];
         for (int x = 0; x < TFWidth; x++)
         {
             Color c = gradient.Evaluate((float)x / TFWidth);
@@ -268,10 +367,11 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 // gradFactor = 1 uvijek kad je gradientInfluence=0 → isti kao stari 1D TF
                 // gradFactor = y/63 kad je gradientInfluence=1 → samo rubovi su opaque
                 float gradFactor = Mathf.Lerp(1f, (float)y / (TFHeight - 1), gradientInfluence);
-                texture_.SetPixel(x, y, new Color(c.r, c.g, c.b, c.a * gradFactor));
+                pixels[y * TFWidth + x] = new Color(c.r, c.g, c.b, c.a * gradFactor);
             }
         }
 
+        texture_.SetPixels32(pixels);
         texture_.Apply(false);
         Mat.SetTexture("_Transfer", texture_);
     }
@@ -387,8 +487,8 @@ public class VolumeRenderingWithTransferFunction : MonoBehaviour
                 );
                 break;
 
-            case CTPreset.MaxIntensityProjection:
-                // MIP: sve gustoće bijelo, alpha linearno raste.
+            case CTPreset.AllTissue:
+                // Sve gustoće bijelo, alpha linearno raste.
                 g.SetKeys(
                     new GradientColorKey[] {
                         new GradientColorKey(Color.white, 0f),

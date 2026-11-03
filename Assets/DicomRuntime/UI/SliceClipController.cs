@@ -68,7 +68,11 @@ namespace VolumeRendering.Runtime.UI
             }
         }
 
-        void CycleMaskOnly()
+        // 0 = cijeli volumen, 1 = samo oznaka (gustoća tkiva), 2 = samo oznaka (puna boja).
+        public int MaskOnly => _maskOnly;
+
+        // Gumb na Canvasu i VR izbornik dijele isto stanje, pa i natpis gumba ostaje točan.
+        public void CycleMaskOnly()
         {
             _maskOnly = (_maskOnly + 1) % 3;
             if (volumeMaterial != null)

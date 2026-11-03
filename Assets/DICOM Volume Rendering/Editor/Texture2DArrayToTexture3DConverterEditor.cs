@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System;
+using VolumeRendering.Runtime;
 
 namespace VolumeRendering
 {
@@ -32,7 +33,8 @@ public class Texture2DArrayToTexture3DConverterEditor : Editor
     bool Convert()
     {
         var converter  = target as Texture2DArrayToTexture3DConverter;
-        var tex2dArray = converter.texture2DArray;
+        // Kopija: Reverse na serijaliziranoj listi okretao bi redoslijed pri svakom Convertu.
+        var tex2dArray = new System.Collections.Generic.List<Texture2D>(converter.texture2DArray);
         tex2dArray.Reverse();
 
         if (tex2dArray.Count == 0)
@@ -101,9 +103,18 @@ public class Texture2DArrayToTexture3DConverterEditor : Editor
         }
         Debug.Log("[Converter] Gradient magnitude izračunat.");
 
-        // RGBA32 je obavezan — trebamo G kanal za gradijent
-        var tex3d = new Texture3D(w, h, d, TextureFormat.RGBA32, false);
-        tex3d.SetPixels(colors);
+        // RG32 (16 bita po kanalu, 4 B/voxel kao i RGBA32): R = gustoća, G = gradijent. Isto pakiranje
+        // kao runtime DicomVolumeBuilder. Ulazne Texture2D su 8-bitne, pa gustoća ostaje 8-bitne
+        // preciznosti; stari RGBA32 assetovi i dalje rade jer shader čita samo .r i .g.
+        var packed = new ushort[w * h * d * 2];
+        for (int i = 0; i < colors.Length; i++)
+        {
+            packed[i * 2]     = VolumeGeometry.PackUnorm16(colors[i].r);
+            packed[i * 2 + 1] = VolumeGeometry.PackUnorm16(colors[i].g);
+        }
+
+        var tex3d = new Texture3D(w, h, d, TextureFormat.RG32, false);
+        tex3d.SetPixelData(packed, 0);
         tex3d.Apply();
 
         var path = EditorUtility.SaveFilePanelInProject(

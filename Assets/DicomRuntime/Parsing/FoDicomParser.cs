@@ -12,8 +12,8 @@ namespace VolumeRendering.Runtime
     // OSIM Path C koji zahtijeva main thread (Texture2D.LoadImage). Path C je za sada preskočen.
     public class FoDicomParser : IDicomParser
     {
-        const double HU_MIN   = -1000.0;
-        const double HU_RANGE =  4000.0; // HU_MAX(3000) - HU_MIN(-1000)
+        const double HU_MIN   = VolumeGeometry.HuMin;
+        const double HU_RANGE = VolumeGeometry.HuRange;
 
         public DicomSliceData Parse(byte[] dicomBytes)
         {
@@ -39,6 +39,7 @@ namespace VolumeRendering.Runtime
                 // tada ostavljamo null pa sort pada na SliceLocation → InstanceNumber.
                 double[] ipp = TryGetDoubles(dataset, DicomTag.ImagePositionPatient,    3);
                 double[] iop = TryGetDoubles(dataset, DicomTag.ImageOrientationPatient, 6);
+                double[] pixelSpacing = TryGetDoubles(dataset, DicomTag.PixelSpacing, 2);
 
                 if (bitsAlloc != 8 && bitsAlloc != 16) bitsAlloc = 16;
 
@@ -85,7 +86,8 @@ namespace VolumeRendering.Runtime
                     InstanceNumber          = instNum,
                     SeriesInstanceUID       = seriesUid,
                     ImagePositionPatient    = ipp,
-                    ImageOrientationPatient = iop
+                    ImageOrientationPatient = iop,
+                    PixelSpacing            = pixelSpacing
                 };
             }
             catch (Exception e)
@@ -131,6 +133,8 @@ namespace VolumeRendering.Runtime
             return result;
         }
 
+        // Poznato ograničenje: RenderImage vraća 8-bitnu prikaznu sliku, pa je gustoća iz ovog puta
+        // efektivno 8-bitna (256 koraka unutar prozora slicea) čak i u RG32 teksturi.
         static float[] ExtractPathB(byte[] bgra, int pixelCount, double winLow, double winWidth)
         {
             float[] result = new float[pixelCount];

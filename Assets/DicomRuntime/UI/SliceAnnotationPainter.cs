@@ -16,14 +16,21 @@ namespace VolumeRendering.Runtime.UI
         [SerializeField, Min(1)] int brushRadius = 8;
 
         RectTransform _rect;
+        int _lastPx, _lastPy, _lastSlice;
+        bool _hasLast;
 
         void Awake() => _rect = GetComponent<RectTransform>();
 
         public void SetBrushRadius(float radius) => brushRadius = Mathf.Max(1, Mathf.RoundToInt(radius));
 
-        public void OnPointerDown(PointerEventData eventData) => PaintAt(eventData);
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _hasLast = false;
+            PaintAt(eventData);
+        }
+
         public void OnDrag(PointerEventData eventData) => PaintAt(eventData);
-        public void OnPointerUp(PointerEventData eventData) { }
+        public void OnPointerUp(PointerEventData eventData) => _hasLast = false;
 
         void PaintAt(PointerEventData eventData)
         {
@@ -52,7 +59,17 @@ namespace VolumeRendering.Runtime.UI
             int px = SliceViewController.TexelIndex(u, sliceView.VolumeWidth);
             int py = SliceViewController.TexelIndex(v, sliceView.VolumeHeight);
 
-            maskManager.PaintAt(sliceView.CurrentSliceIndex, px, py, brushRadius);
+            // Između dva uzorka miša crtaj niz točaka da potez ne bude isprekidan (kao u VolumeSlicePainter).
+            int slice = sliceView.CurrentSliceIndex;
+            if (_hasLast && _lastSlice == slice)
+                maskManager.PaintStroke(slice, _lastPx, _lastPy, px, py, brushRadius);
+            else
+                maskManager.PaintAt(slice, px, py, brushRadius);
+
+            _lastPx = px;
+            _lastPy = py;
+            _lastSlice = slice;
+            _hasLast = true;
         }
     }
 }

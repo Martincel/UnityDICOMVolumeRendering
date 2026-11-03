@@ -16,5 +16,9 @@ namespace VolumeRendering.Runtime
         // Ako tagovi nisu prisutni, polja ostaju null i sort pada na SliceLocation → InstanceNumber.
         public double[] ImagePositionPatient;    // duljina 3 ili null
         public double[] ImageOrientationPatient; // duljina 6 ili null
+
+        // PixelSpacing (0028,0030) u mm, DICOM redoslijed: [razmak između redova (y), razmak između stupaca (x)].
+        // null ako tag nedostaje — tada se proporcije volumena ne mogu izračunati.
+        public double[] PixelSpacing;            // duljina 2 ili null
     }
 }

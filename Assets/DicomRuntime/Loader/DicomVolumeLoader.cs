@@ -13,7 +13,7 @@ namespace VolumeRendering.Runtime
     //
     // Raspored threadova:
     //   InitializeAsync, GetSliceDataAsync — main thread (FileSource je sync, HttpSource je async)
-    //   Parsiranje + BuildColors            — background thread (Task.Run)
+    //   Parsiranje + Build                  — background thread (Task.Run)
     //   CreateTexture + postavljanje na mat — main thread (Unity API zahtjev)
     public class DicomVolumeLoader : MonoBehaviour
     {
@@ -23,8 +23,16 @@ namespace VolumeRendering.Runtime
         // Korisno za velike datasete koji bi premašili memoriju.
         [SerializeField, Min(1)] int downsampleFactor = 1;
 
+        // Transform volumena (quad s materijalom). Ako je postavljen i applyPhysicalAspect je uključen,
+        // loader nakon učitavanja postavlja localScale prema stvarnim proporcijama serije u mm.
+        // Najveća komponenta autorske skale ostaje referentna veličina (npr. 12.43), mijenja se samo omjer.
+        [SerializeField] Transform volumeTransform;
+        [SerializeField] bool applyPhysicalAspect = true;
+
         // Otkazuje učitavanje u tijeku (npr. na OnDisable / novi load / korisnička akcija).
         CancellationTokenSource _cts;
+
+        float _referenceScale; // najveća komponenta localScale zapamćena u Awake
 
         // Izloženo nakon uspješnog učitavanja — do sad ništa nije čuvalo volumen/dimenzije
         // izvan lokalnih varijabli LoadAsync. Runtime UI sloj (slice scrollbar, anotacije)
@@ -34,11 +42,25 @@ namespace VolumeRendering.Runtime
         public int Height { get; private set; }
         public int Depth { get; private set; }
 
+        // Fizička geometrija serije (x = stupci, y = redovi, z = sliceovi), Vector3.zero ako je nepoznata
+        // (nedostaje PixelSpacing ili pozicije sliceova).
+        public Vector3 VoxelSpacingMm { get; private set; }
+        public Vector3 PhysicalSizeMm { get; private set; }
+
         // Okida se na main threadu odmah nakon što je LoadedVolume/Width/Height/Depth postavljen.
         public event Action OnVolumeLoaded;
 
         // U Playu radi s instancom materijala, ne s assetom (vidi RuntimeMaterial).
-        void Awake() => volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+        void Awake()
+        {
+            volumeMaterial = RuntimeMaterial.Resolve(volumeMaterial);
+
+            if (volumeTransform != null)
+            {
+                Vector3 scale = volumeTransform.localScale;
+                _referenceScale = Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+            }
+        }
 
         // Ulaz s diska (Faza 0). Potpis nepromijenjen — zove ga DicomLoadTest.
         public void LoadFromFolder(string folderPath)
@@ -113,6 +135,34 @@ namespace VolumeRendering.Runtime
             LoadedVolume = null;
         }
 
+        // Razmak voksela i fizička veličina iz builderova izračuna; skala volumena prema proporcijama.
+        // Mora biti PRIJE OnVolumeLoaded: pretplatnici (maska, 2D prikaz) tada već vide konačnu skalu.
+        void ApplyGeometry(DicomVolumeBuilder builder, int w, int h, int d)
+        {
+            if (builder.ColumnSpacingMm <= 0 || builder.RowSpacingMm <= 0 || builder.SliceSpacingMm <= 0)
+            {
+                VoxelSpacingMm = Vector3.zero;
+                PhysicalSizeMm = Vector3.zero;
+                Debug.LogWarning("[DicomVolumeLoader] Nema PixelSpacing ili razmaka sliceova — fizičke proporcije " +
+                                 "nisu poznate, skala volumena ostaje kakva je u sceni.");
+                return;
+            }
+
+            VoxelSpacingMm = new Vector3((float)builder.ColumnSpacingMm, (float)builder.RowSpacingMm, (float)builder.SliceSpacingMm);
+            double[] sizeMm = VolumeGeometry.PhysicalSizeMm(w, h, d,
+                builder.ColumnSpacingMm, builder.RowSpacingMm, builder.SliceSpacingMm);
+            PhysicalSizeMm = new Vector3((float)sizeMm[0], (float)sizeMm[1], (float)sizeMm[2]);
+            Debug.Log($"[DicomVolumeLoader] Razmak voksela {VoxelSpacingMm.x:0.###}×{VoxelSpacingMm.y:0.###}×{VoxelSpacingMm.z:0.###} mm, " +
+                      $"veličina {PhysicalSizeMm.x:0.#}×{PhysicalSizeMm.y:0.#}×{PhysicalSizeMm.z:0.#} mm.");
+
+            if (!applyPhysicalAspect || volumeTransform == null || _referenceScale <= 0f)
+                return;
+
+            double[] aspect = VolumeGeometry.Aspect(sizeMm);
+            volumeTransform.localScale = new Vector3(
+                (float)aspect[0], (float)aspect[1], (float)aspect[2]) * _referenceScale;
+        }
+
         // Glavni async lanac. CancellationToken se provlači do svih I/O i CPU faza.
         public async Task LoadAsync(IDicomDataSource source, string label, CancellationToken ct = default)
         {
@@ -153,14 +203,17 @@ namespace VolumeRendering.Runtime
             //    Stopwatch po fazi (parse / build) MJERI raspodjelu prije bilo kakve optimizacije —
             //    ne pretpostavljamo gdje odlazi vrijeme, nego damo da brojke odgovore.
             DicomVolumeData volumeData = null;
-            Color32[] colors = null;
-            int w = 0, h = 0, d = 0;
+            VolumeBuffer buffer = null;
             long parseMs = 0, buildMs = 0;
+
+            // Format se bira ovdje, na main threadu (SystemInfo nije dostupan iz Task.Run).
+            // Builder je isti za gradnju i upload da geometrija (razmaci voksela) ostane na njemu.
+            bool use16Bit = DicomVolumeBuilder.SupportsRg32;
+            var builder = new DicomVolumeBuilder();
 
             await Task.Run(() =>
             {
                 var parser  = new FoDicomParser();
-                var builder = new DicomVolumeBuilder();
 
                 // ── FAZA: PARSE (paralelno) ──────────────────────────────────
                 // Parse dominira (~61% na 501-datasetu), a FoDicomParser.Parse je stateless
@@ -205,16 +258,16 @@ namespace VolumeRendering.Runtime
                     Height = slices[0].Height
                 };
 
-                // ── FAZA: BUILD (sort + Color32[] + gradient) ────────────────
+                // ── FAZA: BUILD (sort + pakiranje + gradient) ────────────────
                 var swBuild = Stopwatch.StartNew();
-                colors = builder.BuildColors(volumeData, out w, out h, out d);
+                buffer = builder.Build(volumeData, use16Bit);
                 swBuild.Stop();
                 buildMs = swBuild.ElapsedMilliseconds;
             }, ct);
 
             ct.ThrowIfCancellationRequested();
 
-            if (volumeData == null || colors == null)
+            if (volumeData == null || buffer == null)
             {
                 Debug.LogError("[DicomVolumeLoader] Parsiranje nije uspjelo — nema validnih sliceova.");
                 return;
@@ -223,9 +276,10 @@ namespace VolumeRendering.Runtime
             // 5. Kreiraj Texture3D i postavi na materijal — mora biti na main threadu
             // ── FAZA: UPLOAD (Texture3D create + Apply na GPU) ───────────────
             var swUpload = Stopwatch.StartNew();
-            var builder2 = new DicomVolumeBuilder();
-            Texture3D tex = builder2.CreateTexture(colors, w, h, d);
+            Texture3D tex = builder.CreateTexture(buffer);
+            int w = buffer.Width, h = buffer.Height, d = buffer.Depth;
             volumeMaterial.SetTexture("_Volume", tex);
+            volumeMaterial.SetVector("_VolumeDims", new Vector4(w, h, d, 0f)); // korak gradijenta u shaderu
             swUpload.Stop();
 
             var previousVolume = LoadedVolume;
@@ -233,6 +287,7 @@ namespace VolumeRendering.Runtime
             Width = w;
             Height = h;
             Depth = d;
+            ApplyGeometry(builder, w, h, d);
             OnVolumeLoaded?.Invoke();
 
             // Tek nakon događaja: pretplatnici su do tada prešli na novu teksturu.
@@ -241,7 +296,7 @@ namespace VolumeRendering.Runtime
 
             swTotal.Stop();
             Debug.Log(
-                $"[DicomVolumeLoader] Gotovo. {w}×{h}×{d} volumen za {swTotal.ElapsedMilliseconds} ms " +
+                $"[DicomVolumeLoader] Gotovo. {w}×{h}×{d} volumen ({buffer.Format}) za {swTotal.ElapsedMilliseconds} ms " +
                 $"(parse={parseMs} ms, build={buildMs} ms, upload={swUpload.ElapsedMilliseconds} ms).");
         }
     }
