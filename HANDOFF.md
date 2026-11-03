@@ -54,7 +54,33 @@ preko `SliceClipController.CycleMaskOnly`), **Ravnina** uključi/isključi + **P
 - **Okretanje (`75bcf2e`):** hvatanje je bilo nezgrapno (volumen je pratio ruku 1:1 i okretao se oko ruke). Sad se
   pomak ruke prenosi 1:1, a okret ruke se pojačava (`Rotation Gain` na `VrVolumeController`, zadano 2: 90° zgloba
   = 180° modela) i volumen se okreće oko svog središta. Primjenjuje se promjena od prošlog okvira, pa nema skoka.
-  Čeka potvrdu u headsetu; ako je 2 previše/premalo, mijenja se u Inspectoru (1–4).
+  Martin (2026-11-03): bolje, ali neka bude 1,5× (`aa78932`). Grip i okidač hvataju isto (pomak 1:1 + okret 1,5×).
+
+## HU pojas (2026-11-03, `9360b38`, `a7ceb7a`)
+Martinova ideja: prikazati samo gustoću između donje i gornje granice (npr. izdvojiti žile). `_HuBand` u shaderu
+(x/y = granice u gustoći, z = uključeno), `VolumeRenderingWithTransferFunction`: `HuBandEnabled`, `HuBandMinHU`,
+`HuBandMaxHU`, `SetTissueBand(TissueBand)` (i u Inspectoru, pa radi i u 3D sceni).
+- **Slaganje:** uzorci izvan pojasa su prozirni (boja i dalje iz preseta, pa preset mora dati vidljivu boju u pojasu).
+- **MIP:** najveća gustoća unutar pojasa, siva skala razvučena preko pojasa.
+- **Izopovršina:** prva ploha gdje zraka uđe u pojas (donja granica zamjenjuje prag izopovršine).
+- Oznaka (maska) i ravnina slicea ne poštuju pojas.
+- VR izbornik: red "Pojas HU" kruži isključen → pluća → mast → meko tkivo → žile (kontrast) → kost; "Pojas od"/
+  "Pojas do" `-`/`+` po 50 HU (ručna izmjena uključi pojas i prebaci ga na "ručno"). Panel sad ima 10 redova.
+
+| Tkivo | Pojas u projektu | Tablična vrijednost |
+|---|---|---|
+| Pluća | −950…−500 | parenhim −700…−600 (zrak −1000) |
+| Mast | −150…−50 | −120…−90 |
+| Meko tkivo | +20…+80 | mišić +35…+55, jetra ~60, krv +13…+50, bijela/siva tvar +20…+45 |
+| Žile s kontrastom | +150…+500 | aorta u CTA ≥ 250 (cilj 250–350), granica lumena u literaturi 80–180 |
+| Kost | +300…+3000 | spužvasta +300…+400, kortikalna +500…+1900 |
+
+Rasponi su malo širi od tabličnih zbog djelomičnog volumena i šuma. Izvori: Wikipedia "Hounsfield scale",
+Radiopaedia "Hounsfield unit", pregledni radovi o CTA (aortna opacifikacija ≥ 250 HU). **Ograničenje:** krv bez
+kontrasta (~40 HU) ima istu gustoću kao mišić, pa se žile pojasom mogu izdvojiti samo u kontrastnoj seriji; i tada
+spužvasta kost (300–400) upada u pojas žila, pa kost treba odrezati ravninom ili maskom. Je li `series-000003`
+kontrastna, nije provjereno (tag 0018,0010 Contrast/Bolus Agent).
+- **Nije provjereno:** kompilacija shadera i C#-a u Unityju (Unity MCP nije bio spojen) i izgled u headsetu.
 - Provjereno bez headseta (Play, MCP): kompilacija bez grešaka, scena bez nedostajućih skripti, sve stavke mijenjaju
   `Preset`/`Style`/`Lighting`/`IsoValueHU`, ključne riječi i `_IsoValue`/`_MaskOnly`/`_ClipPlaneOn` na instanci
   materijala; ravnina se veže za `Volume`. **Nije provjereno:** ulaz s Wanda, čitljivost i položaj panela u headsetu.
@@ -133,8 +159,8 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
 ## Sljedeće
-1. **Okretanje u headsetu** (`75bcf2e`): potvrditi da je okretanje lakše; po potrebi štimati `Rotation Gain`.
-   VR izbornik je potvrđen.
+1. **HU pojas u headsetu** (`9360b38`, `a7ceb7a`): Console bez grešaka, pojasevi tkiva u sva tri načina, okretanje
+   1,5×. VR izbornik i okretanje su potvrđeni.
 2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
 4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
