@@ -687,7 +687,7 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 
 | Sesija | Stanje | Grana / commit | Napomena |
 |---|---|---|---|
-| S1 | u tijeku (cloud) | `mb/s1-voxels` | loader provjeriti u Unityju pri spajanju |
+| S1 | gotovo u cloudu, čeka provjeru u Unityju | `mb/s1-voxels` @ `45a8ecb` | `VoxelVolume` + `loader.Voxels` (`keepVoxelsOnCpu`); `VoxelVolumeTests` 27/27. Loader nije kompajliran u cloudu: lokalno provjeriti kompilaciju, log "+… MB" i da se 3D scena učitava kao prije; `.meta` za `Segmentation/` generira lokalna sesija |
 | S2 | nije počela | | čeka `mb/s3-grow2d` za `MaskRegion` |
 | S3 | u tijeku (cloud) | `mb/s3-grow2d` | |
 | S4 | nije počela | | |
