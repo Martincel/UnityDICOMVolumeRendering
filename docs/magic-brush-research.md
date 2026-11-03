@@ -404,6 +404,13 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
   ```
 - **Lokalno** (Unity preko MCP-a, headset): sve što dira scene, GPU, render ili treba podatke iz
   `C:\Users\martin\Desktop\DICOMprimjeri`.
+- **Kod u `Assets/` mora proći Unity 2021.3** (API razina .NET Standard 2.1, C# 9):
+  - bez file-scoped namespacea, `global using`, record structova;
+  - bez API-ja iz .NET 5+ (npr. `PriorityQueue<T>`, `BitOperations`, `Random.Shared`);
+  - testni csproj zato postavlja `<LangVersion>9.0</LangVersion>`, a `ImplicitUsings` ostaje `disable`.
+- **`.meta` datoteke se u cloudu ne stvaraju.** Unity ih generira kad lokalna sesija prvi put otvori
+  spojenu granu, i ta ih sesija commita. Tako dvije paralelne sesije ne naprave isti `Segmentation.meta`
+  s različitim GUID-om.
 
 ---
 
