@@ -306,7 +306,8 @@ detached HEAD, vidi HANDOFF "Raspored checkouta").
 graph LR
   S1[S1 Vokseli na CPU-u] --> S4
   S2[S2 Uređivanje maske + undo] --> S4
-  S3[S3 2D algoritam] --> S4[S4 MVP: 2D / 3D / VR]
+  S3[S3 2D algoritam] --> S2
+  S3 --> S4[S4 MVP: 2D / 3D / VR]
   S3 --> S5[S5 3D u ROI]
   S4 --> S5
   S1 --> S6[S6 Klik na površinu]
@@ -318,25 +319,91 @@ graph LR
   S4 --> S9
 ```
 
-| Sesija | Ovisi o | Može paralelno s | Dira scene |
-|---|---|---|---|
-| S1 Vokseli na CPU-u | — | S2, S3 | ne |
-| S2 Uređivanje maske + undo | — | S1, S3 | da (gumb Poništi) |
-| S3 2D algoritam | — | S1, S2 | ne |
-| S4 MVP magic brush | S1, S2, S3 | — | da |
-| S5 3D u ROI | S3 (algoritam), S4 (integracija) | S6, S8 | malo (prekidač 2D/3D) |
-| S6 Klik na površinu | S1, S4 | S5, S7 | ne (ili malo) |
-| S7 Sjemena dodaj/oduzmi | S2, S5 | S6, S9 | moguće (način) |
-| S8 Mjerenje i štimanje | S4 (ponoviti nakon S5) | sve | ne |
-| S9 ML backend (opcija) | S2, S4 | S5–S8 | malo |
+| Sesija | Ovisi o | Može paralelno s | Dira scene | Gdje |
+|---|---|---|---|---|
+| S1 Vokseli na CPU-u | — | S2, S3 | ne | **cloud** (loader provjeriti u Unityju u S4) |
+| S2 Uređivanje maske + undo | S3 (samo `MaskRegion.cs`) | S1 | da (gumb Poništi) | lokalno (Unity, scene) |
+| S3 2D algoritam | — | S1 | ne | **cloud** |
+| S4 MVP magic brush | S1, S2, S3 | — | da | lokalno (Unity, headset) |
+| S5 3D u ROI | S3 (algoritam), S4 (integracija) | S6, S8 | malo (prekidač 2D/3D) | algoritam u cloudu nakon S3, integracija lokalno |
+| S6 Klik na površinu | S1, S4 | S5, S7 | ne (ili malo) | lokalno (usporedba s renderom) |
+| S7 Sjemena dodaj/oduzmi | S2, S5 | S6, S9 | moguće (način) | algoritam u cloudu, integracija lokalno |
+| S8 Mjerenje i štimanje | S4 (ponoviti nakon S5) | sve | ne | lokalno (podaci, headset) |
+| S9 ML backend (opcija) | S2, S4 | S5–S8 | malo | lokalno ili GPU server |
+
+**Spajanje:** svaka sesija pusha svoju granu `mb/<sesija>`. U `feature/magic-brush` je spaja sljedeća
+lokalna sesija koja je treba (npr. S2 spaja `mb/s3-grow2d`) ili Martin:
+`git merge --no-ff mb/s3-grow2d`.
 
 Zajedničko za sve sesije:
 - Čisti C# u `Assets/DicomRuntime/Segmentation/`, namespace `VolumeRendering.Runtime.Segmentation`,
   bez `UnityEngine`.
 - MonoBehaviouri u `UI/` ili `Xr/`.
 - Komentari i UI tekstovi na hrvatskom, kao u ostatku koda.
-- `dotnet test` s `DOTNET_ROLL_FORWARD=Major`.
-- Na kraju sesije ažurirati odjeljak "Stanje sesija" na dnu ovog dokumenta.
+- `dotnet test` s `DOTNET_ROLL_FORWARD=Major` (lokalno je samo .NET 10 runtime).
+- Na kraju sesije ažurirati **samo svoj redak** u odjeljku "Stanje sesija" na dnu ovog dokumenta.
+
+### 5.1 Ugovor između sesija (da se paralelne sesije ne sudare)
+
+**Vlasništvo datoteka:**
+
+| Datoteka / mapa | Vlasnik | Ostali |
+|---|---|---|
+| `Segmentation/VoxelVolume.cs`, `Tests~/VoxelVolumeTests/` | S1 | samo čitaju |
+| `Segmentation/MaskRegion.cs`, `MagicBrushSettings.cs`, `RegionStats.cs`, `Morphology2D.cs`, `RegionGrow2D.cs`, `Tests~/SegmentationTests/` | S3 | S5 i S7 dodaju svoje datoteke i testove u isti projekt |
+| `Annotation/MaskUndoStack.cs` (testovi u `Tests~/MaskSerializerTests`) | S2 | — |
+| `Loader/DicomVolumeLoader.cs` | S1 | — |
+| `Annotation/AnnotationMaskManager.cs`, kistovi, `VrMenu.cs`, scene | S2, pa S4 (redom) | — |
+
+**Raspored voksela** (S1 ga izlaže, S3 ga čita kao sirovi niz, pa ne ovisi o S1):
+- `ushort[] data`, isprepleteno po 2 vrijednosti po vokselu: `data[2·i]` = gustoća, `data[2·i + 1]` = gradijent.
+- Indeks voksela: `i = z·W·H + y·W + x` (isto kao `VolumeBuffer.Rg16` i kao piksel maske `y·W + x` na sliceu z).
+- Gustoća: `raw / 65535 = (HU + 1000) / 4000` (`VolumeGeometry`).
+- RGBA32 fallback S1 pretvara u isti raspored (`R × 257`, `G × 257`).
+- Najveći indeks za 512×512×501 je ~2,6·10⁸, pa `int` je dovoljan.
+
+**`MaskRegion`** (S3 piše, S2 i S4 koriste):
+```csharp
+namespace VolumeRendering.Runtime.Segmentation
+{
+    // Rezultat alata: pravokutnik u pikselima slicea + bajtovi po sliceu (1 = u regiji, 0 = nije).
+    public sealed class MaskRegion
+    {
+        public int MinX { get; }
+        public int MinY { get; }
+        public int Width { get; }
+        public int Height { get; }
+        public IReadOnlyDictionary<int, byte[]> Slices { get; }   // z -> Width*Height bajtova
+        public long VoxelCount { get; }
+        public bool TouchedRoiBorder { get; }                     // regija dodiruje rub ROI-a: "možda curi"
+        // konstruktor i pomoćne metode po izboru S3
+    }
+}
+```
+2D rezultat ima točno jedan slice. Prazna regija ima `VoxelCount = 0` i bez sliceova.
+
+**Potpis 2D algoritma** (S3 piše, S4 zove):
+```csharp
+MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
+                            double spacingXmm, double spacingYmm,
+                            int seedX, int seedY, MagicBrushSettings settings,
+                            CancellationToken ct);
+```
+
+### 5.2 Cloud ili lokalno
+
+- **Cloud sesija** ima repo i internet, ali **nema Unityja, headseta ni DICOM primjera**. Radi samo čisti C# +
+  `dotnet test`. Kod koji ovisi o `UnityEngine` (npr. izmjena loadera u S1) piše se pažljivo i provjerava
+  u Unityju u prvoj lokalnoj sesiji koja ga spoji. Scene se u cloudu ne diraju.
+- .NET 8 SDK u cloudu (provjereno: postojeći testovi 21/21 i 23/23 prolaze):
+  ```bash
+  curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0 --install-dir "$HOME/.dotnet"
+  ```
+  ```bash
+  export PATH="$HOME/.dotnet:$PATH"
+  ```
+- **Lokalno** (Unity preko MCP-a, headset): sve što dira scene, GPU, render ili treba podatke iz
+  `C:\Users\martin\Desktop\DICOMprimjeri`.
 
 ---
 
@@ -349,8 +416,8 @@ Zajedničko za sve sesije:
     `OnVolumeLoaded`, oslobođeno na novo učitavanje ili `OnDestroy`; log s memorijom u MB;
   - `CreateTexture` i dalje oslobađa kopiju teksture (`Rg16` je zaseban .NET niz pa ostaje).
 - **Datoteke:**
-  - nova: `Assets/DicomRuntime/Segmentation/VoxelVolume.cs`, `Assets/DicomRuntime/Tests~/SegmentationTests/`
-    (csproj + testovi);
+  - nova: `Assets/DicomRuntime/Segmentation/VoxelVolume.cs`, `Assets/DicomRuntime/Tests~/VoxelVolumeTests/`
+    (csproj + testovi; zaseban projekt, da se ne sudari sa S3);
   - izmjena: `Loader/DicomVolumeLoader.cs`.
 - **Gotovo kad:**
   - `loader.Voxels` postoji u `OnVolumeLoaded`;
@@ -361,7 +428,7 @@ Zajedničko za sve sesije:
 - **Prompt:**
   > Grana: `mb/s1-voxels` (od `feature/magic-brush`). Pročitaj HANDOFF.md i `docs/magic-brush-research.md`
   > (poglavlja 1 i 5, sesija S1). Napravi S1: CPU pristup vokselima (`VoxelVolume` + `loader.Voxels`) i
-  > xUnit testove u `Tests~/SegmentationTests`. Ne mijenjaj masku ni kistove. Commitaj, pushaj i ažuriraj
+  > xUnit testove u `Tests~/VoxelVolumeTests`. Ne mijenjaj masku ni kistove. Commitaj, pushaj i ažuriraj
   > "Stanje sesija" u dokumentu.
 
 ### S2: Uređivanje maske, undo i raspon oznaka
@@ -379,8 +446,8 @@ Zajedničko za sve sesije:
     `VolumeSlicePainter` (miš i `PaintWithRay`);
   - UI: gumb "Poništi" + Ctrl+Z (3D scena), stavka "Poništi" u `VrMenu`.
 - **Datoteke:**
-  - nove: `Segmentation/MaskRegion.cs`, `Annotation/MaskUndoStack.cs`, testovi u
-    `Tests~/SegmentationTests` (ili `MaskSerializerTests`);
+  - nova: `Annotation/MaskUndoStack.cs`, testovi u `Tests~/MaskSerializerTests` (link na
+    `MaskUndoStack.cs`); `Segmentation/MaskRegion.cs` dolazi iz S3;
   - izmjena: `Annotation/AnnotationMaskManager.cs`, `UI/SliceAnnotationPainter.cs`,
     `UI/VolumeSlicePainter.cs`, `Xr/VrMenu.cs`, obje scene (gumb).
 - **Gotovo kad:**
@@ -390,14 +457,14 @@ Zajedničko za sve sesije:
   - `ApplyRegion` na 100 sliceova prolazi kroz ≥ 13 frameova, bez jednog dugog framea;
   - testovi undo stoga prolaze (granica bajtova, vraćanje nepostojećeg slicea);
   - `MaskSerializerTests` 21/21.
-- **Ovisnosti:** nema. Napomena: S4 koristi `MaskRegion`. Ako S3 krene prije, S3 definira `MaskRegion`,
-  a S2 ga preuzme (dogovor: **S3 vlasnik `MaskRegion.cs`**).
+- **Ovisnosti:** S3, samo zbog `MaskRegion.cs` (vlasnik je S3, vidi 5.1). Undo stog i budžet za `Flush`
+  mogu početi i prije, a `ApplyRegion` tek kad je `mb/s3-grow2d` spojen.
 - **Prompt:**
   > Grana: `mb/s2-mask-edit`. Pročitaj HANDOFF.md i `docs/magic-brush-research.md` (poglavlja 1, 3 i
   > sesija S2). Napravi S2: `ApplyRegion` (dodaj/oduzmi), undo za kist i regije, uklanjanje praznih
-  > sliceova iz `_slices`, `Flush` s budžetom, gumb "Poništi" + Ctrl+Z i stavku u VR izborniku. Ako
-  > `Segmentation/MaskRegion.cs` već postoji (S3), koristi njega. Provjeri u Unityju preko MCP-a, commitaj,
-  > pushaj i ažuriraj "Stanje sesija".
+  > sliceova iz `_slices`, `Flush` s budžetom, gumb "Poništi" + Ctrl+Z i stavku u VR izborniku. Prvo
+  > spoji `mb/s3-grow2d` u `feature/magic-brush` (donosi `Segmentation/MaskRegion.cs`). Provjeri u
+  > Unityju preko MCP-a, commitaj, pushaj i ažuriraj "Stanje sesija".
 
 ### S3: 2D algoritam (čisti C#)
 - **Opseg:**
@@ -408,7 +475,7 @@ Zajedničko za sve sesije:
   - `Segmentation/MaskRegion.cs`;
   - ulaz su sirovi nizovi (`ushort[]` + pomak slicea + širina i visina + razmak), pa ne ovisi o S1;
   - `CancellationToken` se provjerava u petljama.
-- **Datoteke:** nove datoteke iznad i `Tests~/SegmentationTests` (ako S1 nije gotov, S3 stvara csproj).
+- **Datoteke:** nove datoteke iznad i `Tests~/SegmentationTests/` (S3 je vlasnik ovog projekta, vidi 5.1).
 - **Gotovo kad testovi pokrivaju:**
   - dva diska spojena mostom od 1 px: uz r = 1 označen samo jedan, uz r = 0 oba;
   - šumni disk (σ = 20 HU): popunjen bez rupa, uz zatvaranje rupa;
@@ -562,16 +629,28 @@ Zajedničko za sve sesije:
 
 ---
 
-## 6. Otvorena pitanja (za Martina)
+## 6. Odluke i otvorena pitanja (za Martina)
 
-1. **Memorija:** smije li loader trajno čuvati CPU voksele (+263 MB za trenutnu seriju, +525 MB za
-   501 slice)? Prijedlog: da, uz `keepVoxelsOnCpu` koji se može isključiti.
-2. **Testni podaci:** koja CT (i MR) serija bez rupa ide za 3D testove? `series-000003` nije prikladna za
-   3D.
-3. **Kontrole:**
+### Odlučeno (2026-11-03)
+
+1. **Memorija: loader čuva CPU voksele** (+263 MB za trenutnu seriju, +525 MB za 501 slice), uz
+   prekidač `keepVoxelsOnCpu`.
+   - Martin je pitao može li se umjesto toga koristiti spremljena maska. Ne može:
+     - **maska** (Spremi/Učitaj, `MaskSerializer`) je *izlaz*, popis označenih piksela, i dalje se sprema
+       kao dosad;
+     - **vokseli** su *ulaz*, sama CT slika. Magic brush mora vidjeti gustoću oko klika da zna gdje je rub
+       tkiva.
+   - Alternativa bez trajne memorije: na klik izrezati potrebni dio iz `Texture3D` na GPU-u i pročitati ga
+     natrag (`AsyncGPUReadback`). To je +1–3 framea kašnjenja i više koda. Ostaje rezerva ako memorija
+     postane problem.
+2. **Testni podaci za 3D:** jedna od serija iz `C:\Users\martin\Desktop\DICOMprimjeri` (samo lokalno;
+   cloud sesije je nemaju). Koja točno: izabrati u S5 ili S8 i zapisati ovdje.
+3. **Kontrole potvrđene:**
    - desktop: Shift+klik = oduzmi, Ctrl+Z = poništi, drži i povuci = osjetljivost;
    - VR: magic alat bira se u izborniku; okidač = klik; touchpad = osjetljivost umjesto veličine kista.
-   Odgovara li?
+
+### Otvoreno
+
 4. **Oduzmi:** briše regiju izračunatu od klika (prijedlog). Alternativa je gumica. Treba li i obična
    gumica za kist?
 5. **Više oznaka** (npr. tumor i organ zasebno): sad je maska binarna. Izvan opsega ovog plana; ako treba,
@@ -601,9 +680,9 @@ Zajedničko za sve sesije:
 
 | Sesija | Stanje | Grana / commit | Napomena |
 |---|---|---|---|
-| S1 | nije počela | | |
-| S2 | nije počela | | |
-| S3 | nije počela | | |
+| S1 | u tijeku (cloud) | `mb/s1-voxels` | loader provjeriti u Unityju pri spajanju |
+| S2 | nije počela | | čeka `mb/s3-grow2d` za `MaskRegion` |
+| S3 | u tijeku (cloud) | `mb/s3-grow2d` | |
 | S4 | nije počela | | |
 | S5 | nije počela | | |
 | S6 | nije počela | | |
