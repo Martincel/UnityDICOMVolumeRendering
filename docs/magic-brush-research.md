@@ -689,7 +689,7 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 |---|---|---|---|
 | S1 | u tijeku (cloud) | `mb/s1-voxels` | loader provjeriti u Unityju pri spajanju |
 | S2 | nije počela | | čeka `mb/s3-grow2d` za `MaskRegion` |
-| S3 | u tijeku (cloud) | `mb/s3-grow2d` | |
+| S3 | gotovo (cloud) | `mb/s3-grow2d` @ `310e318` | 30/30 testova (`Tests~/SegmentationTests`). 512×512 Release (.NET 8): zadani ROI ~1–4 ms, ROI preko cijelog slicea 10–14 ms; u Unityju (Mono) provjeriti u S4/S8. Odstupanja od plana: erozija diskom (ne kvadratom); klizanje sjemena i prozor statistike gledaju samo piksele unutar maxTol od sjemena; uz `FillHoles` rupe u T se zatvaraju prije erozije (šum). Dodatno: `RegionGrow2D.Diagnostics` (μ, t, upotrijebljeni r). `.meta` nisu stvorene. |
 | S4 | nije počela | | |
 | S5 | nije počela | | |
 | S6 | nije počela | | |
