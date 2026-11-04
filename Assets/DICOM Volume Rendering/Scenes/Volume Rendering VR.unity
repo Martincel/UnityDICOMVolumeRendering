@@ -274,6 +274,8 @@ MonoBehaviour:
   head: {fileID: 2108303128}
   leftHand: {fileID: 1400114945}
   rightHand: {fileID: 414216171}
+  showControllerModels: 1
+  showFrameStats: 1
 --- !u!1 &50630102
 GameObject:
   m_ObjectHideFlags: 0
@@ -287,6 +289,8 @@ GameObject:
   - component: {fileID: 50630105}
   - component: {fileID: 50630104}
   - component: {fileID: 50630103}
+  - component: {fileID: 50630108}
+  - component: {fileID: 50630109}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -308,6 +312,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   loader: {fileID: 1967823717}
   volumeMaterial: {fileID: 2100000, guid: fac9380be039d42d6b22514ac17d4857, type: 2}
+  maxSlicesPerFrame: 8
 --- !u!114 &50630104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -391,6 +396,39 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &50630108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 50630102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51a3f0154b9c5d046af9f76102578557, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maskManager: {fileID: 50630103}
+  undoButton: {fileID: 0}
+--- !u!114 &50630109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 50630102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d8c9363e4f1cb14db851c1112d15650, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  loader: {fileID: 1967823717}
+  maskManager: {fileID: 50630103}
+  tool: 0
+  sensitivity: 2.5
+  subtract: 0
+  debounceSeconds: 0.05
+  showPanel: 1
 --- !u!1 &62853147
 GameObject:
   m_ObjectHideFlags: 0
@@ -1115,6 +1153,7 @@ MonoBehaviour:
   sliceView: {fileID: 600067635}
   maskManager: {fileID: 50630103}
   brushRadius: 8
+  magicTool: {fileID: 50630109}
 --- !u!114 &234625826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4307,6 +4346,15 @@ MonoBehaviour:
     m_NumColorKeys: 5
     m_NumAlphaKeys: 6
   gradientInfluence: 1
+  renderStyle: 0
+  lighting: 0
+  isoValueHU: 300
+  huBandEnabled: 0
+  huBandTissue: 0
+  huBandMinHU: 150
+  huBandMaxHU: 500
+  mipMinHU: -200
+  mipMaxHU: 1500
   presetOverrides: []
   updateTextureInEveryFrame: 1
 --- !u!23 &1288704143
@@ -5841,6 +5889,7 @@ MonoBehaviour:
   orbit: {fileID: 2108303129}
   modeButton: {fileID: 1204263780}
   brushRadius: 8
+  magicTool: {fileID: 50630109}
 --- !u!1 &1822395773
 GameObject:
   m_ObjectHideFlags: 0
@@ -6020,25 +6069,16 @@ MonoBehaviour:
   startInDrawingMode: 0
   brushRadius: 8
   brushSpeed: 15
+  magicTool: {fileID: 50630109}
+  magicSensitivitySpeed: 1.5
   scaleSpeed: 0.8
+  rotationGain: 2
   scaleRange: {x: 0.2, y: 5}
   stickThreshold: 0.6
   deadzone: 0.2
---- !u!114 &1844185242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1844185239}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f831ee6a04814012b45ab6923848398b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  volumeRendering: {fileID: 1288704142}
-  sliceClip: {fileID: 1785273284}
-  panelMaterial: {fileID: 2100000, guid: eded95419e676ff4bac23f679b1f43d8, type: 2}
+  triggerPressAt: 0.55
+  triggerReleaseAt: 0.35
+  showStatusLabel: 1
 --- !u!4 &1844185241
 Transform:
   m_ObjectHideFlags: 0
@@ -6054,6 +6094,29 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1844185242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1844185239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f831ee6a04814012b45ab6923848398b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volumeRendering: {fileID: 1288704142}
+  sliceClip: {fileID: 1785273284}
+  maskManager: {fileID: 50630103}
+  magicTool: {fileID: 50630109}
+  panelMaterial: {fileID: 2100000, guid: eded95419e676ff4bac23f679b1f43d8, type: 2}
+  panelOffset: {x: 0, y: 0.1, z: 0.02}
+  panelEuler: {x: 40, y: 0, z: 0}
+  rayLength: 1.5
+  isoStepHU: 50
+  isoRangeHU: {x: -1000, y: 3000}
+  planeOutlineSize: 0.2
 --- !u!1 &1853282857
 GameObject:
   m_ObjectHideFlags: 0
@@ -6350,6 +6413,7 @@ MonoBehaviour:
   downsampleFactor: 1
   volumeTransform: {fileID: 1288704135}
   applyPhysicalAspect: 1
+  keepVoxelsOnCpu: 1
 --- !u!114 &1967823718
 MonoBehaviour:
   m_ObjectHideFlags: 0
