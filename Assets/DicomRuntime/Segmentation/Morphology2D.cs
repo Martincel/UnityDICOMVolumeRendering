@@ -143,39 +143,81 @@ namespace VolumeRendering.Runtime.Segmentation
         // Zatvaranje rupa: pozadina (nule) se poplavi od ruba maske. Nula koju poplava ne dosegne
         // je rupa i postaje 1. Mijenja "region" na mjestu.
         public static void FillHoles(byte[] region, int width, int height, CancellationToken ct)
+            => FillHoles(region, width, height, 0, ct);
+
+        // Isto, ali zatvara samo rupe od najviše maxHolePixels piksela (0 = sve rupe). Veća rupa
+        // (npr. organ okružen kliknutom masnoćom) ostaje otvorena.
+        public static void FillHoles(byte[] region, int width, int height, int maxHolePixels, CancellationToken ct)
         {
-            // Pozadina = 0 u regiji; poplavimo je s rubova kroz 4-susjedstvo.
+            // outside: 0 = nije dosegnuto, 1 = pozadina povezana s rubom, 2 = rupa koja je već izmjerena.
             var outside = new byte[region.Length];
             var stack = new int[region.Length];
             int top = 0;
 
-            void Push(int i)
+            // Pozadina = 0 u regiji; poplavimo je s rubova kroz 4-susjedstvo.
+            for (int x = 0; x < width; x++) { Push(x, 1); Push((height - 1) * width + x, 1); }
+            for (int y = 0; y < height; y++) { Push(y * width, 1); Push(y * width + width - 1, 1); }
+            Spread(1, null, out _);
+
+            if (maxHolePixels <= 0)
             {
-                if (region[i] == 0 && outside[i] == 0) { outside[i] = 1; stack[top++] = i; }
+                // Bez granice: svaka nedosegnuta nula je rupa.
+                for (int y = 0; y < height; y++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    for (int i = y * width; i < (y + 1) * width; i++)
+                        if (region[i] == 0 && outside[i] == 0) region[i] = 1;
+                }
+                return;
             }
 
-            for (int x = 0; x < width; x++) { Push(x); Push((height - 1) * width + x); }
-            for (int y = 0; y < height; y++) { Push(y * width); Push(y * width + width - 1); }
-
-            int steps = 0;
-            while (top > 0)
+            // S granicom: svaka rupa (4-povezana skupina nedosegnutih nula) se izmjeri i zatvori samo ako je mala.
+            var members = new int[region.Length];
+            for (int start = 0; start < region.Length; start++)
             {
-                if ((++steps & 4095) == 0) ct.ThrowIfCancellationRequested();
+                if (region[start] != 0 || outside[start] != 0) continue;
+                if ((start & 4095) == 0) ct.ThrowIfCancellationRequested();
 
-                int i = stack[--top];
-                int x = i % width;
-                if (x > 0) Push(i - 1);
-                if (x < width - 1) Push(i + 1);
-                if (i >= width) Push(i - width);
-                if (i + width < region.Length) Push(i + width);
+                Push(start, 2);
+                Spread(2, members, out int count);
+                if (count <= maxHolePixels)
+                    for (int m = 0; m < count; m++)
+                        region[members[m]] = 1;
             }
 
-            for (int y = 0; y < height; y++)
+            void Push(int i, byte mark)
             {
-                ct.ThrowIfCancellationRequested();
-                for (int i = y * width; i < (y + 1) * width; i++)
-                    if (region[i] == 0 && outside[i] == 0) region[i] = 1;
+                if (region[i] == 0 && outside[i] == 0) { outside[i] = mark; stack[top++] = i; }
             }
+
+            // Širi oznaku "mark" od piksela na stogu; ako je zadan "collected", u njega upisuje dosegnute piksele.
+            void Spread(byte mark, int[] collected, out int count)
+            {
+                count = 0;
+                int steps = 0;
+                while (top > 0)
+                {
+                    if ((++steps & 4095) == 0) ct.ThrowIfCancellationRequested();
+
+                    int i = stack[--top];
+                    if (collected != null) collected[count] = i;
+                    count++;
+                    int x = i % width;
+                    if (x > 0) Push(i - 1, mark);
+                    if (x < width - 1) Push(i + 1, mark);
+                    if (i >= width) Push(i - width, mark);
+                    if (i + width < region.Length) Push(i + width, mark);
+                }
+            }
+        }
+
+        // Površina u mm² → broj piksela uz zadani razmak (zaokruženo prema dolje). 0 ili manje = 0 (bez granice).
+        public static int AreaToPixels(double areaMm2, double spacingXmm, double spacingYmm)
+        {
+            if (!(areaMm2 > 0) || !(spacingXmm > 0) || !(spacingYmm > 0))
+                return 0;
+            double pixels = Math.Floor(areaMm2 / (spacingXmm * spacingYmm) + 1e-9);
+            return pixels >= int.MaxValue ? int.MaxValue : Math.Max(1, (int)pixels);
         }
     }
 }

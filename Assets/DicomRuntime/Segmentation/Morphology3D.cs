@@ -195,6 +195,11 @@ namespace VolumeRendering.Runtime.Segmentation
         // Zatvaranje rupa po sliceu (Morphology2D.FillHoles na svakom z): ono što korisnik vidi kao rupu
         // u sliceu se zatvori, a udubljenja otvorena prema rubu slicea ostaju. Mijenja "mask" na mjestu.
         public static void FillHolesPerSlice(byte[] mask, int width, int height, int depth, CancellationToken ct)
+            => FillHolesPerSlice(mask, width, height, depth, 0, ct);
+
+        // Isto, ali po sliceu zatvara samo rupe od najviše maxHolePixels piksela (0 = sve rupe).
+        public static void FillHolesPerSlice(byte[] mask, int width, int height, int depth, int maxHolePixels,
+                                             CancellationToken ct)
         {
             int plane = width * height;
             var slice = new byte[plane];
@@ -210,7 +215,7 @@ namespace VolumeRendering.Runtime.Segmentation
                 }
                 if (!any) continue;
 
-                Morphology2D.FillHoles(slice, width, height, ct);
+                Morphology2D.FillHoles(slice, width, height, maxHolePixels, ct);
                 Array.Copy(slice, 0, mask, offset, plane);
             }
         }

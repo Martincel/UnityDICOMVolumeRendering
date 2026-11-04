@@ -6,11 +6,17 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Unity 2021.3 prevodi isti kod najviše kao C# 9. -->
+    <LangVersion>9.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Linkamo čisti serializator iz Unity projekta (bez kopiranja). -->
     <Compile Include="../../Annotation/MaskSerializer.cs" Link="MaskSerializer.cs" />
+    <!-- Undo i upis regije (S2, čisti dio) te MaskRegion iz Segmentation/ koji ApplyRegion prima. -->
+    <Compile Include="../../Annotation/MaskEditing.cs" Link="MaskEditing.cs" />
+    <Compile Include="../../Annotation/MaskUndoStack.cs" Link="MaskUndoStack.cs" />
+    <Compile Include="../../Segmentation/MaskRegion.cs" Link="MaskRegion.cs" />
   </ItemGroup>
 
   <ItemGroup>

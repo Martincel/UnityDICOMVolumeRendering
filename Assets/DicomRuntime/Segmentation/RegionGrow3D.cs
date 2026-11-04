@@ -12,10 +12,12 @@ namespace VolumeRendering.Runtime.Segmentation
     //      samo vokseli "istog tkiva" (unutar maxTol od sjemena). t = clamp(k·σ, minTol, maxTol).
     //   3. T = gustoća u [μ − t, μ + t] i rubni stop iz G kanala (G ≤ EdgeStop; 0 = isključeno).
     //      Uz zatvaranje rupa, rupe u T se po sliceu zatvore već ovdje (kao u 2D: šum ne smije razbiti eroziju).
+    //      Zatvaraju se samo rupe do MaxHoleAreaMm2 po sliceu (i u koraku 7).
     //   4. E = T erodiran elipsoidom (rx, ry, rz iz mm po osi; rz je često 0–1). Ako sjeme nije u E,
     //      smanjuj r (do 0).
     //   5. R = 6-povezan flood od sjemena kroz E (prekid iznad MaxVoxels).
     //   6. R = geodetska dilatacija R za r koraka unutar T.
+    //  6b. Uz rubni stop: još jedan korak dilatacije kroz interval gustoće (vrati sloj uz rub).
     //   7. Zatvaranje rupa po sliceu.
     //   8. Iznad MaxVoxels: prazna regija i poruka u Diagnostics. Inače MaskRegion: pravokutnik = xy ROI,
     //      samo sliceovi s vokselima.
@@ -104,6 +106,7 @@ namespace VolumeRendering.Runtime.Segmentation
             int rw = roi.Width, rh = roi.Height, rd = roi.Depth;
             var inT = new byte[rw * rh * rd];
             bool edgeStop = settings.EdgeStop > 0;
+            byte[] inRange = edgeStop ? new byte[rw * rh * rd] : null;   // bez rubnog stopa, za korak 6b
             double edgeRaw = settings.EdgeStop * 65535.0;
             for (int z = 0; z < rd; z++)
             {
@@ -117,7 +120,11 @@ namespace VolumeRendering.Runtime.Segmentation
                         if (insideRoi[dst + x] == 0) continue;
                         int d = data[src];
                         if (d < lo || d > hi) continue;
-                        if (edgeStop && data[src + 1] > edgeRaw) continue;
+                        if (edgeStop)
+                        {
+                            inRange[dst + x] = 1;
+                            if (data[src + 1] > edgeRaw) continue;
+                        }
                         inT[dst + x] = 1;
                     }
                 }
@@ -130,8 +137,9 @@ namespace VolumeRendering.Runtime.Segmentation
                 return MaskRegion.Empty();
 
             // 3b. Rupe u T po sliceu (vidi 2D, korak 3b).
+            int maxHolePixels = Morphology2D.AreaToPixels(settings.MaxHoleAreaMm2, spacingXmm, spacingYmm);
             if (settings.FillHoles)
-                Morphology3D.FillHolesPerSlice(inT, rw, rh, rd, ct);
+                Morphology3D.FillHolesPerSlice(inT, rw, rh, rd, maxHolePixels, ct);
 
             // 4. Anti-leak: erozija elipsoidom. Ako sjeme ne preživi, smanjuj r po svim osima.
             int rx = RadiusInVoxels(settings.AntiLeakRadiusMm, spacingXmm);
@@ -163,9 +171,14 @@ namespace VolumeRendering.Runtime.Segmentation
                 // 6. Vrati oblik: geodetska dilatacija za r koraka, samo unutar T.
                 Morphology3D.GeodesicDilate(region, inT, rw, rh, rd, rx, ry, rz, ct);
 
+                // 6b. Rubni stop je izbacio i sloj tik uz rub (visok G, gustoća u intervalu). Jedan korak
+                //     dilatacije kroz interval gustoće ga vrati (vidi RegionGrow2D, korak 6b).
+                if (edgeStop)
+                    Morphology3D.GeodesicDilate(region, inRange, rw, rh, rd, 1, 1, 1, ct);
+
                 // 7. Zatvaranje rupa po sliceu.
                 if (settings.FillHoles)
-                    Morphology3D.FillHolesPerSlice(region, rw, rh, rd, ct);
+                    Morphology3D.FillHolesPerSlice(region, rw, rh, rd, maxHolePixels, ct);
 
                 exceeded = CountOnes(region) > maxVoxels;
             }

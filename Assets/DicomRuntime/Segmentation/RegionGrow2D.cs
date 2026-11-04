@@ -12,10 +12,12 @@ namespace VolumeRendering.Runtime.Segmentation
     //      (piksele unutar maxTol od sjemena), da žila uža od prozora ne pokvari statistiku.
     //   3. T = gustoća u [μ − t, μ + t] (i opcionalno gradijent ≤ g), samo unutar kruga.
     //      Uz zatvaranje rupa, rupe u T se zatvore već ovdje (šum ne smije razbiti eroziju).
+    //      Zatvaraju se samo rupe do MaxHoleAreaMm2 (i u koraku 7), da veće strukture ostanu otvorene.
     //   4. E = T erodiran diskom radijusa r (mm → pikseli po osi). Ako sjeme nije u E: r = r − 1
     //      i ponovi (do r = 0).
     //   5. R = 4-povezan flood od sjemena kroz E.
     //   6. R = geodetska dilatacija R za r koraka unutar T.
+    //  6b. Uz rubni stop: još jedan korak dilatacije kroz interval gustoće (vrati sloj uz rub).
     //   7. Zatvaranje rupa.
     //   8. MaskRegion (pravokutnik ROI-a) + TouchedRoiBorder.
     public static class RegionGrow2D
@@ -93,8 +95,10 @@ namespace VolumeRendering.Runtime.Segmentation
             diagnostics.ToleranceHu = tolerance / RegionStats.RawPerHu;
 
             // 3. T = pikseli u intervalu (i ispod rubnog praga), samo unutar kruga.
+            //    inRange = isto, ali bez rubnog stopa (treba samo kad je rubni stop uključen, za korak 6b).
             var inT = new byte[roiW * roiH];
             bool edgeStop = settings.EdgeStop > 0;
+            byte[] inRange = edgeStop ? new byte[roiW * roiH] : null;
             for (int y = 0; y < roiH; y++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -105,8 +109,12 @@ namespace VolumeRendering.Runtime.Segmentation
                     if (insideRoi[dst + x] == 0) continue;
                     int d = data[src];
                     if (d < lo || d > hi) continue;
-                    if (edgeStop && RegionStats.InPlaneGradient(data, sliceOffset, width, height, minX + x, minY + y) > settings.EdgeStop)
-                        continue;
+                    if (edgeStop)
+                    {
+                        inRange[dst + x] = 1;
+                        if (RegionStats.InPlaneGradient(data, sliceOffset, width, height, minX + x, minY + y) > settings.EdgeStop)
+                            continue;
+                    }
                     inT[dst + x] = 1;
                 }
             }
@@ -121,8 +129,9 @@ namespace VolumeRendering.Runtime.Segmentation
             //     probuši T, erozija oko svake rupe pojede disk radijusa r i E se raspadne na otoke, pa
             //     flood od sjemena ne pokrije cijelo tkivo. Rezultat bi ionako dobio zatvorene rupe
             //     (korak 7), a mostovi prema van ostaju tanki, pa anti-leak radi isto.
+            int maxHolePixels = Morphology2D.AreaToPixels(settings.MaxHoleAreaMm2, spacingXmm, spacingYmm);
             if (settings.FillHoles)
-                Morphology2D.FillHoles(inT, roiW, roiH, ct);
+                Morphology2D.FillHoles(inT, roiW, roiH, maxHolePixels, ct);
 
             // 4. Anti-leak: erozija za r. Ako sjeme ne preživi, smanjuj r (klik u tankoj strukturi).
             int rx = RadiusInPixels(settings.AntiLeakRadiusMm, spacingXmm);
@@ -146,9 +155,15 @@ namespace VolumeRendering.Runtime.Segmentation
             // 6. Vrati oblik: geodetska dilatacija za r koraka, samo unutar T.
             Morphology2D.GeodesicDilate(region, inT, roiW, roiH, rx, ry, ct);
 
+            // 6b. Rubni stop je zaustavio rast, ali je izbacio i sloj tik uz rub (visok gradijent, gustoća u
+            //     intervalu). Jedan korak dilatacije kroz interval gustoće (bez rubnog stopa) ga vrati.
+            //     Dalje ne ide, pa regija ne prelazi u susjedno tkivo slične gustoće.
+            if (edgeStop)
+                Morphology2D.GeodesicDilate(region, inRange, roiW, roiH, 1, 1, ct);
+
             // 7. Zatvaranje rupa.
             if (settings.FillHoles)
-                Morphology2D.FillHoles(region, roiW, roiH, ct);
+                Morphology2D.FillHoles(region, roiW, roiH, maxHolePixels, ct);
 
             // 8. Rezultat. Rub ROI-a = piksel regije čiji je susjed u slici, ali izvan kruga.
             bool touched = TouchesRoiBorder(region, insideRoi, roiW, roiH, minX, minY, width, height);
