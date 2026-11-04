@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using VolumeRendering.Runtime.Segmentation;
 using Debug = UnityEngine.Debug;
 
 namespace VolumeRendering.Runtime
@@ -29,6 +30,11 @@ namespace VolumeRendering.Runtime
         [SerializeField] Transform volumeTransform;
         [SerializeField] bool applyPhysicalAspect = true;
 
+        // Čuva voksele (gustoća + gradijent) na CPU-u nakon uploada, za magic brush i ostale alate
+        // koji čitaju gustoću. Cijena: 4 B po vokselu (512×512×251 ≈ 263 MB). Isključiti u scenama
+        // bez anotacije; tada Voxels ostaje null.
+        [SerializeField] bool keepVoxelsOnCpu = true;
+
         // Otkazuje učitavanje u tijeku (npr. na OnDisable / novi load / korisnička akcija).
         CancellationTokenSource _cts;
 
@@ -46,6 +52,10 @@ namespace VolumeRendering.Runtime
         // (nedostaje PixelSpacing ili pozicije sliceova).
         public Vector3 VoxelSpacingMm { get; private set; }
         public Vector3 PhysicalSizeMm { get; private set; }
+
+        // CPU vokseli zadnjeg učitanog volumena (samo za čitanje), null ako je keepVoxelsOnCpu isključen.
+        // Postavlja se zajedno s Width/Height/Depth, prije OnVolumeLoaded.
+        public VoxelVolume Voxels { get; private set; }
 
         // Okida se na main threadu odmah nakon što je LoadedVolume/Width/Height/Depth postavljen.
         public event Action OnVolumeLoaded;
@@ -133,6 +143,7 @@ namespace VolumeRendering.Runtime
             if (LoadedVolume != null)
                 Destroy(LoadedVolume);
             LoadedVolume = null;
+            Voxels = null; // pusti CPU voksele (GC)
         }
 
         // Razmak voksela i fizička veličina iz builderova izračuna; skala volumena prema proporcijama.
@@ -161,6 +172,34 @@ namespace VolumeRendering.Runtime
             double[] aspect = VolumeGeometry.Aspect(sizeMm);
             volumeTransform.localScale = new Vector3(
                 (float)aspect[0], (float)aspect[1], (float)aspect[2]) * _referenceScale;
+        }
+
+        // Zamijeni CPU voksele novima (stari idu GC-u). Razmak iz buildera, 0 = nepoznato.
+        void SetVoxels(ushort[] data, DicomVolumeBuilder builder, int w, int h, int d)
+        {
+            if (data == null)
+            {
+                Voxels = null;
+                return;
+            }
+
+            Voxels = new VoxelVolume(data, w, h, d,
+                builder.ColumnSpacingMm, builder.RowSpacingMm, builder.SliceSpacingMm);
+            Debug.Log($"[DicomVolumeLoader] Vokseli ostaju na CPU-u (keepVoxelsOnCpu): " +
+                      $"+{Voxels.SizeBytes / 1e6:0} MB RAM-a.");
+        }
+
+        // RGBA32 fallback → isti raspored kao Rg16: [2·i] = R × 257 (gustoća), [2·i + 1] = G × 257 (gradijent).
+        // Zove se iz Task.Run (veliki volumen je ~10⁸ voksela).
+        static ushort[] ToInterleaved16(Color32[] rgba8)
+        {
+            var data = new ushort[rgba8.Length * 2];
+            for (int i = 0; i < rgba8.Length; i++)
+            {
+                data[2 * i]     = VoxelVolume.Expand8To16(rgba8[i].r);
+                data[2 * i + 1] = VoxelVolume.Expand8To16(rgba8[i].g);
+            }
+            return data;
         }
 
         // Glavni async lanac. CancellationToken se provlači do svih I/O i CPU faza.
@@ -204,7 +243,9 @@ namespace VolumeRendering.Runtime
             //    ne pretpostavljamo gdje odlazi vrijeme, nego damo da brojke odgovore.
             DicomVolumeData volumeData = null;
             VolumeBuffer buffer = null;
+            ushort[] voxelData = null; // CPU vokseli za Voxels (null ako se ne čuvaju)
             long parseMs = 0, buildMs = 0;
+            bool keepVoxels = keepVoxelsOnCpu; // pročitano na main threadu
 
             // Format se bira ovdje, na main threadu (SystemInfo nije dostupan iz Task.Run).
             // Builder je isti za gradnju i upload da geometrija (razmaci voksela) ostane na njemu.
@@ -263,6 +304,11 @@ namespace VolumeRendering.Runtime
                 buffer = builder.Build(volumeData, use16Bit);
                 swBuild.Stop();
                 buildMs = swBuild.ElapsedMilliseconds;
+
+                // CPU vokseli: 16-bitni put dijeli isti niz (bez kopiranja), RGBA32 fallback se
+                // jednom pretvori u isti isprepleteni raspored. Još smo na background threadu.
+                if (keepVoxels)
+                    voxelData = buffer.Rg16 ?? ToInterleaved16(buffer.Rgba8);
             }, ct);
 
             ct.ThrowIfCancellationRequested();
@@ -288,6 +334,7 @@ namespace VolumeRendering.Runtime
             Height = h;
             Depth = d;
             ApplyGeometry(builder, w, h, d);
+            SetVoxels(voxelData, builder, w, h, d);
             OnVolumeLoaded?.Invoke();
 
             // Tek nakon događaja: pretplatnici su do tada prešli na novu teksturu.

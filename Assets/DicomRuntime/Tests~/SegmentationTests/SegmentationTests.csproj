@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Unity 2021.3 podržava C# 9, pa testiramo istom razinom jezika. -->
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Linkamo čisti C# iz Unity projekta (bez kopiranja). -->
+    <Compile Include="../../Segmentation/MaskRegion.cs" Link="Segmentation/MaskRegion.cs" />
+    <Compile Include="../../Segmentation/MagicBrushSettings.cs" Link="Segmentation/MagicBrushSettings.cs" />
+    <Compile Include="../../Segmentation/RegionStats.cs" Link="Segmentation/RegionStats.cs" />
+    <Compile Include="../../Segmentation/Morphology2D.cs" Link="Segmentation/Morphology2D.cs" />
+    <Compile Include="../../Segmentation/RegionGrow2D.cs" Link="Segmentation/RegionGrow2D.cs" />
+    <Compile Include="../../Segmentation/Morphology3D.cs" Link="Segmentation/Morphology3D.cs" />
+    <Compile Include="../../Segmentation/RegionGrow3D.cs" Link="Segmentation/RegionGrow3D.cs" />
+    <!-- HU pretvorba (HuMin, HuRange). -->
+    <Compile Include="../../Building/VolumeGeometry.cs" Link="Building/VolumeGeometry.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>
