@@ -124,6 +124,7 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
   bude točna.
 
 ## Ručna provjera (3D scena, pa VR)
+**Prošla** (Martin, 2026-11-04: "prošao sam je, radi"). Za stavku 1 vrijedi Nalaz o `series-000003`.
 1. Isti dataset: proporcije oko 12.43 : 11.56 : 5.63; Console ispisuje format (RG32), razmak i veličinu u mm.
 2. CT presetovi izgledaju kao prije ili bolje (manje stepenica u SoftTissue/Brain).
 3. 2D prikaz slicea, crtanje maske u 2D i 3D, Spremi/Učitaj masku, "kroz tkivo", tanki sloj (9 sliceova).
@@ -174,7 +175,7 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
   datotekama idu nakon S2/S4 ili uz dogovor s integracijskom sesijom magic brusha.
 
 ## Sljedeće
-1. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
-2. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
-3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
-4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+1. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
+2. Merge u `feature/vr-vive` (ručna provjera je prošla): u glavnom checkoutu `git switch feature/vr-vive` i
+   `git merge --ff-only feature/volume-format`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije.
