@@ -67,7 +67,10 @@ namespace VolumeRendering.Runtime.UI
             if (_active == on)
                 return;
             _active = on;
+            if ((_painting || _rayPressed) && maskManager != null)
+                maskManager.EndEdit();   // potez prekinut isključivanjem crtanja
             _painting = false;
+            _rayPressed = false;
             _hasLast = false;
 
             if (orbit != null)
@@ -153,9 +156,13 @@ namespace VolumeRendering.Runtime.UI
             {
                 _painting = inView && !overUi;
                 _hasLast = false;
+                if (_painting)
+                    maskManager.BeginEdit();   // cijeli potez je jedna operacija za Poništi
             }
             if (Input.GetMouseButtonUp(0))
             {
+                if (_painting)
+                    maskManager.EndEdit();
                 _painting = false;
                 _hasLast = false;
             }
@@ -185,6 +192,8 @@ namespace VolumeRendering.Runtime.UI
             worldHit = default;
             if (!_active || volume == null || sliceView == null || maskManager == null)
             {
+                if (_rayPressed && maskManager != null)
+                    maskManager.EndEdit();
                 _rayPressed = false;
                 return false;
             }
@@ -200,6 +209,10 @@ namespace VolumeRendering.Runtime.UI
 
             if (!pressed || !_rayPressed)
                 _hasLast = false;
+            if (pressed && !_rayPressed)
+                maskManager.BeginEdit();
+            else if (!pressed && _rayPressed)
+                maskManager.EndEdit();
             _rayPressed = pressed;
 
             if (pressed && hit)

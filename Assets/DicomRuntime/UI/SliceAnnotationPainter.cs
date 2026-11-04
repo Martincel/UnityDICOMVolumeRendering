@@ -26,11 +26,19 @@ namespace VolumeRendering.Runtime.UI
         public void OnPointerDown(PointerEventData eventData)
         {
             _hasLast = false;
+            if (maskManager != null)
+                maskManager.BeginEdit();   // cijeli potez je jedna operacija za Poništi
             PaintAt(eventData);
         }
 
         public void OnDrag(PointerEventData eventData) => PaintAt(eventData);
-        public void OnPointerUp(PointerEventData eventData) => _hasLast = false;
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            _hasLast = false;
+            if (maskManager != null)
+                maskManager.EndEdit();
+        }
 
         void PaintAt(PointerEventData eventData)
         {

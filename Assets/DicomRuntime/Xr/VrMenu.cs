@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using VolumeRendering.Runtime.Annotation;
 using VolumeRendering.Runtime.UI;
 
 namespace VolumeRendering.Runtime.Xr
@@ -23,6 +24,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] VolumeRenderingWithTransferFunction volumeRendering;
         // Opcionalno: bez njega se red "Samo oznaka" ne prikazuje.
         [SerializeField] SliceClipController sliceClip;
+        // Opcionalno: bez njega se stavka "Poništi" ne prikazuje.
+        [SerializeField] AnnotationMaskManager maskManager;
         // Proziran materijal bez zapisa dubine (Sprites/Default), da panel ne izreže rupu u volumenu.
         [SerializeField] Material panelMaterial;
 
@@ -439,6 +442,9 @@ namespace VolumeRendering.Runtime.Xr
             if (sliceClip != null)
                 rows.Add(y => Row(y, MaskOnlyName, CycleMaskOnly));
             rows.Add(y => Row(y, ClipName, ToggleClipPlane, ("Postavi", BeginPlacement, 0.06f, false)));
+            if (maskManager != null)
+                rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
+                                  () => maskManager.Undo()));
 
             float height = rows.Count * RowHeight + (rows.Count + 1) * Gap;
             _panelRect = new Rect(-Width * 0.5f, -height * 0.5f, Width, height);

@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
 using VolumeRendering.Runtime;
+using VolumeRendering.Runtime.Segmentation;
 
 namespace VolumeRendering.Runtime.Annotation
 {
@@ -28,6 +29,13 @@ namespace VolumeRendering.Runtime.Annotation
         [SerializeField] DicomVolumeLoader loader;
         [SerializeField] Material volumeMaterial;
 
+        // Najviše sliceova koji se po frameu šalju na GPU (ostatak čeka idući frame). Veliki zahvat
+        // (ApplyRegion preko 100 sliceova, Očisti, Učitaj) tako ne stvara jedan dugi frame.
+        [SerializeField, Min(1)] int maxSlicesPerFrame = 8;
+
+        // Poništavanje: jedna operacija = potez kista, ApplyRegion, Očisti ili Učitaj.
+        readonly MaskUndoStack _undo = new MaskUndoStack();
+
         Texture2DArray _mask;
         Texture2D _staging;   // jedan slice, izvor za Graphics.CopyTexture
         bool _gpuCopy;
@@ -50,6 +58,11 @@ namespace VolumeRendering.Runtime.Annotation
         // bio je teško uočljiv highlight u punom 3D raymarchu.
         public Texture2DArray Mask => _mask;
         public event Action OnMaskChanged;
+
+        public bool CanUndo => _undo.CanUndo;
+        public int Width => _width;
+        public int Height => _height;
+        public int Depth => _depth;
 
         void Awake()
         {
@@ -83,6 +96,7 @@ namespace VolumeRendering.Runtime.Annotation
             DestroyTextures();   // maska prethodnog volumena (inače ostaje na GPU-u)
             _slices.Clear();
             _pending.Clear();
+            _undo.Clear();
             _empty = new byte[_width * _height];
             _gpuCopy = (SystemInfo.copyTextureSupport & CopyTextureSupport.DifferentTypes) != 0;
 
@@ -151,9 +165,60 @@ namespace VolumeRendering.Runtime.Annotation
             // Debljina kista u sliceovima: piše u raspon sliceIndex-k .. sliceIndex+k (0 = samo trenutni).
             int first = Mathf.Max(0, sliceIndex - _sliceHalfThickness);
             int last = Mathf.Min(_depth - 1, sliceIndex + _sliceHalfThickness);
+
+            // Poziv izvan poteza (bez BeginEdit) postaje vlastita operacija, pa je i on poništiv.
+            bool ownEdit = !_undo.IsRecording;
+            if (ownEdit)
+                _undo.Begin();
             for (int s = first; s <= last; s++)
                 PaintSlice(s, px, py, radius);
-            // Na GPU ide u LateUpdate, jednom po frameu za sve poteze u tom frameu.
+            if (ownEdit)
+                _undo.End();
+            // Na GPU ide u LateUpdate, najviše maxSlicesPerFrame sliceova po frameu.
+        }
+
+        // Početak i kraj korisnikova poteza (pritisak i otpuštanje kista): sve između je jedna operacija
+        // koju Poništi vraća odjednom.
+        public void BeginEdit()
+        {
+            if (_mask != null)
+                _undo.Begin();
+        }
+
+        public void EndEdit() => _undo.End();
+
+        // Poništava zadnju operaciju. Vraća false ako nema što poništiti.
+        public bool Undo()
+        {
+            if (_mask == null || !_undo.CanUndo)
+                return false;
+
+            _pending.UnionWith(_undo.Undo(_slices));
+            return true;
+        }
+
+        // Upisuje regiju (magic brush) kao jednu operaciju koja se može poništiti. Sliceovi koji ostanu prazni
+        // uklanjaju se iz _slices. Na GPU idu postupno (maxSlicesPerFrame po frameu). Vraća broj promijenjenih
+        // sliceova.
+        public int ApplyRegion(MaskRegion region, MaskEditMode mode)
+        {
+            if (_mask == null || region == null)
+                return 0;
+
+            _undo.Begin();
+            List<int> changed;
+            try
+            {
+                changed = MaskEditing.ApplyRegion(_slices, _width, _height, _depth, region, mode,
+                    z => _undo.RecordBefore(z, _slices));
+            }
+            finally
+            {
+                _undo.End();
+            }
+
+            _pending.UnionWith(changed);
+            return changed.Count;
         }
 
         // Potez od prethodne do nove točke na istom sliceu: točke s korakom ≈ radius/2 da potez ne ostane
@@ -181,12 +246,14 @@ namespace VolumeRendering.Runtime.Annotation
 
         void OnDisable()
         {
+            _undo.End();   // potez prekinut gašenjem komponente ne smije ostati otvoren
             if (_pending.Count > 0)
-                Flush();
+                Flush(int.MaxValue);
         }
 
-        // Šalje izmijenjene sliceove na GPU i javlja promjenu (2D prikaz se ponovno iscrta).
-        void Flush()
+        // Šalje izmijenjene sliceove na GPU (najviše budget po pozivu, ostatak ostaje u _pending za idući
+        // frame) i javlja promjenu (2D prikaz se ponovno iscrta).
+        void Flush(int budget = -1)
         {
             if (_mask == null)
             {
@@ -194,8 +261,20 @@ namespace VolumeRendering.Runtime.Annotation
                 return;
             }
 
+            if (budget < 0)
+                budget = maxSlicesPerFrame;
+
+            var batch = new List<int>(Mathf.Min(budget, _pending.Count));
             foreach (int sliceIndex in _pending)
             {
+                if (batch.Count >= budget)
+                    break;
+                batch.Add(sliceIndex);
+            }
+
+            foreach (int sliceIndex in batch)
+            {
+                _pending.Remove(sliceIndex);
                 var pixels = _slices.TryGetValue(sliceIndex, out var marked) ? marked : _empty;
                 if (_gpuCopy)
                 {
@@ -209,10 +288,9 @@ namespace VolumeRendering.Runtime.Annotation
                 }
             }
 
-            if (!_gpuCopy)
+            if (!_gpuCopy && batch.Count > 0)
                 _mask.Apply(false);
 
-            _pending.Clear();
             UpdateMarkedRange();
             OnMaskChanged?.Invoke();
         }
@@ -223,6 +301,8 @@ namespace VolumeRendering.Runtime.Annotation
 
         void PaintSlice(int sliceIndex, int px, int py, int radius)
         {
+            _undo.RecordBefore(sliceIndex, _slices);   // stanje prije prve izmjene slicea u potezu
+
             // Slice koji nije u _slices na GPU-u je prazan, pa kreće od nula.
             if (!_slices.TryGetValue(sliceIndex, out var pixels))
             {
@@ -255,9 +335,14 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null)
                 return;
 
+            _undo.Begin();
+            foreach (int z in _slices.Keys)
+                _undo.RecordBefore(z, _slices);
+            _undo.End();
+
             _pending.UnionWith(_slices.Keys);
             _slices.Clear();
-            Flush();
+            // Na GPU ide postupno u LateUpdate (maxSlicesPerFrame po frameu).
         }
 
         // Sprema masku na disk (format: MaskSerializer). Prazni sliceovi se ne spremaju.
@@ -298,6 +383,14 @@ namespace VolumeRendering.Runtime.Annotation
             using (var stream = File.OpenRead(path))
                 data = MaskSerializer.Read(stream, _width, _height, _depth);
 
+            // Učitavanje je jedna operacija: snimi stare sliceove i one koje datoteka mijenja (prije izmjene).
+            _undo.Begin();
+            foreach (int z in _slices.Keys)
+                _undo.RecordBefore(z, _slices);
+            foreach (int z in data.Slices.Keys)
+                _undo.RecordBefore(z, _slices);
+            _undo.End();
+
             // Isprazni sve što je trenutno označeno (jedino ti sliceovi mogu imati nenulte piksele).
             _pending.UnionWith(_slices.Keys);
             _slices.Clear();
@@ -314,8 +407,7 @@ namespace VolumeRendering.Runtime.Annotation
                 _slices[pair.Key] = pixels;
                 _pending.Add(pair.Key);
             }
-
-            Flush();
+            // Na GPU ide postupno u LateUpdate (maxSlicesPerFrame po frameu).
         }
 
         // Izvoz maske kao stack 8-bit PNG-ova (jedan po neprazom sliceu) u zadanu mapu.
