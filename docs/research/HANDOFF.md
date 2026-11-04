@@ -17,10 +17,7 @@ nisu mijenjani. Sve je u `docs/research/`.
 | Bibliografija iz identifikatora (Crossref/arXiv/PubMed), 60+ temeljnih referenci | `data/reference-ids.csv`, `scripts/build_bib.py`, `references.bib` |
 
 ## Nije gotovo
-1. **Grupa "maybe" (56 zapisa) za puni tekst** – podagent nije završio prije kraja sesije. Ponoviti: grupna
-   datoteka se gradi kao u ovoj sesiji (zapisi s `decision_ta = maybe` i bez RQ2 iz `data/screening-log.csv`),
-   upute su u `data/fulltext-screening/instructions.md`. Ako nema vremena: odluka TA ostaje "maybe" i navodi
-   se kao ograničenje.
+1. ~~Grupa "maybe" za puni tekst~~ gotovo na kraju sesije: `data/fulltext-screening/ftscreen_maybe.csv` i `ftextract_maybe.csv`.
 2. Spojiti `data/fulltext-screening/*.csv` u `data/screening-log.csv` (stupci `decision_ft` …) i u konačnu
    `data/extraction.csv`.
 3. Dodati u `data/reference-ids.csv` uključene radove koji se citiraju (DOI/arXiv iz `data/records.csv`), pokrenuti
