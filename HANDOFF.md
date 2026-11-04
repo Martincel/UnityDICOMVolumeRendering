@@ -54,7 +54,33 @@ preko `SliceClipController.CycleMaskOnly`), **Ravnina** uključi/isključi + **P
 - **Okretanje (`75bcf2e`):** hvatanje je bilo nezgrapno (volumen je pratio ruku 1:1 i okretao se oko ruke). Sad se
   pomak ruke prenosi 1:1, a okret ruke se pojačava (`Rotation Gain` na `VrVolumeController`, zadano 2: 90° zgloba
   = 180° modela) i volumen se okreće oko svog središta. Primjenjuje se promjena od prošlog okvira, pa nema skoka.
-  Čeka potvrdu u headsetu; ako je 2 previše/premalo, mijenja se u Inspectoru (1–4).
+  Martin (2026-11-03): bolje, ali neka bude 1,5× (`aa78932`). Grip i okidač hvataju isto (pomak 1:1 + okret 1,5×).
+
+## HU pojas (2026-11-03, `9360b38`, `a7ceb7a`)
+Martinova ideja: prikazati samo gustoću između donje i gornje granice (npr. izdvojiti žile). `_HuBand` u shaderu
+(x/y = granice u gustoći, z = uključeno), `VolumeRenderingWithTransferFunction`: `HuBandEnabled`, `HuBandMinHU`,
+`HuBandMaxHU`, `SetTissueBand(TissueBand)` (i u Inspectoru, pa radi i u 3D sceni).
+- **Slaganje:** uzorci izvan pojasa su prozirni (boja i dalje iz preseta, pa preset mora dati vidljivu boju u pojasu).
+- **MIP:** najveća gustoća unutar pojasa, siva skala razvučena preko pojasa.
+- **Izopovršina:** prva ploha gdje zraka uđe u pojas (donja granica zamjenjuje prag izopovršine).
+- Oznaka (maska) i ravnina slicea ne poštuju pojas.
+- VR izbornik: red "Pojas HU" kruži isključen → pluća → mast → meko tkivo → žile (kontrast) → kost; "Pojas od"/
+  "Pojas do" `-`/`+` po 50 HU (ručna izmjena uključi pojas i prebaci ga na "ručno"). Panel sad ima 10 redova.
+
+| Tkivo | Pojas u projektu | Tablična vrijednost |
+|---|---|---|
+| Pluća | −950…−500 | parenhim −700…−600 (zrak −1000) |
+| Mast | −150…−50 | −120…−90 |
+| Meko tkivo | +20…+80 | mišić +35…+55, jetra ~60, krv +13…+50, bijela/siva tvar +20…+45 |
+| Žile s kontrastom | +150…+500 | aorta u CTA ≥ 250 (cilj 250–350), granica lumena u literaturi 80–180 |
+| Kost | +300…+3000 | spužvasta +300…+400, kortikalna +500…+1900 |
+
+Rasponi su malo širi od tabličnih zbog djelomičnog volumena i šuma. Izvori: Wikipedia "Hounsfield scale",
+Radiopaedia "Hounsfield unit", pregledni radovi o CTA (aortna opacifikacija ≥ 250 HU). **Ograničenje:** krv bez
+kontrasta (~40 HU) ima istu gustoću kao mišić, pa se žile pojasom mogu izdvojiti samo u kontrastnoj seriji; i tada
+spužvasta kost (300–400) upada u pojas žila, pa kost treba odrezati ravninom ili maskom. Je li `series-000003`
+kontrastna, nije provjereno (tag 0018,0010 Contrast/Bolus Agent).
+- Martin (2026-11-04): Console bez grešaka, HU pojas i okretanje 1,5× rade u headsetu.
 - Provjereno bez headseta (Play, MCP): kompilacija bez grešaka, scena bez nedostajućih skripti, sve stavke mijenjaju
   `Preset`/`Style`/`Lighting`/`IsoValueHU`, ključne riječi i `_IsoValue`/`_MaskOnly`/`_ClipPlaneOn` na instanci
   materijala; ravnina se veže za `Volume`. **Nije provjereno:** ulaz s Wanda, čitljivost i položaj panela u headsetu.
@@ -98,6 +124,7 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
   bude točna.
 
 ## Ručna provjera (3D scena, pa VR)
+**Prošla** (Martin, 2026-11-04: "prošao sam je, radi"). Za stavku 1 vrijedi Nalaz o `series-000003`.
 1. Isti dataset: proporcije oko 12.43 : 11.56 : 5.63; Console ispisuje format (RG32), razmak i veličinu u mm.
 2. CT presetovi izgledaju kao prije ili bolje (manje stepenica u SoftTissue/Brain).
 3. 2D prikaz slicea, crtanje maske u 2D i 3D, Spremi/Učitaj masku, "kroz tkivo", tanki sloj (9 sliceova).
@@ -123,7 +150,16 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
   površina je crna.
 - Zasebno (nije u ovom planu): undo kista i postavljanje volumena ispred glave.
 
-## Raspored checkouta (od 2026-11-02)
+## Raspored checkouta (od 2026-11-04)
+- `feature/volume-format` je fast-forward spojena u `feature/vr-vive` (2026-11-04); glavni checkout više nije
+  detached, nego je na `feature/vr-vive` (isti commit, lokalne izmjene su ostale). Nove izmjene: u glavnom checkoutu
+  na `feature/vr-vive` ili na novoj grani; ovaj worktree se dalje ne koristi za razvoj.
+- Lokalne nekomitane izmjene u glavnom checkoutu (Martinove, namjerno izvan commitova): `Volume Rendering.mat`
+  (`_Iteration` 100), VR scena (Unity je zapisao zadane vrijednosti novih polja, `folderPath` na lokalni dataset,
+  i **`rotationGain: 2`**, jer je scena spremljena prije promjene na 1,5; za 1,5× postaviti `Rotation Gain` na
+  `VrVolumeController`), `OpenXR Package Settings.asset`, `UserSettings`.
+
+## Raspored checkouta (2026-11-02 – 2026-11-04, povijest)
 - Grana `feature/volume-format` je checkoutana u worktreeu `.claude/worktrees/renderer-upgrade-continue-2fea64`;
   tamo se uređuje i commita.
 - Glavni checkout (`C:\Dicom\UnityDICOMVolumeRendering`, otvoren u Unityju) je na **detached HEAD** na vrhu te grane.
@@ -132,9 +168,23 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Worktree `unity-vr-project-comparison-acb557` je detached na `6a232e5` i više se ne koristi.
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
+## Spajanje s magic brushem (2026-11-04)
+- **Grana je spremna za spajanje u `feature/magic-brush`** (pushana; VR izbornik, okretanje i HU pojas potvrđeni u
+  headsetu). Probni `git merge-tree` s granama magic brusha prolazi bez konflikta.
+- Redoslijed za zajedničke datoteke (`Xr/VrMenu.cs`, `Xr/VrVolumeController.cs`, `VolumeRenderingWithTransferFunction.cs`,
+  `VolumeRendering-Basic.shader`, obje scene): **VR izbornik (lokalno) → S2 → S4**, nikad paralelno. Ovaj redak
+  ("VR izbornik (lokalno) → prije S2") treba dodati i u tablicu 5.1 plana magic brusha (`docs/magic-brush-research.md`);
+  ta datoteka je na granama magic brusha i ova grana je ne dira.
+- Sučelje za S4: redovi panela se dodaju u `VrMenu.BuildPanel` kroz `Row(y, label, onClick, params buttons)`
+  (glavni gumb + mali gumbi zdesna, `repeat` za držanje). Javne akcije: `NextPreset`/`PreviousPreset`, `CycleStyle`,
+  `ToggleLighting`, `ChangeIso`, `CycleTissueBand`, `ChangeBand`, `CycleMaskOnly`, `ToggleClipPlane`, `BeginPlacement`.
+  `VrVolumeController` zove `VrMenu.Tick(rightTrigger)`; dok vraća true, desni okidač i desni touchpad pripadaju
+  izborniku. Mapiranje tipki je u tablici u "VR izbornik".
+- Magic brush stanje se vodi u njegovu dokumentu, ne ovdje. Nalazi iz ručne liste koji traže izmjene u zajedničkim
+  datotekama idu nakon S2/S4 ili uz dogovor s integracijskom sesijom magic brusha.
+
 ## Sljedeće
-1. **Okretanje u headsetu** (`75bcf2e`): potvrditi da je okretanje lakše; po potrebi štimati `Rotation Gain`.
-   VR izbornik je potvrđen.
-2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
-3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
-4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+1. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
+2. ~~Merge u `feature/vr-vive`~~ gotovo 2026-11-04 (fast-forward, pushano).
+   Sljedeći veliki korak: plan za Unity 6 + XRI + stereo makroe.
+3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije.

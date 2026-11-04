@@ -38,8 +38,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField, Min(1)] float brushRadius = 8f;
         [SerializeField] float brushSpeed = 15f;
         [SerializeField] float scaleSpeed = 0.8f;
-        // Okret volumena po stupnju okreta ruke dok se drži (1 = prati ruku; 2 = 90° zgloba daje 180°).
-        [SerializeField, Range(1f, 4f)] float rotationGain = 2f;
+        // Okret volumena po stupnju okreta ruke dok se drži (1 = prati ruku; 1.5 = 90° zgloba daje 135°).
+        [SerializeField, Range(1f, 4f)] float rotationGain = 1.5f;
         [SerializeField] Vector2 scaleRange = new Vector2(0.2f, 5f);
         [SerializeField] float stickThreshold = 0.6f;
         [SerializeField] float deadzone = 0.2f;
