@@ -753,3 +753,4 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 | S7 | nije počela | | |
 | S8 | nije počela | | |
 | S9 | nije počela (opcija) | | |
+| R1 Literaturno istraživanje za članak (scoping review, PRISMA-ScR) | u tijeku (cloud, od 2026-11-04) | `research/magic-brush-literature` | rezultati u `docs/research/` (engleski, README na hrvatskom); svaka referenca provjerena preko DOI-ja/PMID-a/arXiva; ne dira runtime kod ni ovaj dokument |
