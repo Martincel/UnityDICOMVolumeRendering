@@ -217,4 +217,15 @@ are labelled separately. Numbers from our unit tests are synthetic and are label
 
 ## Amendments
 
-(none yet)
+- **A1 (2026-11-04, after the first search run, before analysis).** The first PubMed parser read DOIs with
+  `.//ArticleIdList`, which also matches the ID lists of each article's cited references. Some records therefore
+  carried a wrong DOI and de-duplication merged different papers (618 instead of 620 unique records; 9 records
+  showed a title from one paper and an abstract from another). Fix: only `PubmedData/ArticleIdList` is read. The
+  PubMed search was re-run the same day (same queries, same hit counts; both runs are in `data/search-log.csv`),
+  de-duplication was repeated, and screening decisions were carried over only where the reviewer had seen exactly
+  the same title and abstract (`scripts/map_screening.py`); the other 9 records were screened again.
+- **A2 (2026-11-04, during screening).** Clarifications of the codes, applied uniformly: (a) narrative and
+  systematic reviews are coded E5 (publication type) but are listed as background reading; (b) models prompted only
+  by text (no seeds/clicks/strokes/boxes/contours) and SAM variants with automatically generated prompts are E1;
+  (c) TA screening was split into five batches screened by five instances of the same AI reviewer with the same
+  written instructions (`02-search-and-screening.md`, Section 3). This is still a single-reviewer design.

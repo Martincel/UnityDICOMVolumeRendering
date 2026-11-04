@@ -72,12 +72,12 @@ def pubmed(block):
             title = "".join(art.find(".//ArticleTitle").itertext()) if art.find(".//ArticleTitle") is not None else ""
             abstract = " ".join("".join(a.itertext()) for a in art.findall(".//Abstract/AbstractText"))
             year = art.findtext(".//JournalIssue/PubDate/Year") or (art.findtext(".//JournalIssue/PubDate/MedlineDate") or "")[:4]
-            doi = ""
-            for aid in art.findall(".//ArticleIdList/ArticleId"):
+            # Only the article's own IDs (PubmedData/ArticleIdList). ".//ArticleIdList" would also match the
+            # IDs of every cited reference (ReferenceList), which gave wrong DOIs in the first run.
+            doi = pmcid = ""
+            for aid in art.findall("./PubmedData/ArticleIdList/ArticleId"):
                 if aid.get("IdType") == "doi":
                     doi = (aid.text or "").strip()
-            pmcid = ""
-            for aid in art.findall(".//ArticleIdList/ArticleId"):
                 if aid.get("IdType") == "pmc":
                     pmcid = (aid.text or "").strip()
             authors = []
