@@ -1,6 +1,6 @@
 """Find and fetch open full texts for records kept after title/abstract screening (protocol Section 6, step 3).
 
-Usage: python -I docs/research/scripts/fulltext.py <output_dir_outside_repo>
+Usage: python -I docs/research/scripts/fulltext.py <output_dir_outside_repo> [--snowball]
 Order of sources: Europe PMC full-text XML (PMCID), arXiv PDF (arXiv ID), OpenAlex open-access URL (PDF only).
 Full texts are saved as plain text in <output_dir> (NOT in the repository: copyright). The repository only gets
 docs/research/data/fulltext-availability.csv (record_id, source, url, chars, status).
@@ -48,12 +48,18 @@ def pdf_text(data):
 def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    recs = {r["record_id"]: r for r in csv.DictReader(open(os.path.join(DATA, "records.csv"), encoding="utf-8"))}
-    keep = [r["record_id"] for r in csv.DictReader(open(os.path.join(DATA, "screening-log.csv"), encoding="utf-8"))
-            if r["decision_ta"] in ("include", "maybe")]
+    snow = "--snowball" in sys.argv  # snowball candidates: IDs S###, DOI only
+    if snow:
+        recs = {r["record_id"]: dict(r, pmcid="", arxiv="") for r in
+                csv.DictReader(open(os.path.join(DATA, "screening-log-snowball.csv"), encoding="utf-8"))}
+        keep = [i for i, r in recs.items() if r["decision_ta"] in ("include", "maybe")]
+    else:
+        recs = {r["record_id"]: r for r in csv.DictReader(open(os.path.join(DATA, "records.csv"), encoding="utf-8"))}
+        keep = [r["record_id"] for r in csv.DictReader(open(os.path.join(DATA, "screening-log.csv"), encoding="utf-8"))
+                if r["decision_ta"] in ("include", "maybe")]
     rows = []
     prev_log = {}
-    log_path = os.path.join(DATA, "fulltext-availability.csv")
+    log_path = os.path.join(DATA, "fulltext-availability" + ("-snowball" if snow else "") + ".csv")
     if os.path.exists(log_path):
         prev_log = {r[0]: r for r in csv.reader(open(log_path, encoding="utf-8"))}
     for rid in keep:
@@ -93,7 +99,7 @@ def main():
             rows.append([rid, "", "", 0, "not_available"])
         print(rid, rows[-1][1], rows[-1][3], flush=True)
         time.sleep(0.3)
-    with open(os.path.join(DATA, "fulltext-availability.csv"), "w", newline="", encoding="utf-8") as f:
+    with open(log_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["record_id", "source", "url", "chars", "status"])
         w.writerows(rows)

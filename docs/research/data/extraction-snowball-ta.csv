@@ -1,0 +1,25 @@
+record_id,doi,method_family,method_name,interaction,dims,modality,anatomy,hardware,time_or_latency,accuracy,dataset,evaluation,vr,platform,code_available
+S002,10.1002/mp.14852,deep-interactive-CNN,Recurrent Residual U-Net with attention gates (contextual),contour,2.5D,NR,19 anatomical structures (e.g. heart structures; spleen),NR,NR,"heart-only model on spleen: DSC 0.33, HD 44 mm, relative APL 0.85",NR,"DSC, Hausdorff distance, added path length",n,NR,NR
+S004,10.1007/978-3-319-46723-8_41,other,Dynamically balanced online random forests,stroke,NR,NR,NR,NR,NR,NR,NR,NR,n,NR,NR
+S005,10.1007/978-3-319-69775-8_10,tool/system,Fast semi-automatic segmentation tool,NR,NR,NR,brain tumor,NR,NR,NR,NR,NR,n,NR,NR
+S010,10.1007/s10055-021-00577-4,tool/system,NUI-VR2,other,3D,NR (volumetric medical images),NR,NR,NR,NR,NR,NR,y,NR,NR
+S011,10.1007/s10055-022-00740-5,tool/system,NR,NR,3D,NR,neurosurgical data,NR,NR,NR,NR,user-interaction strategy assessment,y,NR,NR
+S012,10.1007/s10111-017-0436-0,other,Between-slice interpolation,contour,2.5D,NR,tumor (radiotherapy),NR,NR,interpolated contours more similar among themselves,3 patient cases,"naturalistic study, 5 physicians, interaction logging",n,NR,NR
+S013,10.1007/s10278-015-9839-8,other,"Strokes and contour semi-automatic methods",mixed,NR,NR,organs at risk (5 types),NR,NR,NR,42 case studies,"2 physicians; subjective and objective process/result measures, correlations",n,NR,NR
+S020,10.1016/j.cmpb.2021.106534,tool/system,Fully connected CRF interactive multi-label tool,NR,3D,NR,NR,NR,NR,NR,NR,NR,n,NR,NR
+S023,10.1016/j.eswa.2023.122275,tool/system,NR,NR,3D,NR,mandible,NR,NR,NR,NR,"VR vs desktop vs AI accuracy and precision",y,NR,NR
+S028,10.1016/j.media.2022.102599,deep-interactive-CNN,Volumetric Memory Network (VMN) with quality assessment module,other,3D,NR,NR,NR,NR,NR,NR,NR,n,NR,NR
+S032,10.1016/j.phro.2022.12.005,deep-interactive-CNN,Interactive deep-learning (iDL) CNN with re-training on corrected slices,contour,2.5D,Multimodal image data,head and neck GTV,NR,NR,"baseline median DSC 0.65, MSD 4.3 mm, HD95 17.5 mm",204 HNC patients,"DSC, MSD, HD95; simulated user input",n,NR,NR
+S036,10.1080/10447318.2016.1220729,other,Two interactive segmentation approaches,mixed,NR,NR,organs at risk,NR,NR,NR,NR,"GOMS model, NASA-TLX; 3 physicians",n,NR,NR
+S045,10.1109/cvpr.2016.47,deep-interactive-CNN,Deep Interactive Object Selection (FCN-8s + distance maps + graph cut),click,2D,natural images (RGB),NR,NR,NR,NR,PASCAL,seen/unseen object generalization,n,NR,NR
+S046,10.1109/embc.2016.7591443,hybrid,ITK-SNAP random forest + active contour,stroke,3D,multi-modality MRI,high-grade glioblastoma,NR,NR,NR,NR,NR,n,ITK-SNAP,NR
+S050,10.1109/iccv51070.2023.00371,SAM-family/foundation,Segment Anything Model (SAM),mixed,2D,natural images,NR,NR,NR,NR,SA-1B (11M images; 1B masks),zero-shot transfer on numerous tasks,n,NR,yes (segment-anything.com)
+S052,10.1109/icip46576.2022.9897365,deep-interactive-CNN,RITM feedforward click model with mask guidance,click,2D,natural images,NR,NR,NR,NR,COCO+LVIS,NR,n,NR,yes (github.com/saic-vul/ritm_interactive_segmentation)
+S053,10.1109/isbi.2015.7164073,graph-cut,Hierarchical conditional random field (single-click),click,NR,CT,lung nodules,NR,NR,"higher sensitivity, Dice, Jaccard than other semi-automatic methods",NR,"sensitivity, specificity, Dice, Jaccard, accuracy vs clinician contours",n,NR,NR
+S054,10.1109/ismar55827.2022.00020,tool/system,VRContour,contour,3D,NR,medical structures (radiotherapy),tracked tablet and VR stylus,NR,3D visualization significantly increased precision,NR,"within-subject study n=8; mental load, frustration, effort",y,NR,NR
+S057,10.1109/tbme.2017.2777742,other,Scribble-based interactive segmentation (latency study),stroke,NR,NR,NR,NR,simulated latency 100 to 2000 ms,NR,NR,"controlled user experiment; automatic vs user-initiated refresh",n,NR,NR
+S089,10.1145/2968220.2968235,other,NR,NR,3D,NR,NR,NR,NR,NR,NR,"observation, surveys, eye tracking",n,NR,NR
+S090,10.1145/3531706.3536456,tool/system,VR contour delineation prototypes,contour,3D,NR,tumors/organs (radiotherapy),head-mounted VR display,NR,NR,NR,"needs-finding interviews, co-design workshops; 3 medical + 3 engineering/design experts",y,NR,NR
+S091,10.1155/2019/1464592,other,Usability evaluation framework for interactive segmentation systems,NR,NR,NR,NR,NR,NR,questionnaire prediction average relative error 8.9%,NR,"user studies, SUS, AttrakDiff-2, content analysis",n,NR,NR
+S094,10.21203/rs.3.rs-6221538/v1,deep-interactive-CNN,Two-stage Interactive Click Refinement (2S-ICR),click,3D,NR,oropharyngeal primary GTV,NR,NR,"DSC 0.722 ± 0.142 without interaction; 0.858 ± 0.050 after ten interactions",2021 HECKTOR; external MD Anderson dataset,DSC,n,NR,NR
+S095,10.2352/issn.2470-1173.2019.2.ervr-188,tool/system,VR 3D segmentation application (two segmentation algorithms),NR,3D,MRI and CT,NR,NR,NR,NR,NR,NR,y,NR,NR
