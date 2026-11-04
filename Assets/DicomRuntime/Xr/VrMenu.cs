@@ -498,8 +498,8 @@ namespace VolumeRendering.Runtime.Xr
         void AddUndoRow(List<Action<float>> rows)
         {
             if (maskManager != null)
-                rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
-                                  () => maskManager.Undo()));
+                rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi (lijevi okidač)" : "Poništi oznaku (nema)",
+                                  () => _controller.UndoMask()));
         }
 
         void AddDisplayRows(List<Action<float>> rows)
@@ -669,12 +669,8 @@ namespace VolumeRendering.Runtime.Xr
 
         // ---- ulaz ----
 
-        static void Haptic()
-        {
-            var device = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-            if (device.isValid)
-                device.SendHapticImpulse(0, 0.3f, 0.02f);
-        }
+        // Povratna informacija izbornika je tihi zvuk, ne vibracija.
+        static void Haptic() => VrSounds.Play(VrSounds.Kind.Tick);
 
         static bool ReadButton(XRNode node, InputFeatureUsage<bool> usage)
         {

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.XR;
+using VolumeRendering.Runtime.Annotation;
 using VolumeRendering.Runtime.UI;
 
 namespace VolumeRendering.Runtime.Xr
@@ -39,6 +40,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] float brushSpeed = 15f;
         // Opcionalno: magic brush. Dok je aktivan, desni trackpad gore/dolje mijenja osjetljivost umjesto kista.
         [SerializeField] MagicBrushTool magicTool;
+        // Opcionalno: za poništavanje lijevim okidačem kad nema magicTool; inače se traži u sceni.
+        [SerializeField] AnnotationMaskManager maskManager;
         // Promjena osjetljivosti k po sekundi pri punom otklonu trackpada.
         [SerializeField] float magicSensitivitySpeed = 1.5f;
         [SerializeField] float scaleSpeed = 0.8f;
@@ -100,6 +103,8 @@ namespace VolumeRendering.Runtime.Xr
             if (volume != null)
                 _baseScale = volume.localScale;
 
+            if (maskManager == null)
+                maskManager = FindObjectOfType<AnnotationMaskManager>();
             if (loader == null)
                 loader = FindObjectOfType<DicomVolumeLoader>();
             if (loader != null)
@@ -165,6 +170,12 @@ namespace VolumeRendering.Runtime.Xr
             else if (!_rightTrigger)
                 _rightTriggerBlocked = false;
             _rightTriggerFree = _rightTrigger && !_rightTriggerBlocked;
+
+            // Lijevi okidač u crtanju poništava zadnju oznaku (i otkazuje magic brush koji se još računa).
+            bool leftPressed = _leftTrigger && !_prevLeftTrigger;
+            _prevLeftTrigger = _leftTrigger;
+            if (leftPressed && painter.DrawingActive && !_menuBusy && _grabHand == null)
+                UndoMask();
 
             HandleGrab();
             HandleSliceStep();
@@ -288,7 +299,7 @@ namespace VolumeRendering.Runtime.Xr
             if (padPressed && magicTool != null && painter.DrawingActive && _grabHand == null && !_menuBusy)
             {
                 magicTool.CycleTool();
-                Haptic(XRNode.RightHand);
+                VrSounds.Play(VrSounds.Kind.Switch);
             }
             if (padClick)
                 return;
@@ -351,32 +362,47 @@ namespace VolumeRendering.Runtime.Xr
             _line.SetPosition(0, ray.origin);
             _line.SetPosition(1, hit ? worldHit : ray.origin + dir * rayLength);
             bool magicBusy = magicTool != null && magicTool.Busy;
-            if (_wasMagicBusy && !magicBusy)
-                Haptic(XRNode.RightHand);   // magic brush je gotov
-            _wasMagicBusy = magicBusy;
+            if (magicTool != null && magicTool.CompletedJobs != _seenJobs)
+            {
+                _seenJobs = magicTool.CompletedJobs;
+                VrSounds.Play(VrSounds.Kind.Done);   // magic brush je gotov (otkazani poslovi se ne broje)
+            }
 
             Color c = magicBusy ? Color.yellow : (pressed ? Color.red : (hit ? Color.cyan : Color.white));
             _line.startColor = c;
             _line.endColor = c;
         }
 
-        bool _wasMagicBusy, _prevPadClick;
+        bool _prevLeftTrigger, _prevPadClick;
+        int _seenJobs;
 
-        static void Haptic(XRNode node)
+        // Poništi zadnju operaciju; zvuk samo ako se nešto doista poništilo.
+        public void UndoMask()
         {
-            var device = InputDevices.GetDeviceAtXRNode(node);
-            if (device.isValid && device.TryGetHapticCapabilities(out var caps) && caps.supportsImpulse)
-                device.SendHapticImpulse(0, 0.5f, 0.1f);
+            bool undone;
+            if (magicTool != null)
+                undone = magicTool.UndoLast();
+            else if (maskManager != null && maskManager.CanUndo)
+            {
+                maskManager.Undo();
+                undone = true;
+            }
+            else
+                undone = false;
+
+            if (undone)
+                VrSounds.Play(VrSounds.Kind.Undo);
         }
 
         // ---- čitanje kontrolera ----
 
-        // Grip na Wandu je nezgodan za dulje držanje, pa hvata i okidač; u crtanju desni okidač crta.
+        // Grip na Wandu je nezgodan za dulje držanje, pa hvata i okidač. U crtanju okidači imaju drugu ulogu
+        // (desni crta, lijevi poništava), pa se tada hvata samo gripom.
         bool ReadGrab(XRNode node)
         {
             if (ReadButton(node, CommonUsages.gripButton))
                 return true;
-            bool triggerGrabs = !painter.DrawingActive || node == XRNode.LeftHand;
+            bool triggerGrabs = !painter.DrawingActive;
             return triggerGrabs && (node == XRNode.LeftHand ? _leftTrigger : _rightTriggerFree);
         }
 

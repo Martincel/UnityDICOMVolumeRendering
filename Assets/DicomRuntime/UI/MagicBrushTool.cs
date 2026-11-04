@@ -72,6 +72,8 @@ namespace VolumeRendering.Runtime.UI
         public bool Subtract => subtract;
         public bool Busy => _job != null && !_job.Done;
         public string Message { get; private set; }
+        // Broj završenih (ne otkazanih) poslova; VR po njemu zna kad treba javiti "gotovo".
+        public int CompletedJobs { get; private set; }
         public event Action StateChanged;
 
         void Update()
@@ -171,6 +173,27 @@ namespace VolumeRendering.Runtime.UI
             StartJob();
         }
 
+        // Poništi: ako se nešto još računa, otkaže se taj posao; inače se poništi zadnja operacija u maski.
+        // Zadnji klik se zaboravlja, da kasnija promjena osjetljivosti ne vrati poništenu regiju.
+        // Vraća true ako se nešto poništilo.
+        public bool UndoLast()
+        {
+            bool wasBusy = Busy;
+            CancelRunning();
+            ForgetClick();
+            _versionAfterApply = -1;
+
+            bool undone = false;
+            if (!wasBusy && maskManager != null && maskManager.CanUndo)
+            {
+                maskManager.Undo();
+                undone = true;
+            }
+            Message = null;
+            StateChanged?.Invoke();
+            return wasBusy || undone;
+        }
+
         // Zove se kad korisnik počne novi potez/klik pa stari rezultat više nije "zadnji klik" za osjetljivost.
         public void ForgetClick()
         {
@@ -255,6 +278,7 @@ namespace VolumeRendering.Runtime.UI
         void Finish(Job job)
         {
             job.Cts.Dispose();
+            CompletedJobs++;
 
             if (job.Error != null)
             {
