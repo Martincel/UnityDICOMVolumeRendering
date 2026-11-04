@@ -114,10 +114,16 @@ namespace SegmentationTests
             int ball = Count(v, (x, y, z) => InLeftBall(v, x, y, z));
             int marked = Count(v, (x, y, z) => InLeftBall(v, x, y, z) && region.Contains(x, y, z));
             _output.WriteLine($"označeno {marked}/{ball} voksela kugle, μ = {diag.CenterHu:F1} HU, t = {diag.ToleranceHu:F1} HU");
+            int outside = Count(v, (x, y, z) => !InLeftBall(v, x, y, z) && region.Contains(x, y, z));
+            _output.WriteLine($"izvan kugle {outside} voksela");
             Assert.Equal(0, Count(v, (x, y, z) => InRightBall(v, x, y, z) && region.Contains(x, y, z)));
-            Assert.Equal(0, Count(v, (x, y, z) => !InLeftBall(v, x, y, z) && region.Contains(x, y, z)));
-            // Rubni stop odreže sloj uz rub (tamo je G visok), ostatak kugle je označen.
-            Assert.True(marked >= 0.6 * ball, $"označeno samo {marked}/{ball}");
+            // Vraćanje ruba (korak 6b) smije dodati najviše jedan sloj voksela iste gustoće koji dodiruje
+            // kuglu: ovdje početak mosta (presjek 3 voksela). Dalje od toga ne ide.
+            Assert.Equal(0, Count(v, (x, y, z) => v.DistMm(x, y, z, 28 * Sxy, 25 * Sxy, 12 * Sz) > 10 + Sz
+                                                  && region.Contains(x, y, z)));
+            Assert.True(outside <= 9, $"izvan kugle {outside} voksela");
+            // Rubni stop zaustavlja rast, a sloj uz rub se vrati, pa je skoro cijela kugla označena.
+            Assert.True(marked >= 0.9 * ball, $"označeno samo {marked}/{ball}");
         }
 
         [Fact]
@@ -168,7 +174,8 @@ namespace SegmentationTests
             settings.EdgeStop = 0.6;
             var stopped = Grow(v, 10, 15, 10, settings, out _);
             Assert.True(stopped.Contains(5, 15, 10));
-            Assert.Equal(0, Count(v, (x, y, z) => x >= 20 && stopped.Contains(x, y, z)));
+            // Sam "zid" ima istu gustoću, pa ga vraćanje ruba (korak 6b) smije dodati; iza njega rast ne ide.
+            Assert.Equal(0, Count(v, (x, y, z) => x >= 21 && stopped.Contains(x, y, z)));
 
             settings.EdgeStop = 0;   // isključeno: G se ne gleda
             var open = Grow(v, 10, 15, 10, settings, out _);

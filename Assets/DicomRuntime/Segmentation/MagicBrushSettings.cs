@@ -29,10 +29,16 @@ namespace VolumeRendering.Runtime.Segmentation
 
         // Rubni stop: piksel ulazi samo ako mu je gradijent u ravnini ≤ ova vrijednost.
         // Ista skala kao G kanal (0–1, |∇gustoće|·10). 0 = isključeno (zadano u 2D).
+        // Rubni stop zaustavlja rast; sloj uz sam rub (visok gradijent, ali gustoća u intervalu) se na
+        // kraju vrati jednim korakom dilatacije, da regija ne izgubi rub.
         public double EdgeStop { get; set; } = 0;
 
         // Zatvaranje rupa u rezultatu.
         public bool FillHoles { get; set; } = true;
+
+        // Zatvaraju se samo rupe do ove površine u mm² (u 3D: po sliceu). 0 = sve rupe.
+        // Bez granice klik u masnoću oko organa "zatvori" i organ kao rupu. 200 mm² ≈ krug promjera 16 mm.
+        public double MaxHoleAreaMm2 { get; set; } = 200;
 
         // Samo 3D (RegionGrow3D): najviše voksela u regiji. Iznad toga rezultat je prazan, a
         // Diagnostics javlja "smanji osjetljivost". 2D ga ne čita (ROI krug ionako ograničava).
