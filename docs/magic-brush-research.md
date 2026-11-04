@@ -353,7 +353,16 @@ Zajedničko za sve sesije:
 | `Segmentation/MaskRegion.cs`, `MagicBrushSettings.cs`, `RegionStats.cs`, `Morphology2D.cs`, `RegionGrow2D.cs`, `Tests~/SegmentationTests/` | S3 | S5 i S7 dodaju svoje datoteke i testove u isti projekt |
 | `Annotation/MaskUndoStack.cs` (testovi u `Tests~/MaskSerializerTests`) | S2 | — |
 | `Loader/DicomVolumeLoader.cs` | S1 | — |
-| `Annotation/AnnotationMaskManager.cs`, kistovi, `VrMenu.cs`, scene | S2, pa S4 (redom) | — |
+| `Annotation/AnnotationMaskManager.cs`, kistovi (`UI/SliceAnnotationPainter.cs`, `UI/VolumeSlicePainter.cs`) | S2, pa S4 (redom) | — |
+| VR izbornik (lokalno): izbornik, okretanje, HU pojas (`feature/volume-format`) | prije S2 (gotovo, `04a89c9`) | spojeno u `feature/magic-brush` 2026-11-04 (`b6e1a31`) |
+| Zajedničke s rendererom: `Xr/VrMenu.cs`, `Xr/VrVolumeController.cs`, `VolumeRenderingWithTransferFunction.cs`, `VolumeRendering-Basic.shader`, obje scene | redom: VR izbornik (lokalno) → S2 → S4, **nikad paralelno** | integracije S5, S6, S7 i S9 tek nakon S4; nalazi iz ručne provjere renderera koji traže izmjene ovdje idu nakon S2/S4 |
+
+**Sučelje VrMenu-a za S4** je u HANDOFF.md, odjeljak "Spajanje s magic brushem":
+- novi retci panela dodaju se u `VrMenu.BuildPanel` kroz `Row(y, label, onClick, params buttons)` (glavni gumb +
+  mali gumbi zdesna, `repeat` za držanje);
+- `VrVolumeController` zove `VrMenu.Tick(rightTrigger)`; dok vraća true, desni okidač i desni touchpad pripadaju
+  izborniku;
+- mapiranje tipki je u HANDOFF.md, odjeljak "VR izbornik".
 
 **Raspored voksela** (S1 ga izlaže, S3 ga čita kao sirovi niz, pa ne ovisi o S1):
 - `ushort[] data`, isprepleteno po 2 vrijednosti po vokselu: `data[2·i]` = gustoća, `data[2·i + 1]` = gradijent.
@@ -408,6 +417,10 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
   ```
 - **Lokalno** (Unity preko MCP-a, headset): sve što dira scene, GPU, render ili treba podatke iz
   `C:\Users\martin\Desktop\DICOMprimjeri`.
+- **Prije prve lokalne sesije (S2):** glavni checkout je na `feature/vr-vive` s Martinovim namjerno
+  nekomitanim izmjenama (HANDOFF.md, "Raspored checkouta"). Među njima je i VR scena, a S2 mijenja obje
+  scene. Prije prelaska na `feature/magic-brush` te izmjene spremiti (`git stash`) ili commitati, da se ne
+  pomiješaju sa S2.
 - **Kod u `Assets/` mora proći Unity 2021.3** (API razina .NET Standard 2.1, C# 9):
   - bez file-scoped namespacea, `global using`, record structova;
   - bez API-ja iz .NET 5+ (npr. `PriorityQueue<T>`, `BitOperations`, `Random.Shared`);
@@ -514,7 +527,9 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
     - okidač = klik, touchpad gore/dolje = osjetljivost;
     - zraka žuta dok se računa, haptika kad je gotovo;
     - natpis "Magic · k = 2,5 · Dodaj";
-  - `VrMenu`: retci "Alat", "Osjetljivost − +", "Dodaj/Oduzmi";
+  - `VrMenu`: retci "Alat", "Osjetljivost − +", "Dodaj/Oduzmi", preko `Row(...)` u `BuildPanel` (sučelje: 5.1
+    i HANDOFF.md, "Spajanje s magic brushem"). Panel već ima retke za HU pojas; ako postane predugačak za
+    čitanje u headsetu, magic brush retke staviti na drugu stranicu panela;
   - 2D UI: prekidač alata, klizač osjetljivosti, Shift+klik = oduzmi;
   - opcionalno: adaptivni kist (2.2 #6) kao treći alat.
 - **Datoteke:**
@@ -690,6 +705,11 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
   rupu u regiji (i u T prije erozije), pa klik u masno tkivo oko bubrega može označiti i bubreg, ako je
   masnoća oko njega zatvorena unutar ROI-a. Prijedlog za S4/S8: zatvarati samo rupe manje od N mm²
   (npr. 200 mm²) i provjeriti na stvarnim podacima.
+- **Rubni stop u 3D (S5) odreže sloj uz rub** (nalaz iz S5). Uz `EdgeStop` 0,6 vokseli tik uz jak rub imaju
+  visok G, pa ne ulaze ni u T ni u geodetsku dilataciju. Na sintetičkoj kugli (40 vs −500 HU) ostane
+  ~62 % volumena. Prijedlog za S8: rubni stop koristiti samo kao zapreku za flood (korak 5), a dilataciju
+  (korak 6) pustiti kroz T bez rubnog stopa (samo interval gustoće). Tako se rub vrati, a curenje kroz
+  slab rub i dalje staje.
 
 ## 7. Izvori
 
