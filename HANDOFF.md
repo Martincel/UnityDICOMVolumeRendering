@@ -185,6 +185,6 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 
 ## Sljedeće
 1. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
-2. ~~Merge u `feature/vr-vive`~~ gotovo 2026-11-04 (fast-forward, lokalno; push `feature/vr-vive` čeka Martina).
+2. ~~Merge u `feature/vr-vive`~~ gotovo 2026-11-04 (fast-forward, pushano).
    Sljedeći veliki korak: plan za Unity 6 + XRI + stereo makroe.
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije.
