@@ -230,7 +230,7 @@ Zaključak: **faza 4, opcionalno**, iza sučelja, tek kad klasični alat radi.
 | Anti-leak r | 2 mm | 2 mm (rz zaokružen, često 1) | 0 = isključeno |
 | Rubni stop g | isključen (opcija, gradijent u ravnini) | 0,6 (G kanal) | 0 = isključeno |
 | Povezanost | 4 | 6 | 8/26 curi lakše |
-| Zatvaranje rupa | da | po sliceu, nakon 3D rasta | |
+| Zatvaranje rupa | da, rupe do 200 mm² | po sliceu, rupe do 200 mm² | `MaxHoleAreaMm2`, 0 = sve rupe; veća rupa (organ u kliknutoj masnoći) ostaje otvorena |
 | Najviše voksela | — (ROI ograničava) | 3 M | iznad toga prekid i poruka "smanji osjetljivost" |
 
 ### Algoritam MVP-a (2D, `RegionGrow2D.Run`)
@@ -240,7 +240,10 @@ Zaključak: **faza 4, opcionalno**, iza sučelja, tek kad klasični alat radi.
 4. E = T erodiran za r. Ako sjeme nije u E: r = r − 1, ponovi (do r = 0).
 5. R = flood (4-povezan) od sjemena kroz E.
 6. R = geodetska dilatacija R za r koraka unutar T.
-7. Zatvori rupe u R: flood pozadine s ruba ROI-a; što nije dosegnuto, a nije u R, je rupa.
+   6b. Uz rubni stop: još jedan korak dilatacije kroz interval gustoće (bez rubnog stopa), da se vrati
+   sloj tik uz rub.
+7. Zatvori rupe u R do `MaxHoleAreaMm2`: flood pozadine s ruba ROI-a; što nije dosegnuto, a nije u R, je
+   rupa.
 8. Rezultat: `MaskRegion` (pravokutnik ROI-a + bajtovi), broj piksela i zastavica `TouchedRoiBorder`
    ("možda curi", prikazati korisniku).
 
@@ -322,7 +325,7 @@ graph LR
 | Sesija | Ovisi o | Može paralelno s | Dira scene | Gdje |
 |---|---|---|---|---|
 | S1 Vokseli na CPU-u | — | S2, S3 | ne | **cloud** (loader provjeriti u Unityju u S4) |
-| S2 Uređivanje maske + undo | S3 (samo `MaskRegion.cs`) | S1 | da (gumb Poništi) | lokalno (Unity, scene) |
+| S2 Uređivanje maske + undo | S3 (spojeno) | — | da (gumb Poništi) | čisti dio u cloudu (gotovo), ostalo lokalno (Unity, scene) |
 | S3 2D algoritam | — | S1 | ne | **cloud** |
 | S4 MVP magic brush | S1, S2, S3 | — | da | lokalno (Unity, headset) |
 | S5 3D u ROI | S3 (algoritam), S4 (integracija) | S6, S8 | malo (prekidač 2D/3D) | algoritam u cloudu nakon S3, integracija lokalno |
@@ -351,7 +354,7 @@ Zajedničko za sve sesije:
 |---|---|---|
 | `Segmentation/VoxelVolume.cs`, `Tests~/VoxelVolumeTests/` | S1 | samo čitaju |
 | `Segmentation/MaskRegion.cs`, `MagicBrushSettings.cs`, `RegionStats.cs`, `Morphology2D.cs`, `RegionGrow2D.cs`, `Tests~/SegmentationTests/` | S3 | S5 i S7 dodaju svoje datoteke i testove u isti projekt |
-| `Annotation/MaskUndoStack.cs` (testovi u `Tests~/MaskSerializerTests`) | S2 | — |
+| `Annotation/MaskUndoStack.cs`, `Annotation/MaskEditing.cs` (testovi u `Tests~/MaskSerializerTests`) | S2 (čisti dio gotov u cloudu, `c4a332e`) | lokalna S2 ih samo koristi |
 | `Loader/DicomVolumeLoader.cs` | S1 | — |
 | `Annotation/AnnotationMaskManager.cs`, kistovi (`UI/SliceAnnotationPainter.cs`, `UI/VolumeSlicePainter.cs`) | S2, pa S4 (redom) | — |
 | VR izbornik (lokalno): izbornik, okretanje, HU pojas (`feature/volume-format`) | prije S2 (gotovo, `04a89c9`) | spojeno u `feature/magic-brush` 2026-11-04 (`b6e1a31`) |
@@ -456,39 +459,51 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
   > "Stanje sesija" u dokumentu.
 
 ### S2: Uređivanje maske, undo i raspon oznaka
+**Čisti dio je gotov** (cloud, `c4a332e`, spojeno u `feature/magic-brush`):
+- `Annotation/MaskEditing.cs`: `ApplyRegion(slices, W, H, D, region, Add/Subtract, beforeChange)` upisuje
+  regiju, stvara slice kad treba, **uklanja slice koji ostane prazan** i vraća promijenjene sliceove;
+  `beforeChange(z)` se zove jednom po sliceu prije prve izmjene (za undo).
+- `Annotation/MaskUndoStack.cs`: `Begin`/`RecordBefore(z, slices)`/`End`, `Undo(slices)` vraća dotaknute
+  sliceove, granica memorije (zadano 256 MB, najstarije otpada, zadnja operacija se uvijek čuva), `Clear`.
+- 17 testova u `Tests~/MaskSerializerTests` (ukupno 38/38).
+
+**Lokalno ostaje** (Unity):
 - **Opseg:**
-  - novi `Segmentation/MaskRegion.cs`: pravokutnik + `Dictionary<int, byte[]>` (0/1), čisti C#;
-  - novi `Annotation/MaskUndoStack.cs`: čisti C#, stanja prije operacije po sliceu, `null` = slice nije
-    postojao, ograničenje po bajtovima;
   - `AnnotationMaskManager`:
-    - `BeginEdit()`/`EndEdit()`; snimka slicea pri prvom dodiru u operaciji (`PaintSlice` i `ApplyRegion`);
-    - `ApplyRegion(MaskRegion, Add/Subtract)`, `Undo()` (Redo opcionalno);
-    - prazan slice nakon izmjene ide iz `_slices`;
-    - `Flush` s budžetom (`maxSlicesPerFrame`, zadano 8);
-    - `Clear` i `LoadFromFile` kao jedna operacija (može se poništiti);
+    - polje `MaskUndoStack _undo`; `BeginEdit()`/`EndEdit()` zovu `_undo.Begin()`/`_undo.End()`;
+    - `PaintSlice`: prije izmjene `_undo.RecordBefore(sliceIndex, _slices)`;
+    - `ApplyRegion(MaskRegion, MaskEditMode)`: `BeginEdit`, `MaskEditing.ApplyRegion(..., z => _undo.RecordBefore(z, _slices))`,
+      `EndEdit`, promijenjene sliceove u `_pending`;
+    - `Undo()`: `_pending.UnionWith(_undo.Undo(_slices))`;
+    - `Clear` i `LoadFromFile` kao jedna operacija (snimiti sve dotaknute sliceove);
+    - `_undo.Clear()` u `HandleVolumeLoaded`;
+    - `Flush` s budžetom (`maxSlicesPerFrame`, zadano 8): ostatak ostaje u `_pending` za idući frame;
+    - `UpdateMarkedRange` radi kao dosad: prazni sliceovi su sad uklonjeni iz `_slices`.
   - kistovi zovu `BeginEdit` na pritisak i `EndEdit` na otpuštanje: `SliceAnnotationPainter`,
     `VolumeSlicePainter` (miš i `PaintWithRay`);
-  - UI: gumb "Poništi" + Ctrl+Z (3D scena), stavka "Poništi" u `VrMenu`.
-- **Datoteke:**
-  - nova: `Annotation/MaskUndoStack.cs`, testovi u `Tests~/MaskSerializerTests` (link na
-    `MaskUndoStack.cs`); `Segmentation/MaskRegion.cs` dolazi iz S3;
-  - izmjena: `Annotation/AnnotationMaskManager.cs`, `UI/SliceAnnotationPainter.cs`,
-    `UI/VolumeSlicePainter.cs`, `Xr/VrMenu.cs`, obje scene (gumb).
+  - UI: gumb "Poništi" + Ctrl+Z (3D scena), stavka "Poništi" u `VrMenu` (preko `Row(...)`, vidi 5.1).
+- **Datoteke:** `Annotation/AnnotationMaskManager.cs`, `UI/SliceAnnotationPainter.cs`, `UI/VolumeSlicePainter.cs`,
+  `Xr/VrMenu.cs`, obje scene (gumb), `.meta` za nove datoteke (`Segmentation/`, `MaskEditing.cs`,
+  `MaskUndoStack.cs`, `VoxelVolume.cs`).
 - **Gotovo kad:**
-  - potez kista i `ApplyRegion` se poništavaju jednim undoom;
-  - oduzimanje do praznog slicea uklanja ga iz `_slices` (`_MaskZRange` točan, provjeriti "Samo oznaka"
-    i "oznaka kroz tkivo");
+  - projekt se kompajlira u Unityju (prvi put s kodom iz S1, S3 i S5), 3D scena učitava volumen kao prije i
+    Console ispisuje `Vokseli ostaju na CPU-u … +N MB` (provjera iz S1);
+  - potez kista se poništava jednim undoom (Ctrl+Z, gumb, VR stavka);
+  - Očisti i Učitaj se mogu poništiti;
+  - oduzimanje do praznog slicea uklanja ga iz `_slices` (`_MaskZRange` točan, provjeriti "Samo oznaka" i
+    "oznaka kroz tkivo"). Dok S4 ne postoji, `ApplyRegion` provjeriti privremenim gumbom ili iz MCP-a;
   - `ApplyRegion` na 100 sliceova prolazi kroz ≥ 13 frameova, bez jednog dugog framea;
-  - testovi undo stoga prolaze (granica bajtova, vraćanje nepostojećeg slicea);
-  - `MaskSerializerTests` 21/21.
-- **Ovisnosti:** S3, samo zbog `MaskRegion.cs` (vlasnik je S3, vidi 5.1). Undo stog i budžet za `Flush`
-  mogu početi i prije, a `ApplyRegion` tek kad je `mb/s3-grow2d` spojen.
+  - spremi/učitaj maske radi kao prije; svi `dotnet test` projekti prolaze.
+- **Ovisnosti:** nema više (S1, S3, S5 i čisti dio S2 su u `feature/magic-brush`).
 - **Prompt:**
-  > Grana: `mb/s2-mask-edit`. Pročitaj HANDOFF.md i `docs/magic-brush-research.md` (poglavlja 1, 3 i
-  > sesija S2). Napravi S2: `ApplyRegion` (dodaj/oduzmi), undo za kist i regije, uklanjanje praznih
-  > sliceova iz `_slices`, `Flush` s budžetom, gumb "Poništi" + Ctrl+Z i stavku u VR izborniku. Prvo
-  > spoji `mb/s3-grow2d` u `feature/magic-brush` (donosi `Segmentation/MaskRegion.cs`). Provjeri u
-  > Unityju preko MCP-a, commitaj, pushaj i ažuriraj "Stanje sesija".
+  > Grana: `mb/s2-mask-edit` (od `feature/magic-brush`). Pročitaj HANDOFF.md i `docs/magic-brush-research.md`
+  > (poglavlja 1, 3, 5.1, 5.2 i sesija S2). Prije prelaska na granu spremi ili commitaj moje nekomitane
+  > izmjene u glavnom checkoutu (vidi 5.2). Čisti dio S2 (`MaskEditing`, `MaskUndoStack`) je gotov; napravi
+  > lokalni dio: spoji ih u `AnnotationMaskManager` (undo za kist, `ApplyRegion`, Očisti/Učitaj), `Flush` s
+  > budžetom, gumb "Poništi" + Ctrl+Z i stavku "Poništi" u VR izborniku. Ovo je prvo otvaranje koda iz
+  > S1/S3/S5 u Unityju: provjeri kompilaciju, učitavanje volumena i log memorije iz S1, i commitaj `.meta`
+  > datoteke koje Unity napravi. Provjeri u Unityju preko MCP-a, commitaj, pushaj, spoji u
+  > `feature/magic-brush` i ažuriraj "Stanje sesija".
 
 ### S3: 2D algoritam (čisti C#)
 - **Opseg:**
@@ -701,15 +716,13 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
     4. Algoritam radi nad tim malim nizom kao i dosad (`RegionGrow2D` već prima sirovi niz).
   - Cijena: +1–3 framea kašnjenja po kliku i više koda (asinkroni lanac, pretvorba formata). Algoritmi
     se ne mijenjaju.
-- **Zatvaranje rupa (S3) treba granicu veličine** (nalaz pri pregledu S3). `FillHoles` zatvara svaku
-  rupu u regiji (i u T prije erozije), pa klik u masno tkivo oko bubrega može označiti i bubreg, ako je
-  masnoća oko njega zatvorena unutar ROI-a. Prijedlog za S4/S8: zatvarati samo rupe manje od N mm²
-  (npr. 200 mm²) i provjeriti na stvarnim podacima.
-- **Rubni stop u 3D (S5) odreže sloj uz rub** (nalaz iz S5). Uz `EdgeStop` 0,6 vokseli tik uz jak rub imaju
-  visok G, pa ne ulaze ni u T ni u geodetsku dilataciju. Na sintetičkoj kugli (40 vs −500 HU) ostane
-  ~62 % volumena. Prijedlog za S8: rubni stop koristiti samo kao zapreku za flood (korak 5), a dilataciju
-  (korak 6) pustiti kroz T bez rubnog stopa (samo interval gustoće). Tako se rub vrati, a curenje kroz
-  slab rub i dalje staje.
+- ~~**Zatvaranje rupa treba granicu veličine**~~ **riješeno** (`9d04a44`): `MaxHoleAreaMm2`, zadano 200 mm²
+  (u 3D po sliceu). Klik u masnoću oko organa više ne označi organ (test `ClickInFatAroundOrgan*`).
+  Vrijednost provjeriti na stvarnim podacima u S8.
+- ~~**Rubni stop odreže sloj uz rub**~~ **riješeno** (`9d04a44`): rubni stop sad samo zaustavlja rast, a nakon
+  dilatacije regija ide još jedan korak kroz interval gustoće (korak 6b, 2D i 3D). Kugla 40 vs −500 HU:
+  62 % → 100 %; sa šumom 99,6 %. Cijena: regija smije zahvatiti jedan sloj voksela iste gustoće koji je
+  dodiruje (npr. početak tankog mosta), dalje ne ide. Brzina: 2D ~1 ms, 3D ROI 129×129×51 ~150 ms.
 
 ## 7. Izvori
 
@@ -731,11 +744,11 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 
 | Sesija | Stanje | Grana / commit | Napomena |
 |---|---|---|---|
-| S1 | gotovo u cloudu, čeka provjeru u Unityju | `mb/s1-voxels` @ `45a8ecb` | `VoxelVolume` + `loader.Voxels` (`keepVoxelsOnCpu`); `VoxelVolumeTests` 27/27. Loader nije kompajliran u cloudu: lokalno provjeriti kompilaciju, log "+… MB" i da se 3D scena učitava kao prije; `.meta` za `Segmentation/` generira lokalna sesija |
-| S2 | nije počela | | čeka `mb/s3-grow2d` za `MaskRegion` |
-| S3 | gotovo (cloud) | `mb/s3-grow2d` @ `310e318` | 30/30 testova (`Tests~/SegmentationTests`). 512×512 Release (.NET 8): zadani ROI ~1–4 ms, ROI preko cijelog slicea 10–14 ms; u Unityju (Mono) provjeriti u S4/S8. Odstupanja od plana: erozija diskom (ne kvadratom); klizanje sjemena i prozor statistike gledaju samo piksele unutar maxTol od sjemena; uz `FillHoles` rupe u T se zatvaraju prije erozije (šum). Dodatno: `RegionGrow2D.Diagnostics` (μ, t, upotrijebljeni r). `.meta` nisu stvorene. |
+| S1 | gotovo u cloudu, spojeno (`82ed027`), čeka provjeru u Unityju (S2) | `mb/s1-voxels` @ `45a8ecb` | `VoxelVolume` + `loader.Voxels` (`keepVoxelsOnCpu`); `VoxelVolumeTests` 27/27. Loader nije kompajliran u cloudu: lokalno provjeriti kompilaciju, log "+… MB" i da se 3D scena učitava kao prije; `.meta` za `Segmentation/` generira lokalna sesija |
+| S2 | čisti dio gotov (cloud), lokalni dio nije počeo | `mb/fixes-and-s2-core` @ `c4a332e` | `MaskEditing` + `MaskUndoStack`, 17 testova (`MaskSerializerTests` 38/38). Lokalno: spajanje u manager, kistove, UI, VR, scene, `Flush` s budžetom |
+| S3 | gotovo (cloud), spojeno (`ff8e3ee`) | `mb/s3-grow2d` @ `310e318` | 30/30 testova (`Tests~/SegmentationTests`). 512×512 Release (.NET 8): zadani ROI ~1–4 ms, ROI preko cijelog slicea 10–14 ms; u Unityju (Mono) provjeriti u S4/S8. Odstupanja od plana: erozija diskom (ne kvadratom); klizanje sjemena i prozor statistike gledaju samo piksele unutar maxTol od sjemena; uz `FillHoles` rupe u T se zatvaraju prije erozije (šum). Dodatno: `RegionGrow2D.Diagnostics` (μ, t, upotrijebljeni r). `.meta` nisu stvorene. |
 | S4 | nije počela | | |
-| S5 | algoritam gotov (cloud), integracija čeka S4 | `mb/s5-grow3d` | `RegionGrow3D.Run` + `Morphology3D`, 44/44 testova (30 starih nepromijenjeno + 14 novih). ROI 129×129×51 (~440 k voksela, rubni stop uključen) Release (.NET 8): medijan ~120–130 ms; u Unityju (Mono) provjeriti. 3D zadano: `MagicBrushSettings.Default3D()` (40 mm, rubni stop 0,6, prozor 3×3×3, klizanje 1, `MaxVoxels` 3 M); `new MagicBrushSettings()` i dalje daje 2D. Odstupanja: erozija elipsoidom (ne kvadrom); klizanje sjemena na najmanji G (ne gradijent u ravnini); kao u 2D, rupe u T se po sliceu zatvaraju prije erozije; kad sjeme ne preživi, r se smanjuje na svim osima zajedno (rz prvi padne na 0); `MaxVoxels` se provjerava u floodu i na kraju. Za S8: rubni stop 0,6 odreže ~1 voksel uz jaki rub (na kugli 40 vs −500 HU ostane ~62 %). Dodatno: `RegionGrow3D.Diagnostics` (μ, t, ROI i r po osi, `TooManyVoxels` + `Message`). `.meta` nisu stvorene. |
+| S5 | algoritam gotov (cloud), spojeno (`a789dde`), integracija čeka S4 | `mb/s5-grow3d` | `RegionGrow3D.Run` + `Morphology3D`, 44/44 testova (30 starih nepromijenjeno + 14 novih). ROI 129×129×51 (~440 k voksela, rubni stop uključen) Release (.NET 8): medijan ~120–130 ms; u Unityju (Mono) provjeriti. 3D zadano: `MagicBrushSettings.Default3D()` (40 mm, rubni stop 0,6, prozor 3×3×3, klizanje 1, `MaxVoxels` 3 M); `new MagicBrushSettings()` i dalje daje 2D. Odstupanja: erozija elipsoidom (ne kvadrom); klizanje sjemena na najmanji G (ne gradijent u ravnini); kao u 2D, rupe u T se po sliceu zatvaraju prije erozije; kad sjeme ne preživi, r se smanjuje na svim osima zajedno (rz prvi padne na 0); `MaxVoxels` se provjerava u floodu i na kraju. Rubni stop koji je rezao sloj uz rub (~62 % kugle) ispravljen je u `9d04a44` (vidi "Bilješke za kasnije"). Dodatno: `RegionGrow3D.Diagnostics` (μ, t, ROI i r po osi, `TooManyVoxels` + `Message`). `.meta` nisu stvorene. |
 | S6 | nije počela | | |
 | S7 | nije počela | | |
 | S8 | nije počela | | |
