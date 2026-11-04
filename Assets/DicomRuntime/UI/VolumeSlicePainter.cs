@@ -25,9 +25,17 @@ namespace VolumeRendering.Runtime.UI
         [SerializeField] OrbitCamera orbit;
         [SerializeField] Button modeButton;
         [SerializeField, Min(1)] int brushRadius = 8;
+        // Opcionalno: bez njega kist uvijek crta krug.
+        [SerializeField] MagicBrushTool magicTool;
+
+        // Povlačenje mišem u magic načinu: mrtva zona (piksela) i koliko piksela daje promjenu k za 1.
+        const float MagicDragDeadzone = 6f;
+        const float MagicDragPixelsPerK = 80f;
 
         bool _active;
         bool _painting;
+        bool _magicStroke;
+        float _dragStartY, _dragStartK;
         bool _hasLast;
         int _lastPx, _lastPy, _lastSlice;
         SliceClipController.ClipMode _prevClipMode;
@@ -150,25 +158,52 @@ namespace VolumeRendering.Runtime.UI
 
             Vector3 mouse = Input.mousePosition;
             bool inView = viewCamera.pixelRect.Contains(mouse);
-            bool overUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool overUi = (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                          || (magicTool != null && magicTool.IsOverPanel(mouse));
 
             if (Input.GetMouseButtonDown(0))
             {
                 _painting = inView && !overUi;
                 _hasLast = false;
-                if (_painting)
+                _magicStroke = _painting && magicTool != null && magicTool.Active;
+                if (_magicStroke)
+                {
+                    // Magic brush: klik (Shift = oduzmi); povlačenje gore/dolje mijenja osjetljivost.
+                    if (TryHitSlice(mouse, slice, depth, out int cx, out int cy))
+                    {
+                        magicTool.Click(slice, cx, cy, Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+                        _dragStartY = mouse.y;
+                        _dragStartK = magicTool.Sensitivity;
+                    }
+                    else
+                    {
+                        _magicStroke = false;
+                    }
+                }
+                else if (_painting)
+                {
                     maskManager.BeginEdit();   // cijeli potez je jedna operacija za Poništi
+                }
             }
             if (Input.GetMouseButtonUp(0))
             {
-                if (_painting)
+                if (_painting && !_magicStroke)
                     maskManager.EndEdit();
                 _painting = false;
+                _magicStroke = false;
                 _hasLast = false;
             }
 
-            if (_painting && TryHitSlice(mouse, slice, depth, out int px, out int py))
+            if (_magicStroke)
+            {
+                float dy = mouse.y - _dragStartY;
+                if (Mathf.Abs(dy) > MagicDragDeadzone)
+                    magicTool.SetSensitivity(_dragStartK + (dy - Mathf.Sign(dy) * MagicDragDeadzone) / MagicDragPixelsPerK);
+            }
+            else if (_painting && TryHitSlice(mouse, slice, depth, out int px, out int py))
+            {
                 PaintPixel(slice, px, py);
+            }
         }
 
         // Između dva uzorka (miša ili kontrolera) crtaj niz točaka da potez ne bude isprekidan.
@@ -209,14 +244,24 @@ namespace VolumeRendering.Runtime.UI
 
             if (!pressed || !_rayPressed)
                 _hasLast = false;
-            if (pressed && !_rayPressed)
+            bool magic = magicTool != null && magicTool.Active;
+            if (pressed && !_rayPressed && !magic)
                 maskManager.BeginEdit();
             else if (!pressed && _rayPressed)
                 maskManager.EndEdit();
+            bool pressEdge = pressed && !_rayPressed;
             _rayPressed = pressed;
 
-            if (pressed && hit)
+            if (magic)
+            {
+                // Magic brush: jedan klik po pritisku okidača (osjetljivost je na touchpadu, vidi VrVolumeController).
+                if (pressEdge && hit)
+                    magicTool.Click(slice, px, py);
+            }
+            else if (pressed && hit)
+            {
                 PaintPixel(slice, px, py);
+            }
             return hit;
         }
 

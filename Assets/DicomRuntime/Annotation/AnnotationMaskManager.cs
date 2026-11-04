@@ -60,6 +60,10 @@ namespace VolumeRendering.Runtime.Annotation
         public event Action OnMaskChanged;
 
         public bool CanUndo => _undo.CanUndo;
+
+        // Raste sa svakom izmjenom maske (potez, ApplyRegion, Poništi, Očisti, Učitaj). Magic brush po njemu
+        // zna je li njegova zadnja operacija još na vrhu stoga prije nego je poništi radi nove osjetljivosti.
+        public int EditVersion { get; private set; }
         public int Width => _width;
         public int Height => _height;
         public int Depth => _depth;
@@ -169,7 +173,10 @@ namespace VolumeRendering.Runtime.Annotation
             // Poziv izvan poteza (bez BeginEdit) postaje vlastita operacija, pa je i on poništiv.
             bool ownEdit = !_undo.IsRecording;
             if (ownEdit)
+            {
+                EditVersion++;
                 _undo.Begin();
+            }
             for (int s = first; s <= last; s++)
                 PaintSlice(s, px, py, radius);
             if (ownEdit)
@@ -181,8 +188,10 @@ namespace VolumeRendering.Runtime.Annotation
         // koju Poništi vraća odjednom.
         public void BeginEdit()
         {
-            if (_mask != null)
-                _undo.Begin();
+            if (_mask == null)
+                return;
+            EditVersion++;
+            _undo.Begin();
         }
 
         public void EndEdit() => _undo.End();
@@ -193,6 +202,7 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null || !_undo.CanUndo)
                 return false;
 
+            EditVersion++;
             _pending.UnionWith(_undo.Undo(_slices));
             return true;
         }
@@ -205,6 +215,7 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null || region == null)
                 return 0;
 
+            EditVersion++;
             _undo.Begin();
             List<int> changed;
             try
@@ -335,6 +346,7 @@ namespace VolumeRendering.Runtime.Annotation
             if (_mask == null)
                 return;
 
+            EditVersion++;
             _undo.Begin();
             foreach (int z in _slices.Keys)
                 _undo.RecordBefore(z, _slices);
@@ -384,6 +396,7 @@ namespace VolumeRendering.Runtime.Annotation
                 data = MaskSerializer.Read(stream, _width, _height, _depth);
 
             // Učitavanje je jedna operacija: snimi stare sliceove i one koje datoteka mijenja (prije izmjene).
+            EditVersion++;
             _undo.Begin();
             foreach (int z in _slices.Keys)
                 _undo.RecordBefore(z, _slices);

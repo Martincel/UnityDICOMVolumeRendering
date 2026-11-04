@@ -26,6 +26,8 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] SliceClipController sliceClip;
         // Opcionalno: bez njega se stavka "Poništi" ne prikazuje.
         [SerializeField] AnnotationMaskManager maskManager;
+        // Opcionalno: bez njega se retci magic brusha ne prikazuju.
+        [SerializeField] MagicBrushTool magicTool;
         // Proziran materijal bez zapisa dubine (Sprites/Default), da panel ne izreže rupu u volumenu.
         [SerializeField] Material panelMaterial;
 
@@ -442,6 +444,14 @@ namespace VolumeRendering.Runtime.Xr
             if (sliceClip != null)
                 rows.Add(y => Row(y, MaskOnlyName, CycleMaskOnly));
             rows.Add(y => Row(y, ClipName, ToggleClipPlane, ("Postavi", BeginPlacement, 0.06f, false)));
+            if (magicTool != null)
+            {
+                rows.Add(y => Row(y, () => "Alat: " + MagicToolName(), magicTool.CycleTool));
+                rows.Add(y => Row(y, () => magicTool.Subtract ? "Način: oduzmi" : "Način: dodaj", magicTool.ToggleSubtract));
+                rows.Add(y => Row(y, () => $"Osjetljivost: {magicTool.Sensitivity:0.0}", null,
+                                  ("-", () => magicTool.AdjustSensitivity(-0.1f), SmallButton, true),
+                                  ("+", () => magicTool.AdjustSensitivity(0.1f), SmallButton, true)));
+            }
             if (maskManager != null)
                 rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
                                   () => maskManager.Undo()));
@@ -583,6 +593,13 @@ namespace VolumeRendering.Runtime.Xr
             1 => "Samo oznaka: gustoća tkiva",
             2 => "Samo oznaka: puna boja",
             _ => "Prikaz: cijeli volumen"
+        };
+
+        string MagicToolName() => magicTool.CurrentTool switch
+        {
+            MagicBrushTool.Tool.Magic2D => "Magic 2D",
+            MagicBrushTool.Tool.Magic3D => "Magic 3D",
+            _ => "Kist"
         };
 
         string ClipName()

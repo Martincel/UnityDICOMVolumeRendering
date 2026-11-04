@@ -37,6 +37,10 @@ namespace VolumeRendering.Runtime.Xr
         [SerializeField] bool startInDrawingMode = false;
         [SerializeField, Min(1)] float brushRadius = 8f;
         [SerializeField] float brushSpeed = 15f;
+        // Opcionalno: magic brush. Dok je aktivan, desni trackpad gore/dolje mijenja osjetljivost umjesto kista.
+        [SerializeField] MagicBrushTool magicTool;
+        // Promjena osjetljivosti k po sekundi pri punom otklonu trackpada.
+        [SerializeField] float magicSensitivitySpeed = 1.5f;
         [SerializeField] float scaleSpeed = 0.8f;
         // Okret volumena po stupnju okreta ruke dok se drži (1 = prati ruku; 1.5 = 90° zgloba daje 135°).
         [SerializeField, Range(1f, 4f)] float rotationGain = 1.5f;
@@ -174,7 +178,9 @@ namespace VolumeRendering.Runtime.Xr
             string slice = sliceView != null && sliceView.SliceCount > 0
                 ? $"Slice {sliceView.CurrentSliceIndex + 1}/{sliceView.SliceCount}"
                 : "Slice -";
-            _status.text = $"{slice}\nKist {Mathf.RoundToInt(brushRadius)} px";
+            _status.text = magicTool != null && magicTool.Active
+                ? $"{slice}\nMagic {(magicTool.CurrentTool == MagicBrushTool.Tool.Magic3D ? "3D" : "2D")} · k = {magicTool.Sensitivity:0.0} · {(magicTool.Subtract ? "Oduzmi" : "Dodaj")}"
+                : $"{slice}\nKist {Mathf.RoundToInt(brushRadius)} px";
             VrLabel.PlaceAbove(_status.transform, hand, rig.Head);
         }
 
@@ -268,7 +274,11 @@ namespace VolumeRendering.Runtime.Xr
             // Djeluje samo dominantna os, da jedan pokret ne mijenja i kist i veličinu odjednom.
             if (Mathf.Abs(a.y) >= Mathf.Abs(a.x))
             {
-                if (Mathf.Abs(a.y) > deadzone)
+                if (Mathf.Abs(a.y) > deadzone && magicTool != null && magicTool.Active)
+                {
+                    magicTool.AdjustSensitivity(a.y * magicSensitivitySpeed * Time.deltaTime);
+                }
+                else if (Mathf.Abs(a.y) > deadzone)
                 {
                     brushRadius = Mathf.Clamp(brushRadius + a.y * brushSpeed * Time.deltaTime, 1f, 40f);
                     painter.SetBrushRadius(brushRadius);
@@ -315,9 +325,23 @@ namespace VolumeRendering.Runtime.Xr
             _line.enabled = true;
             _line.SetPosition(0, ray.origin);
             _line.SetPosition(1, hit ? worldHit : ray.origin + dir * rayLength);
-            Color c = pressed ? Color.red : (hit ? Color.cyan : Color.white);
+            bool magicBusy = magicTool != null && magicTool.Busy;
+            if (_wasMagicBusy && !magicBusy)
+                Haptic(XRNode.RightHand);   // magic brush je gotov
+            _wasMagicBusy = magicBusy;
+
+            Color c = magicBusy ? Color.yellow : (pressed ? Color.red : (hit ? Color.cyan : Color.white));
             _line.startColor = c;
             _line.endColor = c;
+        }
+
+        bool _wasMagicBusy;
+
+        static void Haptic(XRNode node)
+        {
+            var device = InputDevices.GetDeviceAtXRNode(node);
+            if (device.isValid && device.TryGetHapticCapabilities(out var caps) && caps.supportsImpulse)
+                device.SendHapticImpulse(0, 0.5f, 0.1f);
         }
 
         // ---- čitanje kontrolera ----
