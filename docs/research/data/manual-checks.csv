@@ -1,0 +1,27 @@
+study_id,field,new_value,evidence,checked
+S091,ft:decision_ft,exclude,"Full text PMC6748179 (Europe PMC), checked 2026-11-04",2026-11-04
+S091,ft:reason_ft,E2,"Full text PMC6748179 (Europe PMC), checked 2026-11-04",2026-11-04
+S091,ft:note_ft,"Full text checked: user studies used grayscale-converted RGB images, not CT/MR volumes (E2). Was included on abstract only.","Full text PMC6748179 (Europe PMC), checked 2026-11-04",2026-11-04
+S020,modality,CT; MRI; ultrasound; X-ray (2D and 3D),"Abstract, PubMed 34839271",2026-11-04
+S020,anatomy,abdominal organs; tumor; bones,"Abstract, PubMed 34839271",2026-11-04
+S020,time_or_latency,computational time evaluated (value not in abstract); automatic next-slice recommendation in 3D,"Abstract, PubMed 34839271",2026-11-04
+S020,accuracy,segmentation accuracy and repeatability evaluated (values not in abstract),"Abstract, PubMed 34839271",2026-11-04
+S020,code_available,y (stated in abstract; download link for research use),"Abstract, PubMed 34839271",2026-11-04
+S020,notes,Abstract checked 2026-11-04 (earlier included on title only); I1-I3 confirmed from abstract; fully connected CRF core; no numbers available without full text,"Abstract, PubMed 34839271",2026-11-04
+S023,modality,CT,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,anatomy,mandible,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,dims,3D,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,dataset,10 mandibles,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,time_or_latency,VR significantly faster than desktop screen and public reference for manual segmentation (p = 0.007 / < 0.001); values not in abstract,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,accuracy,"segmentation-to-segmentation Dice / average Hausdorff: desktop 91.4 % / 0.37 mm, VR 90.1 % / 0.44 mm; precision: VR 96.8 % / 0.14 mm, desktop 96.6 % / 0.15 mm, public reference 94.1 % / 0.21 mm, AI 89.2 % / 0.60 mm; segmentation-to-volume rating (1-5): VR 4.56, desktop 4.33, AI 3.80","Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,evaluation,cross-over study: 10 mandibles segmented in VR and on desktop by 5 experts and by 5 AI models; blinded rating by 2 radiologists,"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,n_users,5 experts (segmenters); 2 radiologists (raters),"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,segmentation_in_vr,manual segmentation in VR (tool and headset not named in abstract),"Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+S023,notes,"Abstract checked 2026-11-04 on open repository page (publisher PDF not downloadable); HMD, engine and interaction technique unknown","Abstract on open repository page (research.rug.nl), ""CT quality""",2026-11-04
+R0290,accuracy,"Dice volume overlap (blood pool, myocardium) shown only as curves vs number of segmented slices in Fig. 2; no numeric value in the text (earlier ""~0.95 with 14 slices"" was read from axis labels and is not confirmed)",Full text re-read 2026-11-04 (Springer OA PDF),2026-11-04
+R0290,notes,Checked against full text 2026-11-04. Text states: good accuracy with 14 of ~200 short-axis slices; active learning on whole slices gives no meaningful gain over uniform selection,Full text re-read 2026-11-04 (Springer OA PDF),2026-11-04
+R0004,hardware,training 8x A100; inference GPU not stated (paper: latency and memory measured on different hardware may vary),Full text re-read 2026-11-04 (arXiv 2403.15063),2026-11-04
+R0004,time_or_latency,0.14 s/patch inference (64^3 input; 125.70 GFLOPs; 1240 MB); time per organ with the tool < 10 s vs manual 0.5 h (slice thickness > 3 mm) or 1-2 h (<= 3 mm) (Table 9),Full text re-read 2026-11-04 (arXiv 2403.15063),2026-11-04
+R0004,accuracy,"BTCV external test: mDSC 78.4 % / mNSD 88.4 % with 1 click, 82.2 % / 93.9 % with 3 clicks",Full text re-read 2026-11-04 (arXiv 2403.15063),2026-11-04
+R0004,notes,Table 9 columns and BTCV numbers verified against full text 2026-11-04 (earlier note on inferred column assignment resolved),Full text re-read 2026-11-04 (arXiv 2403.15063),2026-11-04
+S057,notes,"Abstract re-checked 2026-11-04 (PubMed 29683429): controlled experiment, 8 simulated latency levels 100-2000 ms, automatic vs user-initiated feedback refresh; shorter latency with automatic refresh slowed labelling (attention on feedback). Medical modality and volumetric data are not stated in the abstract (borderline I2); full text not read.","Abstract, PubMed 29683429",2026-11-04

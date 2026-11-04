@@ -89,7 +89,7 @@ S087,10.1145/1015706.1015720,exclude,E8,,foundational? GrabCut (2004),,,,,exclud
 S088,10.1145/1857907.1857910,exclude,E8,,,,,,,exclude,E8
 S089,10.1145/2968220.2968235,maybe,insufficient,RQ2,Observational study of 3D volume segmentation; data type unclear,exclude,E3,abstract-only,Observational study of expert segmentation behaviour; no interactive method/tool or medical modality stated,exclude,E3
 S090,10.1145/3531706.3536456,include,I1-I6,RQ2,Needs-finding and co-design for VR contour delineation,include,I,abstract-only,Formative co-design study of VR contouring prototypes; 6 experts; qualitative only.,include,I
-S091,10.1155/2019/1464592,maybe,insufficient,RQ1;RQ2,Usability (SUS) evaluation framework for interactive segmentation; modality unclear,include,I,abstract-only,Usability evaluation framework for interactive segmentation (SUS; AttrakDiff-2); modality unverified,include,I
+S091,10.1155/2019/1464592,maybe,insufficient,RQ1;RQ2,Usability (SUS) evaluation framework for interactive segmentation; modality unclear,exclude,E2,abstract-only,"Full text checked: user studies used grayscale-converted RGB images, not CT/MR volumes (E2). Was included on abstract only.",exclude,E2
 S092,10.1167/tvst.15.1.12,exclude,E2,,Fundus autofluorescence 2D images,,,,,exclude,E2
 S093,10.19153/cleiej.16.2.4,exclude,E8,,GPU 3D GrabCut (2013),,,,,exclude,E8
 S094,10.21203/rs.3.rs-6221538/v1,include,I1-I6,RQ1,Two-stage interactive click refinement for OPC GTV,include,I,abstract-only,Two-stage click refinement oropharyngeal GTV; Dice after 10 clicks,include,I

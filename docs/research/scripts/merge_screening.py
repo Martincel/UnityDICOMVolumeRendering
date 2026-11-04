@@ -3,12 +3,16 @@
 Usage: python -I docs/research/scripts/merge_screening.py
 Inputs  (docs/research/data/):
   screening-log.csv, screening-log-snowball.csv, records.csv, snowball-candidates.csv,
-  fulltext-screening/ftscreen_*.csv, fulltext-screening/ftextract_*.csv
+  fulltext-screening/ftscreen_*.csv, fulltext-screening/ftextract_*.csv, manual-checks.csv
 Outputs (overwritten, deterministic, safe to re-run):
   screening-log.csv           columns decision_ft, reason_ft, fulltext_source, note_ft filled; adds final_decision, final_reason
   screening-log-snowball.csv  same columns appended (it had none)
   extraction.csv              one row per included study (protocol Section 7); values as reported, none inferred
   prisma-counts.csv           counts used by the PRISMA-ScR flow in 02-search-and-screening.md
+
+manual-checks.csv: corrections made after a manual check against the source (study_id, field, new_value, evidence,
+checked). Fields starting with "ft:" override the full-text decision (decision_ft, reason_ft, note_ft) before the
+final decision is derived; other fields overwrite the extraction value. The group files stay untouched.
 
 final_decision: include | exclude.  A record is included only if it passed title/abstract screening as include or
 maybe AND the full-text stage (or abstract-only stage when no open full text exists) returned include.
@@ -46,19 +50,22 @@ def load_group_files(prefix):
     return out
 
 
-def peer_reviewed_main(pub_types):
-    return "preprint" if "preprint" in (pub_types or "").lower() else "y"
-
-
 def peer_reviewed_doi(doi):
-    # snowball records carry only a DOI; preprint servers are recognised by DOI registrant prefix
+    """y = the record carries the DOI of a journal or proceedings publisher (the DOI of the published version is kept
+    by de-duplication and was checked in Crossref); preprint = only an arXiv ID, or the DOI of a preprint server."""
     d = (doi or "").lower()
+    if not d:
+        return "preprint"
     return "preprint" if d.startswith(("10.48550/", "10.1101/", "10.21203/", "10.20944/")) else "y"
 
 
 def main():
     ft = load_group_files("ftscreen")
     fx = load_group_files("ftextract")
+    checks = read(os.path.join(DATA, "manual-checks.csv"))
+    for c in checks:
+        if c["field"].startswith("ft:"):
+            ft[c["study_id"]][c["field"][3:]] = c["new_value"]
     log = read(os.path.join(DATA, "screening-log.csv"))
     snow = read(os.path.join(DATA, "screening-log-snowball.csv"))
     rec = {r["record_id"]: r for r in read(os.path.join(DATA, "records.csv"))}
@@ -103,7 +110,7 @@ def main():
             continue
         a, x, f = rec[r["record_id"]], fx[r["record_id"]], ft[r["record_id"]]
         rows.append(dict(x, study_id=r["record_id"], corpus="main", year=a["year"], doi=a["doi"], pmid=a["pmid"],
-                         arxiv=a["arxiv"], title=a["title"], peer_reviewed=peer_reviewed_main(a["pub_types"]),
+                         arxiv=a["arxiv"], title=a["title"], peer_reviewed=peer_reviewed_doi(a["doi"]),
                          rq=f["rq"], evidence_base=f["fulltext_source"], note_ft=f["note_ft"]))
     for r in snow:
         if r["final_decision"] != "include":
@@ -112,6 +119,15 @@ def main():
         rows.append(dict(x, study_id=r["record_id"], corpus="snowball", year=c["year"], doi=r["doi"], pmid="",
                          arxiv="", title=c["title"], peer_reviewed=peer_reviewed_doi(r["doi"]), rq=f["rq"],
                          evidence_base=f["fulltext_source"], note_ft=f["note_ft"]))
+    by_id = {r["study_id"]: r for r in rows}
+    for c in checks:
+        if c["field"].startswith("ft:"):
+            continue
+        if c["study_id"] not in by_id:
+            raise SystemExit("manual check for a study that is not included: " + c["study_id"])
+        if c["field"] not in xfields:
+            raise SystemExit("unknown field in manual-checks.csv: " + c["field"])
+        by_id[c["study_id"]][c["field"]] = c["new_value"]
     write(os.path.join(DATA, "extraction.csv"), xfields, rows)
 
     # ---- PRISMA counts
