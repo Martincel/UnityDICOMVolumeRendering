@@ -80,7 +80,7 @@ Radiopaedia "Hounsfield unit", pregledni radovi o CTA (aortna opacifikacija ≥ 
 kontrasta (~40 HU) ima istu gustoću kao mišić, pa se žile pojasom mogu izdvojiti samo u kontrastnoj seriji; i tada
 spužvasta kost (300–400) upada u pojas žila, pa kost treba odrezati ravninom ili maskom. Je li `series-000003`
 kontrastna, nije provjereno (tag 0018,0010 Contrast/Bolus Agent).
-- **Nije provjereno:** kompilacija shadera i C#-a u Unityju (Unity MCP nije bio spojen) i izgled u headsetu.
+- Martin (2026-11-04): Console bez grešaka, HU pojas i okretanje 1,5× rade u headsetu.
 - Provjereno bez headseta (Play, MCP): kompilacija bez grešaka, scena bez nedostajućih skripti, sve stavke mijenjaju
   `Preset`/`Style`/`Lighting`/`IsoValueHU`, ključne riječi i `_IsoValue`/`_MaskOnly`/`_ClipPlaneOn` na instanci
   materijala; ravnina se veže za `Volume`. **Nije provjereno:** ulaz s Wanda, čitljivost i položaj panela u headsetu.
@@ -158,9 +158,23 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 - Worktree `unity-vr-project-comparison-acb557` je detached na `6a232e5` i više se ne koristi.
 - Nakon ručne provjere: u glavnom checkoutu `git switch feature/vr-vive` i `git merge --ff-only feature/volume-format`.
 
+## Spajanje s magic brushem (2026-11-04)
+- **Grana je spremna za spajanje u `feature/magic-brush`** (pushana; VR izbornik, okretanje i HU pojas potvrđeni u
+  headsetu). Probni `git merge-tree` s granama magic brusha prolazi bez konflikta.
+- Redoslijed za zajedničke datoteke (`Xr/VrMenu.cs`, `Xr/VrVolumeController.cs`, `VolumeRenderingWithTransferFunction.cs`,
+  `VolumeRendering-Basic.shader`, obje scene): **VR izbornik (lokalno) → S2 → S4**, nikad paralelno. Ovaj redak
+  ("VR izbornik (lokalno) → prije S2") treba dodati i u tablicu 5.1 plana magic brusha (`docs/magic-brush-research.md`);
+  ta datoteka je na granama magic brusha i ova grana je ne dira.
+- Sučelje za S4: redovi panela se dodaju u `VrMenu.BuildPanel` kroz `Row(y, label, onClick, params buttons)`
+  (glavni gumb + mali gumbi zdesna, `repeat` za držanje). Javne akcije: `NextPreset`/`PreviousPreset`, `CycleStyle`,
+  `ToggleLighting`, `ChangeIso`, `CycleTissueBand`, `ChangeBand`, `CycleMaskOnly`, `ToggleClipPlane`, `BeginPlacement`.
+  `VrVolumeController` zove `VrMenu.Tick(rightTrigger)`; dok vraća true, desni okidač i desni touchpad pripadaju
+  izborniku. Mapiranje tipki je u tablici u "VR izbornik".
+- Magic brush stanje se vodi u njegovu dokumentu, ne ovdje. Nalazi iz ručne liste koji traže izmjene u zajedničkim
+  datotekama idu nakon S2/S4 ili uz dogovor s integracijskom sesijom magic brusha.
+
 ## Sljedeće
-1. **HU pojas u headsetu** (`9360b38`, `a7ceb7a`): Console bez grešaka, pojasevi tkiva u sva tri načina, okretanje
-   1,5×. VR izbornik i okretanje su potvrđeni.
-2. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
+1. Ručna provjera iznad u 3D sceni, pa u headsetu (stavke 5–7 iz VR izbornika).
+2. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije za test.
 4. Merge u `feature/vr-vive`. Tek tada plan za Unity 6 + XRI + stereo makroe.
