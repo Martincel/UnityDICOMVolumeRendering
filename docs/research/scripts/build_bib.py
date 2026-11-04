@@ -83,12 +83,32 @@ def from_pubmed(pmid):
                        "url": "https://pubmed.ncbi.nlm.nih.gov/" + pmid + "/"}
 
 
+def existing_entries():
+    """Entries of the current references.bib: key -> (identifier, raw text). Used to skip re-resolving."""
+    path = os.path.join(ROOT, "references.bib")
+    if not os.path.exists(path):
+        return {}
+    res = {}
+    text = open(path, encoding="utf-8").read()
+    for m in re.finditer(r"@\w+\s*\{\s*([^,]+),(.*?)\n\}\n", text, re.S):
+        f = {k.lower(): val for k, val in re.findall(r"(\w+)\s*=\s*\{(.*?)\}(?:,|\n)", m.group(2))}
+        ident = f.get("doi") or f.get("eprint") or f.get("pmid") or f.get("url", "")
+        res[m.group(1).strip()] = (ident.lower(), m.group(0).rstrip("\n") + "\n")
+    return res
+
+
 def main():
+    """python build_bib.py [--refresh]  (default: reuse entries already in references.bib whose identifier is unchanged)"""
     rows = list(csv.DictReader(open(os.path.join(ROOT, "data", "reference-ids.csv"), encoding="utf-8")))
+    old = {} if "--refresh" in sys.argv else existing_entries()
     out, failed = [], []
     today = dt.date.today().isoformat()
     for r in rows:
         t, i = r["id_type"].strip(), r["identifier"].strip()
+        if r["key"] in old and old[r["key"]][0] == i.lower():
+            out.append(old[r["key"]][1])
+            print("reuse", r["key"])
+            continue
         res = None
         if t == "doi":
             res = from_crossref(i)

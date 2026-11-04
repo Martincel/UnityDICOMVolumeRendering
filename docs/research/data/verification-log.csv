@@ -1,0 +1,284 @@
+key,identifier,source,http_status,retrieved_title,retrieved_year,retrieved_first_author,title_match_score,hint_match_score,date_utc,status
+tricco2018prismascr,10.7326/M18-0850,crossref,200,PRISMA Extension for Scoping Reviews (PRISMA-ScR): Checklist and Explanation,2018,Tricco,1.0,,2026-11-04T10:11:47Z,verified
+arksey2005scoping,10.1080/1364557032000119616,crossref,200,Scoping studies: towards a methodological framework,2005,Arksey,1.0,,2026-11-04T10:11:48Z,verified
+adams1994srg,10.1109/34.295913,crossref,200,Seeded region growing,1994,Adams,1.0,,2026-11-04T10:11:48Z,verified
+vincent1993reconstruction,10.1109/83.217222,crossref,200,Morphological grayscale reconstruction in image analysis: applications and efficient algorithms,1993,Vincent,1.0,,2026-11-04T10:11:49Z,verified
+vincent1991watershed,10.1109/34.87344,crossref,200,Watersheds in digital spaces: an efficient algorithm based on immersion simulations,1991,Vincent,1.0,,2026-11-04T10:11:50Z,verified
+kass1988snakes,10.1007/BF00133570,crossref,200,Snakes: Active contour models,1988,Kass,1.0,,2026-11-04T10:11:51Z,verified
+osher1988levelset,10.1016/0021-9991(88)90002-2,crossref,200,Fronts propagating with curvature-dependent speed: Algorithms based on Hamilton-Jacobi formulations,1988,Osher,1.0,,2026-11-04T10:11:52Z,verified
+caselles1997gac,10.1023/A:1007979827043,crossref,200,Geodesic Active Contours,1997,Caselles,1.0,,2026-11-04T10:11:52Z,verified
+sethian1996fastmarching,10.1073/pnas.93.4.1591,crossref,200,A fast marching level set method for monotonically advancing fronts.,1996,Sethian,1.0,,2026-11-04T10:11:53Z,verified
+dijkstra1959,10.1007/BF01386390,crossref,200,A note on two problems in connexion with graphs,1959,Dijkstra,1.0,,2026-11-04T10:11:54Z,verified
+boykov2001graphcut,10.1109/ICCV.2001.937505,crossref,200,Interactive graph cuts for optimal boundary &amp; region segmentation of objects in N-D images,None,Boykov,0.978,,2026-11-04T10:11:55Z,verified
+boykov2004maxflow,10.1109/TPAMI.2004.60,crossref,200,An experimental comparison of min-cut/max- flow algorithms for energy minimization in vision,2004,Boykov,1.0,,2026-11-04T10:11:56Z,verified
+rother2004grabcut,10.1145/1015706.1015720,crossref,200,"""GrabCut""",2004,Rother,1.0,,2026-11-04T10:11:57Z,verified
+grady2006randomwalker,10.1109/TPAMI.2006.233,crossref,200,Random Walks for Image Segmentation,2006,Grady,1.0,,2026-11-04T10:11:57Z,verified
+vezhnevets2005growcut,https://www.graphicon.ru/html/2005/proceedings/papers/VezhntvetsKonushin.pdf,web,200,,,,,,2026-11-04T10:21:46Z,web
+zhu2014fastgrowcut,https://nac.spl.harvard.edu/publications/effective-interactive-medical-image-segmentation-method-using-fast-growcut,web,200,An Effective Interactive Medical Image Segmentation Method using Fast GrowCut,,,1.0,,2026-11-04T10:21:48Z,web
+bai2007geodesic,10.1109/ICCV.2007.4408931,crossref,200,A Geodesic Framework for Fast Interactive Image and Video Segmentation and Matting,2007,Bai,1.0,,2026-11-04T10:13:02Z,verified
+criminisi2008geos,10.1007/978-3-540-88682-2_9,crossref,200,GeoS: Geodesic Image Segmentation,2008,Criminisi,1.0,,2026-11-04T10:13:02Z,verified
+achanta2012slic,10.1109/TPAMI.2012.120,crossref,200,SLIC Superpixels Compared to State-of-the-Art Superpixel Methods,2012,Achanta,1.0,,2026-11-04T10:13:03Z,verified
+rousseeuw1993mad,10.1080/01621459.1993.10476408,crossref,200,Alternatives to the Median Absolute Deviation,1993,Rousseeuw,1.0,,2026-11-04T10:13:04Z,verified
+yushkevich2006itksnap,10.1016/j.neuroimage.2006.01.015,crossref,200,User-guided 3D active contour segmentation of anatomical structures: Significantly improved efficiency and reliability,2006,Yushkevich,1.0,,2026-11-04T10:13:05Z,verified
+fedorov2012slicer,10.1016/j.mri.2012.05.001,crossref,200,3D Slicer as an image computing platform for the Quantitative Imaging Network,2012,Fedorov,1.0,,2026-11-04T10:13:06Z,verified
+mccormick2014itk,10.3389/fninf.2014.00013,crossref,200,ITK: enabling reproducible research and open science,2014,McCormick,1.0,,2026-11-04T10:13:07Z,verified
+itk_confidenceconnected,https://itk.org/Doxygen/html/classitk_1_1ConfidenceConnectedImageFilter.html,web,200,"ITK: itk::ConfidenceConnectedImageFilter&lt; TInputImage, TOutputImage &gt; Class Template Reference",,,1.0,,2026-11-04T10:21:49Z,web
+slicer_segmenteditor,https://slicer.readthedocs.io/en/latest/user_guide/modules/segmenteditor.html,web,200,Segment editor &mdash; 3D Slicer documentation,,,1.0,,2026-11-04T10:21:50Z,web
+gao2024slicerinteractive,10.1038/s41598-024-80206-7,crossref,200,An effective and open source interactive 3D medical image segmentation solution,2024,Gao,1.0,,2026-11-04T10:13:09Z,verified
+ramkumar2016userinteraction,10.1007/s10278-015-9839-8,crossref,200,User Interaction in Semi-Automatic Segmentation of Organs at Risk: a Case Study in Radiotherapy,2016,Ramkumar,1.0,,2026-11-04T10:13:10Z,verified
+xu2016deepselection,10.1109/CVPR.2016.47,crossref,200,Deep Interactive Object Selection,2016,Xu,1.0,,2026-11-04T10:13:11Z,verified
+maninis2018dextr,10.1109/CVPR.2018.00071,crossref,200,Deep Extreme Cut: From Extreme Points to Object Segmentation,2018,Maninis,1.0,,2026-11-04T10:13:12Z,verified
+sofiiuk2022ritm,10.1109/ICIP46576.2022.9897365,crossref,200,Reviving Iterative Training with Mask Guidance for Interactive Segmentation,2022,Sofiiuk,1.0,,2026-11-04T10:13:13Z,verified
+wang2018bifseg,10.1109/TMI.2018.2791721,crossref,200,Interactive Medical Image Segmentation Using Deep Learning With Image-Specific Fine Tuning,2018,Wang,1.0,,2026-11-04T10:13:14Z,verified
+wang2019deepigeos,10.1109/TPAMI.2018.2840695,crossref,200,DeepIGeoS: A Deep Interactive Geodesic Framework for Medical Image Segmentation,2019,Wang,1.0,,2026-11-04T10:13:15Z,verified
+sakinis2019interactive,1903.08205,arxiv,200,Interactive segmentation of medical images through fully convolutional neural networks,2019,Sakinis,1.0,,2026-11-04T10:13:15Z,verified
+isensee2021nnunet,10.1038/s41592-020-01008-z,crossref,200,nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation,2021,Isensee,1.0,,2026-11-04T10:13:19Z,verified
+kirillov2023sam,10.1109/ICCV51070.2023.00371,crossref,200,Segment Anything,2023,Kirillov,1.0,,2026-11-04T10:13:20Z,verified
+ravi2024sam2,2408.00714,arxiv,200,SAM 2: Segment Anything in Images and Videos,2024,Ravi,1.0,,2026-11-04T10:13:21Z,verified
+ma2024medsam,10.1038/s41467-024-44824-z,crossref,200,Segment anything in medical images,2024,Ma,1.0,,2026-11-04T10:13:24Z,verified
+mazurowski2023samstudy,10.1016/j.media.2023.102918,crossref,200,Segment anything model for medical image analysis: An experimental study,2023,Mazurowski,1.0,,2026-11-04T10:13:25Z,verified
+cheng2023sammed2d,2308.16184,arxiv,200,SAM-Med2D,2023,Cheng,1.0,,2026-11-04T10:13:26Z,verified
+wang2023sammed3d,2310.15161,arxiv,200,SAM-Med3D: Towards General-purpose Segmentation Models for Volumetric Medical Images,2023,Wang,1.0,,2026-11-04T10:13:30Z,verified
+ma2025medsam2,2504.03600,arxiv,200,MedSAM2: Segment Anything in 3D Medical Images and Videos,2025,Ma,1.0,,2026-11-04T10:13:33Z,verified
+isensee2025nninteractive,2503.08373,arxiv,200,nnInteractive: Redefining 3D Promptable Segmentation,2025,Isensee,1.0,,2026-11-04T10:13:37Z,verified
+deVente2025slicernninteractive,2504.07991,arxiv,200,SlicerNNInteractive: A 3D Slicer extension for nnInteractive,2025,Vente,1.0,,2026-11-04T10:13:40Z,verified
+elbeheiry2020diva,10.1016/j.jmb.2020.05.026,crossref,200,DIVA: Natural Navigation Inside 3D Images Using Virtual Reality,2020,El Beheiry,1.0,,2026-11-04T10:13:44Z,verified
+card1991infovis,10.1145/108844.108874,crossref,200,"The information visualizer, an information workspace",1991,Card,1.0,,2026-11-04T10:13:45Z,verified
+miller1968response,10.1145/1476589.1476628,crossref,200,Response time in man-computer conversational transactions,1968,Miller,1.0,,2026-11-04T10:13:45Z,verified
+antonelli2022msd,10.1038/s41467-022-30695-9,crossref,200,The Medical Segmentation Decathlon,2022,Antonelli,1.0,,2026-11-04T10:13:46Z,verified
+simpson2019msd,1902.09063,arxiv,200,A large annotated medical image dataset for the development and evaluation of segmentation algorithms,2019,Simpson,1.0,,2026-11-04T10:13:47Z,verified
+wasserthal2023totalseg,10.1148/ryai.230024,crossref,200,TotalSegmentator: Robust Segmentation of 104 Anatomic Structures in CT Images,2023,Wasserthal,1.0,,2026-11-04T10:13:51Z,verified
+ji2022amos,2206.08023,arxiv,200,AMOS: A Large-Scale Abdominal Multi-Organ Benchmark for Versatile Medical Image Segmentation,2022,Ji,1.0,,2026-11-04T10:13:51Z,verified
+heller2021kits,10.1016/j.media.2020.101821,crossref,200,The state of the art in kidney and kidney tumor segmentation in contrast-enhanced CT imaging: Results of the KiTS19 challenge,2021,Heller,1.0,,2026-11-04T10:13:55Z,verified
+bilic2023lits,10.1016/j.media.2022.102680,crossref,200,The Liver Tumor Segmentation Benchmark (LiTS),2023,Bilic,1.0,,2026-11-04T10:13:56Z,verified
+menze2015brats,10.1109/TMI.2014.2377694,crossref,200,The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS),2015,Menze,1.0,,2026-11-04T10:13:57Z,verified
+kavur2021chaos,10.1016/j.media.2020.101950,crossref,200,CHAOS Challenge - combined (CT-MR) healthy abdominal organ segmentation,2021,Kavur,1.0,,2026-11-04T10:13:58Z,verified
+maierhein2024metrics,10.1038/s41592-023-02151-z,crossref,200,Metrics reloaded: recommendations for image analysis validation,2024,Maier-Hein,1.0,,2026-11-04T10:13:59Z,verified
+dice1945,10.2307/1932409,crossref,200,Measures of the Amount of Ecologic Association Between Species,1945,Dice,1.0,,2026-11-04T10:14:00Z,verified
+taha2015metrics,10.1186/s12880-015-0068-x,crossref,200,"Metrics for evaluating 3D medical image segmentation: analysis, selection, and tool",2015,Taha,1.0,,2026-11-04T10:14:00Z,verified
+brooke1996sus,10.1201/9781498710411-35,crossref,200,SUS: A 'Quick and Dirty' Usability Scale,1996,,1.0,,2026-11-04T10:14:01Z,verified
+bangor2008sus,10.1080/10447310802205776,crossref,200,An Empirical Evaluation of the System Usability Scale,2008,Bangor,1.0,,2026-11-04T10:14:02Z,verified
+hart1988nasatlx,10.1016/S0166-4115(08)62386-9,crossref,200,Development of NASA-TLX (Task Load Index): Results of Empirical and Theoretical Research,1988,,1.0,,2026-11-04T10:14:03Z,verified
+slicer_extraeffects,https://github.com/lassoan/SlicerSegmentEditorExtraEffects,web,200,GitHub - lassoan/SlicerSegmentEditorExtraEffects: Many additional segmentation tools for 3D Slicer&#39;s Segment Editor · GitHub,,,0.889,,2026-11-04T10:21:51Z,web
+totalseg_zenodo,https://zenodo.org/records/10047292,web,200,Dataset with segmentations of 117 important anatomical structures in 1228 CT images | Zenodo,,,1.0,,2026-11-04T10:21:52Z,web
+amos_zenodo,https://zenodo.org/records/7262581,web,200,Amos: A large-scale abdominal multi-organ benchmark for versatile medical image segmentation | Zenodo,,,1.0,,2026-11-04T10:21:53Z,web
+chaos_zenodo,https://zenodo.org/records/3431873,web,200,CHAOS - Combined (CT-MR) Healthy Abdominal Organ Segmentation Challenge Data | Zenodo,,,1.0,,2026-11-04T10:21:54Z,web
+msd_aws,https://registry.opendata.aws/msd/,web,200,Medical Segmentation Decathlon - Registry of Open Data on AWS,,,1.0,,2026-11-04T10:21:55Z,web
+kits23_github,https://github.com/neheller/kits23,web,200,GitHub - neheller/kits23: The official repository of the 2023 Kidney Tumor Segmentation Challenge (KiTS23) · GitHub,,,1.0,,2026-11-04T10:21:56Z,web
+r0001,2507.07730,arxiv,200,RAPS-3D: Efficient interactive segmentation for 3D radiological imaging,2025,Danielou,1.0,1.0,2026-11-04T10:14:10Z,verified
+r0002,10.1007/s10278-026-02097-6,crossref,200,Opportunistic Promptable Segmentation: Leveraging Routine Radiological Annotations to Guide 3D CT Lesion Segmentation,2026,Church,1.0,1.0,2026-11-04T10:14:13Z,verified
+r0003,2601.12297,arxiv,200,Synthetic Volumetric Data Generation Enables Zero-Shot Generalization of Foundation Models in 3D Medical Image Segmentation,2026,Chakrabarty,1.0,1.0,2026-11-04T10:14:14Z,verified
+r0004,2403.15063,arxiv,200,"Towards a Comprehensive, Efficient and Promptable Anatomic Structure Segmentation Model using 3D Whole-body CT Scans",2024,Guo,1.0,1.0,2026-11-04T10:14:18Z,verified
+r0005,10.1109/tmi.2025.3627954,crossref,200,Accelerating Volumetric Medical Image Annotation via Short-Long Memory SAM 2,2026,Chen,1.0,1.0,2026-11-04T10:14:21Z,verified
+r0007,10.1016/j.compbiomed.2025.111422,crossref,200,MOIS-SAM2: Exemplar-based segment anything model 2 for multi-lesion interactive segmentation of neurofibromas in whole-body MRI,2026,Kolokolnikov,1.0,1.0,2026-11-04T10:14:22Z,verified
+r0008,2601.16383,arxiv,200,On The Robustness of Foundational 3D Medical Image Segmentation Models Against Imprecise Visual Prompts,2026,Chattopadhyay,1.0,1.0,2026-11-04T10:14:23Z,verified
+r0009,2407.12658,arxiv,200,FastSAM-3DSlicer: A 3D-Slicer Extension for 3D Volumetric Segment Anything Model with Uncertainty Quantification,2024,Shen,1.0,1.0,2026-11-04T10:14:26Z,verified
+r0010,2408.00756,arxiv,200,Segment anything model 2: an application to 2D and 3D medical images,2024,Dong,1.0,1.0,2026-11-04T10:14:30Z,verified
+r0012,2201.04584,arxiv,200,ECONet: Efficient Convolutional Online Likelihood Network for Scribble-based Interactive Segmentation,2022,Asad,1.0,1.0,2026-11-04T10:14:33Z,verified
+r0013,2408.02635,arxiv,200,Interactive 3D Medical Image Segmentation with SAM 2,2024,Shen,1.0,1.0,2026-11-04T10:14:37Z,verified
+r0014,2412.16381,arxiv,200,VerSe: Integrating Multiple Queries as Prompts for Versatile Cardiac MRI Segmentation,2024,Guo,1.0,1.0,2026-11-04T10:14:40Z,verified
+r0015,2004.08270,arxiv,200,Weakly Supervised Geodesic Segmentation of Egyptian Mummy CT Scans,2020,Hati,1.0,1.0,2026-11-04T10:14:44Z,verified
+r0016,10.1007/978-3-032-23496-4_2,crossref,200,ENSAM: An Efficient Foundation Model for Interactive Segmentation of 3D Medical Images,2026,Stenhede,1.0,1.0,2026-11-04T10:14:47Z,verified
+r0017,2604.22825,arxiv,200,SGP-SAM: Self-Gated Prompting for Transferring 3D Segment Anything Models to Lesion Segmentation,2026,Yao,1.0,1.0,2026-11-04T10:14:48Z,verified
+r0019,2505.15256,arxiv,200,Zero-Shot Gaze-based Volumetric Medical Image Segmentation,2025,Shmykova,1.0,1.0,2026-11-04T10:14:52Z,verified
+r0020,2412.08315,arxiv,200,Lightweight Method for Interactive 3D Medical Image Segmentation with Multi-Round Result Fusion,2024,Shen,1.0,1.0,2026-11-04T10:14:55Z,verified
+r0022,10.1007/978-3-031-17027-0_2,crossref,200,DeepEdit: Deep Editable Learning for Interactive Segmentation of 3D Medical Images,2022,Diaz-Pinto,1.0,1.0,2026-11-04T10:14:59Z,verified
+r0023,2411.07885,arxiv,200,RadioActive: 3D Radiological Interactive Segmentation Benchmark,2024,Ulrich,1.0,1.0,2026-11-04T10:15:00Z,verified
+r0025,2507.23272,arxiv,200,Towards Affordable Tumor Segmentation and Visualization for 3D Breast MRI Using SAM2,2025,Kang,1.0,1.0,2026-11-04T10:15:03Z,verified
+r0030,2511.21926,arxiv,200,Comparing SAM 2 and SAM 3 for Zero-Shot Segmentation of 3D Medical Data,2025,Chakrabarty,1.0,1.0,2026-11-04T10:15:07Z,verified
+r0033,2110.00948,arxiv,200,Interactive Segmentation for COVID-19 Infection Quantification on Longitudinal CT scans,2021,Foo,1.0,1.0,2026-11-04T10:15:10Z,verified
+r0038,2304.07875,arxiv,200,The Segment Anything foundation model achieves favorable brain tumor autosegmentation accuracy on MRI to support radiotherapy treatment planning,2023,Putz,1.0,1.0,2026-11-04T10:15:14Z,verified
+r0039,1904.11701,arxiv,200,Interactive user interface based on Convolutional Auto-encoders for annotating CT-scans,2019,Längkvist,1.0,1.0,2026-11-04T10:15:17Z,verified
+r0040,2408.11210,arxiv,200,A Short Review and Evaluation of SAM2's Performance in 3D CT Image Segmentation,2024,He,1.0,1.0,2026-11-04T10:15:21Z,verified
+r0041,2601.09879,arxiv,200,MedVL-SAM2: A unified 3D medical vision-language model for multimodal reasoning and prompt-driven segmentation,2026,Xing,1.0,1.0,2026-11-04T10:15:24Z,verified
+r0042,2607.18014,arxiv,200,SAMRI-3D: Adapting SAM2 for 3D MRI Segmentation with Global Volume Tokens,2026,Wang,1.0,1.0,2026-11-04T10:15:28Z,verified
+r0043,2405.06786,arxiv,200,SAM3D: Zero-Shot Semi-Automatic Segmentation in 3D Medical Images with the Segment Anything Model,2024,Chan,1.0,1.0,2026-11-04T10:15:31Z,verified
+r0045,2609.11703,arxiv,200,Spectral Adapters for Segment Anything Model-based Segmentation of Colorectal Liver Metastases in Computed Tomography,2026,Mojtahedi,1.0,1.0,2026-11-04T10:15:35Z,verified
+r0048,10.1007/s00330-024-11167-8,crossref,200,Minimally interactive segmentation of soft-tissue tumors on CT and MRI using deep learning,2024,Spaanderman,1.0,1.0,2026-11-04T10:15:38Z,verified
+r0049,2106.10686,arxiv,200,Quality-Aware Memory Network for Interactive Volumetric Image Segmentation,2021,Zhou,1.0,1.0,2026-11-04T10:15:39Z,verified
+r0050,2403.09827,arxiv,200,FastSAM3D: An Efficient Segment Anything Model for 3D Volumetric Medical Images,2024,Shen,1.0,1.0,2026-11-04T10:15:43Z,verified
+r0051,2402.17454,arxiv,200,"Segment anything model for head and neck tumor segmentation with CT, PET and MRI multi-modality images",2024,Ren,1.0,1.0,2026-11-04T10:15:46Z,verified
+r0054,10.1016/j.media.2024.103324,crossref,200,3DSAM-adapter: Holistic adaptation of SAM from 2D to 3D for promptable tumor segmentation,2024,Gong,1.0,1.0,2026-11-04T10:15:50Z,verified
+r0057,2608.28453,arxiv,200,Prompt-Guided Interactive Segmentation of Interstitial Lung Disease in Thoracic CT,2026,Dedousis,1.0,1.0,2026-11-04T10:15:51Z,verified
+r0058,10.1117/12.3047346,crossref,200,Novel adaptation of video segmentation to 3D MRI: efficient zero-shot knee segmentation with SAM2 (Conference Presentation),2025,Yu,1.0,0.889,2026-11-04T10:15:54Z,verified
+r0061,2408.15224,arxiv,200,SAM & SAM 2 in 3D Slicer: SegmentWithSAM Extension for Annotating Medical Images,2024,Yildiz,1.0,1.0,2026-11-04T10:15:55Z,verified
+r0062,2511.09592,arxiv,200,Segment Any Tumour: An Uncertainty-Aware Vision Foundation Model for Whole-Body Analysis,2025,Peiris,1.0,1.0,2026-11-04T10:15:58Z,verified
+r0063,2601.10880,arxiv,200,Medical SAM3: A Foundation Model for Universal Prompt-Driven Medical Image Segmentation,2026,Jiang,1.0,1.0,2026-11-04T10:16:02Z,verified
+r0064,10.1007/978-3-032-05479-1_4,crossref,200,Domain-Specialized Interactive Segmentation Framework for Meningioma Radiotherapy Planning,2026,Lee,1.0,1.0,2026-11-04T10:16:05Z,verified
+r0067,2403.05912,arxiv,200,Mask-Enhanced Segment Anything Model for Tumor Lesion Semantic Segmentation,2024,Shi,1.0,1.0,2026-11-04T10:16:06Z,verified
+r0068,2311.10121,arxiv,200,Slide-SAM: Medical SAM Meets Sliding Window,2023,Quan,1.0,1.0,2026-11-04T10:16:10Z,verified
+r0070,2610.06938,arxiv,200,UniPro: Unified Multi-Mode Medical Image Segmentation from 2D Images to 3D Volumes via Propagation,2026,Guo,1.0,1.0,2026-11-04T10:16:13Z,verified
+r0071,2504.20837,arxiv,200,RadSAM: Segmenting 3D radiological images with a 2D promptable model,2025,Khlaut,1.0,1.0,2026-11-04T10:16:17Z,verified
+r0074,10.1016/j.media.2025.103469,crossref,200,SegmentAnyBone: A universal model that segments any bone at any location on MRI,2025,Gu,1.0,1.0,2026-11-04T10:16:20Z,verified
+r0075,2506.20786,arxiv,200,AI-Driven MRI-based Brain Tumour Segmentation Benchmarking,2025,Ludwig,1.0,1.0,2026-11-04T10:16:21Z,verified
+r0076,2609.16775,arxiv,200,IMVS: Interactive Medical Volume Segmentation with Test-Time Adaptation - A New Method for Annotating Radiology Datasets,2026,Reen,1.0,1.0,2026-11-04T10:16:25Z,verified
+r0077,2404.15028,arxiv,200,PRISM: A Promptable and Robust Interactive Segmentation Model with Visual Prompts,2024,Li,1.0,1.0,2026-11-04T10:16:28Z,verified
+r0078,2503.03294,arxiv,200,Interactive Segmentation and Report Generation for CT Images,2025,Gu,1.0,1.0,2026-11-04T10:16:31Z,verified
+r0080,2312.08932,arxiv,200,Influence of Prompting Strategies on Segment Anything Model (SAM) for Short-axis Cardiac MRI segmentation,2023,Stein,1.0,1.0,2026-11-04T10:16:35Z,verified
+r0083,2604.25685,arxiv,200,Robustness Evaluation of a Foundation Segmentation Model Under Simulated Domain Shifts in Abdominal CT: Implications for Health Digital Twin Deployment,2026,Basu,1.0,1.0,2026-11-04T10:16:39Z,verified
+r0084,2403.16646,arxiv,200,Clustering Propagation for Universal Medical Image Segmentation,2024,Ding,1.0,1.0,2026-11-04T10:16:42Z,verified
+r0087,2505.17096,arxiv,200,TAGS: 3D Tumor-Adaptive Guidance for SAM,2025,Li,1.0,1.0,2026-11-04T10:16:46Z,verified
+r0088,2408.00874,arxiv,200,Medical SAM 2: Segment medical images as video via Segment Anything Model 2,2024,Zhu,1.0,1.0,2026-11-04T10:16:49Z,verified
+r0089,2406.12646,arxiv,200,An Empirical Study on the Fairness of Foundation Models for Multi-Organ Image Segmentation,2024,Li,1.0,1.0,2026-11-04T10:16:53Z,verified
+r0090,10.1109/isbi53787.2023.10230334,crossref,200,Multimodal Interactive Lung Lesion Segmentation: A Framework for Annotating PET/CT Images Based on Physiological and Anatomical Cues,2023,Hallitschke,1.0,1.0,2026-11-04T10:16:56Z,verified
+r0097,2609.25743,arxiv,200,SAMI3D-DW: Interactive Segmentation of Any 3D Medical Images,2026,Gong,1.0,1.0,2026-11-04T10:16:57Z,verified
+r0098,1609.06192,arxiv,200,Hands-Free Segmentation of Medical Volumes via Binary Inputs,2016,Dubost,1.0,1.0,2026-11-04T10:17:01Z,verified
+r0099,1711.07419,arxiv,200,Robust Seed Mask Generation for Interactive Image Segmentation,2017,Amrehn,1.0,1.0,2026-11-04T10:17:04Z,verified
+r0103,10.1038/s41598-025-31503-2,crossref,200,A memory based model for cartilage and meniscus segmentation in 3D knee MRI,2025,Ferreira,1.0,1.0,2026-11-04T10:17:08Z,verified
+r0109,2411.05963,arxiv,200,"Assessing Foundational Medical 'Segment Anything' (Med-SAM1, Med-SAM2) Deep Learning Models for Left Atrial Segmentation in 3D LGE MRI",2024,Mehrnia,1.0,1.0,2026-11-04T10:17:09Z,verified
+r0111,2506.18404,arxiv,200,SafeClick: Error-Tolerant Interactive Segmentation of Any Medical Volumes via Hierarchical Expert Consensus,2025,Gao,1.0,1.0,2026-11-04T10:17:12Z,verified
+r0112,2608.30844,arxiv,200,"Pretrained, Curriculum-Tuned, and Ensembled: A Tracer-Aware Interactive Segmentation Pipeline for AutoPET V",2026,Liang,1.0,1.0,2026-11-04T10:17:16Z,verified
+r0113,2304.05622,arxiv,200,SAMM (Segment Any Medical Model): A 3D Slicer Integration to SAM,2023,Liu,1.0,1.0,2026-11-04T10:17:19Z,verified
+r0116,2510.09499,arxiv,200,A methodology for clinically driven interactive segmentation evaluation,2025,Esmaeili,1.0,1.0,2026-11-04T10:17:23Z,verified
+r0117,2609.23026,arxiv,200,BrainIAC: Interactive 3D Brain Lesion Segmentation across Heterogeneous MRI Modalities with Online Adaptation,2026,Xu,1.0,1.0,2026-11-04T10:17:26Z,verified
+r0118,2412.13908,arxiv,200,Memorizing SAM: 3D Medical Segment Anything Model with Memorizing Transformer,2024,Shao,1.0,1.0,2026-11-04T10:17:30Z,verified
+r0119,2408.03322,arxiv,200,Segment Anything in Medical Images and Videos: Benchmark and Deployment,2024,Ma,1.0,1.0,2026-11-04T10:17:33Z,verified
+r0120,10.1109/tip.2022.3185551,crossref,200,Hierarchical Random Walker Segmentation for Large Volumetric Biomedical Images,2022,Drees,1.0,1.0,2026-11-04T10:17:37Z,verified
+r0125,10.1002/ima.70389,crossref,200,"<scp>GBT</scp>
+                    ‐
+                    <scp>SAM</scp>
+                    : A Parameter‐Efficient Depth‐Aware Model for Generalizable Brain Tumor Segmentation on
+                    <scp>mp‐MRI</scp>",2026,Diana‐Albelda,1.0,0.995,2026-11-04T10:17:37Z,verified
+r0126,2603.10216,arxiv,200,An Automated Radiomics Framework for Postoperative Survival Prediction in Colorectal Liver Metastases using Preoperative MRI,2026,Alberb,1.0,1.0,2026-11-04T10:17:38Z,verified
+r0128,10.1007/978-3-031-43895-0_53,crossref,200,Adaptive Multi-scale Online Likelihood Network for AI-Assisted Interactive Segmentation,2023,Asad,1.0,1.0,2026-11-04T10:17:42Z,verified
+r0132,2511.01345,arxiv,200,MIQ-SAM3D: From Single-Point Prompt to Multi-Instance Segmentation via Competitive Query Refinement,2025,Qu,1.0,1.0,2026-11-04T10:17:43Z,verified
+r0133,2410.04172,arxiv,200,DB-SAM: Delving into High Quality Universal Medical Image Segmentation,2024,Qin,1.0,1.0,2026-11-04T10:17:46Z,verified
+r0134,2403.15218,arxiv,200,"Anytime, Anywhere, Anyone: Investigating the Feasibility of Segment Anything Model for Crowd-Sourcing Medical Image Annotations",2024,Kulkarni,1.0,1.0,2026-11-04T10:17:50Z,verified
+r0136,2503.22862,arxiv,200,Zero-shot Domain Generalization of Foundational Models for 3D Medical Image Segmentation: An Experimental Study,2025,Chattopadhyay,1.0,1.0,2026-11-04T10:17:53Z,verified
+r0137,2310.19721,arxiv,200,Promise:Prompt-driven 3D Medical Image Segmentation Using Pretrained Image Foundation Models,2023,Li,1.0,1.0,2026-11-04T10:17:57Z,verified
+r0138,2304.12620,arxiv,200,Medical SAM Adapter: Adapting Segment Anything Model for Medical Image Segmentation,2023,Wu,1.0,1.0,2026-11-04T10:18:00Z,verified
+r0140,2408.03286,arxiv,200,Biomedical SAM 2: Segment Anything in Biomedical Images and Videos,2024,Yan,1.0,1.0,2026-11-04T10:18:04Z,verified
+r0143,2406.05285,arxiv,200,VISTA3D: A Unified Segmentation Foundation Model For 3D Medical Imaging,2024,He,1.0,1.0,2026-11-04T10:18:07Z,verified
+r0145,2502.20985,arxiv,200,LesionLocator: Zero-Shot Universal Tumor Segmentation and Tracking in 3D Whole-Body Imaging,2025,Rokuss,1.0,1.0,2026-11-04T10:18:11Z,verified
+r0150,10.1016/j.media.2021.102102,crossref,200,MIDeepSeg: Minimally interactive segmentation of unseen objects from medical images using deep learning,2021,Luo,1.0,1.0,2026-11-04T10:18:14Z,verified
+r0151,2607.22332,arxiv,200,SLIP: Segmentation with Low-latency Interactive Prompting for 3D Medical Images,2026,Podvin,1.0,1.0,2026-11-04T10:18:16Z,verified
+r0154,10.2196/72109,crossref,200,Using Segment Anything Model 2 for Zero-Shot 3D Segmentation of Abdominal Organs in Computed Tomography Scans to Adapt Video Tracking Capabilities for 3D Medical Imaging: Algorithm Development and Validation,2025,Yamagishi,1.0,1.0,2026-11-04T10:18:19Z,verified
+r0161,2312.06072,arxiv,200,A dynamic interactive learning framework for automated 3D medical image segmentation,2023,Tian,1.0,1.0,2026-11-04T10:18:20Z,verified
+r0162,2607.12896,arxiv,200,UniMedSeg: Unified In-Context Learning for Multi-Paradigm 2D/3D Medical Image Segmentation,2026,Li,1.0,1.0,2026-11-04T10:18:24Z,verified
+r0163,2603.10541,arxiv,200,Prompting with the human-touch: evaluating model-sensitivity of foundation models for musculoskeletal CT segmentation,2026,Magg,1.0,1.0,2026-11-04T10:18:27Z,verified
+r0164,2610.01452,arxiv,200,Uncertainty-Guided Handshake: Efficient Human-in-the-Loop Refinement for Surgical-Grade Glioma Segmentation,2026,Hart,1.0,1.0,2026-11-04T10:18:31Z,verified
+r0168,1809.05210,arxiv,200,A Time Series Graph Cut Image Segmentation Scheme for Liver Tumors,2018,Paxton,1.0,1.0,2026-11-04T10:18:34Z,verified
+r0169,10.1007/978-3-030-59719-1_28,crossref,200,Uncertainty-Guided Efficient Interactive Refinement of Fetal Brain Segmentation from Stacks of MRI Slices,2020,Wang,1.0,1.0,2026-11-04T10:18:38Z,verified
+r0174,10.1371/journal.pone.0196378,crossref,200,Clinical evaluation of semi-automatic open-source algorithmic software segmentation of the mandibular bone: Practical feasibility and assessment of a new course of action,2018,Wallner,1.0,1.0,2026-11-04T10:18:39Z,verified
+r0175,10.1007/978-3-030-33642-4_5,crossref,200,Weakly Supervised Segmentation from Extreme Points,2019,Roth,1.0,1.0,2026-11-04T10:18:40Z,verified
+r0179,2506.04858,arxiv,200,Beyond the Desktop: XR-Driven Segmentation with Meta Quest 3 and MX Ink,2025,Paiva,1.0,1.0,2026-11-04T10:18:41Z,verified
+r0184,10.1007/s10055-025-01284-0,crossref,200,Towards user-centered interactive medical image segmentation in VR with an assistive AI agent,2025,Spiegler,1.0,1.0,2026-11-04T10:18:44Z,verified
+r0185,2403.18114,arxiv,200,Segment Any Medical Model Extended,2024,Liu,1.0,1.0,2026-11-04T10:18:45Z,verified
+r0186,2608.04475,arxiv,200,Super-Gaussian: Interactive Scene Editing for 3D Gaussian Splatting and NLI-Based Volume Visualization in Virtual Reality,2026,Jeon,1.0,1.0,2026-11-04T10:18:49Z,verified
+r0213,10.1109/tbme.2026.3653267,crossref,200,Segment Anything Model 2: An Application to 2D and 3D Medical Images,2026,Dong,1.0,1.0,2026-11-04T10:18:52Z,verified
+r0215,10.1088/1361-6560/ae2db9,crossref,200,GTV segmentation in MRI guided radiotherapy with promptable foundation models,2026,Julius Blöcker,1.0,1.0,2026-11-04T10:18:53Z,verified
+r0216,10.3389/frph.2026.1790980,crossref,200,Endo-MedSAM: a promptable vision foundation model adaptation for uterus segmentation on pelvic MRI in endometriosis,2026,AlSaad,1.0,1.0,2026-11-04T10:18:54Z,verified
+r0217,10.1007/s00270-026-04488-2,crossref,200,A Promptable 3D-CT Foundation Model-Based Approach for Pulmonary Embolism,2026,Le Floch,1.0,1.0,2026-11-04T10:18:55Z,verified
+r0220,10.1186/s42492-026-00234-0,crossref,200,Adapting Segment Anything Model 3 for concept-driven lesion segmentation in medical images: an experimental study,2026,Xu,1.0,1.0,2026-11-04T10:18:56Z,verified
+r0225,10.1186/s12880-025-02075-4,crossref,200,Reducing manual workload in CT and MRI annotation with the Segment Anything Model 2,2026,Misera,1.0,1.0,2026-11-04T10:18:57Z,verified
+r0226,10.3174/ajnr.a8816,crossref,200,Assessment of “Zero-Shot” General Purpose Segmentation Models: An Analysis of the Meta “Segment Anything Model” on Meningioma MRI,2025,Khazanchi,1.0,1.0,2026-11-04T10:18:57Z,verified
+r0227,10.3389/fonc.2026.1832969,crossref,200,Deep learning with interactive segmentation for risk stratification of cystic renal lesions on tri-phase CT: a multicenter study,2026,Yuan,1.0,1.0,2026-11-04T10:18:58Z,verified
+r0229,10.1007/s12194-026-01092-4,crossref,200,Internal feasibility evaluation of SAM-Med3D for cervical cancer clinical target volume segmentation on planning computed tomography,2026,Li,1.0,1.0,2026-11-04T10:18:59Z,verified
+r0230,10.1097/mao.0000000000005062,crossref,200,A Novel Tool to Create Digital Twin Temporal Bone Models for Virtual and 3D-Printing: Proof-of-Concept and Evaluation,2026,Mikkelsen,1.0,1.0,2026-11-04T10:19:00Z,verified
+r0231,10.1002/mp.70305,crossref,200,Slice‐prompted HR‐CTV interactive segmentation for cervical cancer brachytherapy: A multi‐center study,2026,Peng,1.0,1.0,2026-11-04T10:19:01Z,verified
+r0233,10.1117/12.3047122,crossref,200,A one-shot/few-shot interactive segmentation method for CT image segmentation,2025,Dai,1.0,1.0,2026-11-04T10:19:02Z,verified
+r0238,10.1016/j.compmedimag.2025.102501,crossref,200,ProtoSAM-3D: Interactive semantic segmentation in volumetric medical imaging via a Segment Anything Model and mask-level prototypes,2025,Shen,1.0,1.0,2026-11-04T10:19:03Z,verified
+r0241,10.1371/journal.pone.0309379,crossref,200,Interactive segmentation with curve-based template deformation for spatiotemporal computed tomography of swallowing motion,2024,Kimura,1.0,1.0,2026-11-04T10:19:04Z,verified
+r0246,10.1007/s00066-024-02313-8,crossref,200,The Segment Anything foundation model achieves favorable brain tumor auto-segmentation accuracy in MRI to support radiotherapy treatment planning,2025,Putz,1.0,1.0,2026-11-04T10:19:05Z,verified
+r0247,10.3390/s25123596,crossref,200,Segment Anything Model (SAM) and Medical SAM (MedSAM) for Lumbar Spine MRI,2025,Chang,1.0,1.0,2026-11-04T10:19:06Z,verified
+r0248,10.1093/bjr/tqaf010,crossref,200,Human-in-the-loop machine learning-based quantitative assessment of hemifacial spasm based on volumetric interpolated breath-hold examination MR,2025,Huang,1.0,1.0,2026-11-04T10:19:07Z,verified
+r0250,10.1038/s41698-025-00903-y,crossref,200,A promptable CT foundation model for solid tumor evaluation,2025,Machado,1.0,1.0,2026-11-04T10:19:08Z,verified
+r0254,10.1038/s41598-026-52716-z,crossref,200,Bladder cancer segmentation using u-net-based deep-learning,2026,Patil,1.0,1.0,2026-11-04T10:19:09Z,verified
+r0261,10.3171/2025.4.focus25234,crossref,200,Zero-shot segmentation of spinal vertebrae with metastatic lesions: an analysis of Meta’s Segment Anything Model 2 and factors affecting learning free segmentation,2025,Khazanchi,1.0,1.0,2026-11-04T10:19:10Z,verified
+r0267,10.1016/j.cmpb.2024.108038,crossref,200,A deep learning-based interactive medical image segmentation framework with sequential memory,2024,Mikhailov,1.0,1.0,2026-11-04T10:19:11Z,verified
+r0268,10.1109/tip.2021.3125491,crossref,200,3D Interactive Segmentation With Semi-Implicit Representation and Active Learning,2021,Deng,1.0,1.0,2026-11-04T10:19:12Z,verified
+r0269,10.1080/13645706.2021.1954953,crossref,200,A new software tool for planning interventional procedures in liver cancer,2022,Delache,1.0,1.0,2026-11-04T10:19:13Z,verified
+r0270,10.1002/mp.16280,crossref,200,Surface‐GCN: Learning interaction experience for organ segmentation in 3D medical images,2023,Tian,1.0,1.0,2026-11-04T10:19:14Z,verified
+r0272,10.1109/jbhi.2021.3091900,crossref,200,DeepRecS: From RECIST Diameters to Precise Liver Tumor Segmentation,2022,Zhang,1.0,1.0,2026-11-04T10:19:15Z,verified
+r0273,10.1007/s11548-020-02223-x,crossref,200,Fast interactive medical image segmentation with weakly supervised deep learning method,2020,Girum,1.0,1.0,2026-11-04T10:19:16Z,verified
+r0274,10.1177/1747493019895704,crossref,200,Semi-automatic measurement of intracranial hemorrhage growth on non-contrast CT,2021,Chung,1.0,1.0,2026-11-04T10:19:17Z,verified
+r0275,10.1016/j.media.2016.04.009,crossref,200,Slic-Seg: A minimally interactive segmentation of the placenta from sparse and motion-corrupted fetal MRI in multiple views,2016,Wang,1.0,1.0,2026-11-04T10:19:18Z,verified
+r0278,10.1088/1361-6560/ab6f99,crossref,200,Interactive 3D U-net for the segmentation of the pancreas in computed tomography scans,2020,Boers,1.0,1.0,2026-11-04T10:19:19Z,verified
+r0279,10.1109/tcyb.2015.2489719,crossref,200,Inference With Collaborative Model for Interactive Tumor Segmentation in Medical Image Sequences,2016,Lin,1.0,1.0,2026-11-04T10:19:20Z,verified
+r0280,10.1118/1.4945698,crossref,200,Minimally interactive segmentation of 4D dynamic upper airway MR images via fuzzy connectedness,2016,Tong,1.0,1.0,2026-11-04T10:19:20Z,verified
+r0283,10.1177/1553350618803233,crossref,200,"A New Software Suite in Orthognathic Surgery : Patient Specific Modeling, Simulation and Navigation",2019,Lutz,1.0,1.0,2026-11-04T10:19:21Z,verified
+r0285,10.1088/0031-9155/61/16/5906,crossref,200,Semi-automatic classification of textures in thoracic CT scans,2016,Kockelkorn,1.0,1.0,2026-11-04T10:19:22Z,verified
+r0286,10.3174/ajnr.a5256,crossref,200,"Retrospective Validation of a Computer-Assisted Quantification Model of Intracerebral Hemorrhage Volume on Accuracy, Precision, and Acquisition Time, Compared with Standard ABC/2 Manual Volume Calculation",2017,Xue,1.0,1.0,2026-11-04T10:19:23Z,verified
+r0287,10.1186/s12886-019-1260-5,crossref,200,An accurate interactive segmentation and volume calculation of orbital soft tissue for orbital reconstruction after enucleation,2019,Ning,1.0,1.0,2026-11-04T10:19:24Z,verified
+r0288,10.1088/1361-6560/aa7674,crossref,200,Fast interactive segmentation of the pulmonary lobes from thoracic computed tomography data,2017,Lassen-Schmidt,1.0,1.0,2026-11-04T10:19:25Z,verified
+r0289,10.1016/j.media.2015.01.003,crossref,200,Structured patch model for a unified automatic and interactive segmentation framework,2015,Park,1.0,1.0,2026-11-04T10:19:26Z,verified
+r0290,10.1007/978-3-319-24574-4_10,crossref,200,Interactive Whole-Heart Segmentation in Congenital Heart Disease,2015,Pace,1.0,1.0,2026-11-04T10:19:27Z,verified
+r0292,10.1038/s41598-026-53446-y,crossref,200,A new scheme for knee joint CT image segmentation: A max-flow and watershed method driving semi-automatic CT knee bone segmentation,2026,Fan,1.0,1.0,2026-11-04T10:19:27Z,verified
+r0293,10.3390/bioengineering13020160,crossref,200,3D Medical Image Segmentation with 3D Modelling,2026,Ždímalová,1.0,1.0,2026-11-04T10:19:28Z,verified
+r0300,10.1038/s41598-024-51452-6,crossref,200,GPU-accelerated lung CT segmentation based on level sets and texture analysis,2024,Reska,1.0,1.0,2026-11-04T10:19:29Z,verified
+r0301,10.1007/s00246-024-03630-6,crossref,200,Improving Reproducibility of Volumetric Evaluation Using Computed Tomography in Pediatric Patients with Congenital Heart Disease,2025,Cho,1.0,1.0,2026-11-04T10:19:30Z,verified
+r0306,10.1038/s41598-021-85436-7,crossref,200,Semi-automatic liver segmentation based on probabilistic models and anatomical constraints,2021,Le,1.0,1.0,2026-11-04T10:19:31Z,verified
+r0308,10.1097/rct.0000000000001719,crossref,200,3D Segmentation of Whole Lung and Metastatic Lung Nodules Using Adaptive Region Growing and Shape-based Morphology,2025,Baidya Kayal,1.0,1.0,2026-11-04T10:19:32Z,verified
+r0316,10.3389/fneur.2022.865023,crossref,200,Segmentation of Spontaneous Intracerebral Hemorrhage on CT With a Region Growing Method Based on Watershed Preprocessing,2022,Zhou,1.0,1.0,2026-11-04T10:19:33Z,verified
+r0318,10.1155/2017/5207685,crossref,200,3D Liver Tumor Segmentation in CT Images Using Improved Fuzzy<i> C</i>-Means and Graph Cuts,2017,Wu,1.0,1.0,2026-11-04T10:19:34Z,verified
+r0319,10.1590/1414-431x20198962,crossref,200,Manual and semiautomatic segmentation of bone sarcomas on MRI have high similarity,2020,Dionísio,1.0,1.0,2026-11-04T10:19:35Z,verified
+r0320,10.3390/s21248265,crossref,200,Development of 3D MRI-Based Anatomically Realistic Models of Breast Tissues and Tumours for Microwave Imaging Diagnosis,2021,Pelicano,1.0,1.0,2026-11-04T10:19:36Z,verified
+r0323,10.1016/j.compmedimag.2017.03.004,crossref,200,Graph cut-based method for segmenting the left ventricle from MRI or echocardiographic images,2017,Bernier,1.0,1.0,2026-11-04T10:19:37Z,verified
+r0324,10.1109/tmi.2015.2501751,crossref,200,Carotid Artery Wall Segmentation in Multispectral MRI by Coupled Optimal Surface Graph Cuts,2016,Arias-Lorza,1.0,1.0,2026-11-04T10:19:38Z,verified
+r0325,10.1016/j.ejmp.2018.12.012,crossref,200,Models of breast lesions based on three-dimensional X-ray breast images,2019,Dukov,1.0,1.0,2026-11-04T10:19:39Z,verified
+r0326,10.1117/1.jmi.3.2.024503,crossref,200,Semiautomatic tumor segmentation with multimodal images in a conditional random field framework,2016,Hu,1.0,1.0,2026-11-04T10:19:39Z,verified
+r0328,10.5152/dir.2019.19025,crossref,200,Comparison of semi-automatic and deep learning-based automatic methods for liver segmentation in living liver transplant donors,2020,,1.0,1.0,2026-11-04T10:19:40Z,verified
+r0329,10.1016/j.cmpb.2020.105864,crossref,200,Pathological lung segmentation in chest CT images based on improved random walker,2021,Chen,1.0,1.0,2026-11-04T10:19:41Z,verified
+r0334,10.1016/j.cmpb.2019.105102,crossref,200,A review on multiplatform evaluations of semi-automatic open-source based image segmentation for cranio-maxillofacial surgery,2019,Wallner,1.0,1.0,2026-11-04T10:19:42Z,verified
+r0335,10.1371/journal.pone.0205003,crossref,200,Lung tumor segmentation methods: Impact on the uncertainty of radiomics features for non-small cell lung cancer,2018,Owens,1.0,1.0,2026-11-04T10:19:43Z,verified
+r0339,10.1118/1.4932365,crossref,200,Semiautomatic segmentation of liver metastases on volumetric CT images,2015,Yan,1.0,1.0,2026-11-04T10:19:44Z,verified
+r0342,10.1159/000475548,crossref,200,Automatic Measurement of Fetal Brain Development from Magnetic Resonance Imaging: New Reference Data,2018,Link,1.0,1.0,2026-11-04T10:19:45Z,verified
+r0346,10.1007/s11282-020-00503-5,crossref,200,LRVRG: a local region-based variational region growing algorithm for fast mandible segmentation from CBCT images,2021,Jiang,1.0,1.0,2026-11-04T10:19:45Z,verified
+r0348,10.1186/s12880-019-0348-y,crossref,200,A potential field segmentation based method for tumor segmentation on multi-parametric MRI of glioma cancer patients,2019,Sun,1.0,1.0,2026-11-04T10:19:47Z,verified
+r0349,10.1186/s12938-016-0153-6,crossref,200,A robust statistics driven volume-scalable active contour for segmenting anatomical structures in volumetric medical images with complex conditions,2016,Wang,1.0,1.0,2026-11-04T10:19:48Z,verified
+r0352,10.1118/1.4947484,crossref,200,Interactive contour delineation of organs at risk in radiotherapy: Clinical evaluation on NSCLC patients,2016,Dolz,1.0,1.0,2026-11-04T10:19:49Z,verified
+r0357,10.1088/1361-6560/aaa360,crossref,200,A variational approach to liver segmentation using statistics from multiple sources,2018,Zheng,1.0,1.0,2026-11-04T10:19:50Z,verified
+r0358,10.1016/j.ejmp.2015.08.002,crossref,200,Semi-automatic 3D segmentation of carotid lumen in contrast-enhanced computed tomography angiography images,2015,Hemmati,1.0,1.0,2026-11-04T10:19:51Z,verified
+r0359,10.1109/embc.2016.7590882,crossref,200,Hip segmentation from MRI volumes in infants for DDH diagnosis and treatment planning,2016,Hareendranathan,1.0,1.0,2026-11-04T10:19:52Z,verified
+r0360,10.1038/s41598-018-22980-9,crossref,200,Appearance Constrained Semi-Automatic Segmentation from DCE-MRI is Reproducible and Feasible for Breast Cancer Radiomics: A Feasibility Study,2018,Veeraraghavan,1.0,1.0,2026-11-04T10:19:52Z,verified
+r0361,10.1118/1.4901521,crossref,200,Toward accurate tooth segmentation from computed tomography images using a hybrid level set model,2015,Gan,1.0,1.0,2026-11-04T10:19:53Z,verified
+r0364,10.1259/dmfr.20140313,crossref,200,Three-dimensional reconstruction of teeth and jaws based on segmentation of CT images using watershed transformation,2015,Naumovich,1.0,1.0,2026-11-04T10:19:54Z,verified
+r0366,10.1007/s10278-018-0051-5,crossref,200,Development and Validation of Segmentation Method for Lung Cancer Volumetry on Chest CT,2018,Kim,1.0,1.0,2026-11-04T10:19:55Z,verified
+r0368,10.1016/j.compbiomed.2015.09.002,crossref,200,Thalamic segmentation based on improved fuzzy connectedness in structural MRI,2015,Yang,1.0,1.0,2026-11-04T10:19:56Z,verified
+r0370,10.1016/j.cmpb.2017.12.008,crossref,200,Segmentation of liver and vessels from CT images and classification of liver segments for preoperative liver surgical planning in living donor liver transplantation,2018,Yang,1.0,1.0,2026-11-04T10:19:57Z,verified
+r0371,10.1002/jmri.25113,crossref,200,Semiautomatic detection of myocardial contours in order to investigate normal values of the left ventricular trabeculated mass using MRI,2016,Bricq,1.0,1.0,2026-11-04T10:19:58Z,verified
+r0375,10.1109/tbme.2015.2462750,crossref,200,Dynamic 3-D MR Visualization and Detection of Upper Airway Obstruction During Sleep Using Region-Growing Segmentation,2016,Javed,1.0,1.0,2026-11-04T10:19:59Z,verified
+r0377,10.1155/2015/810796,crossref,200,Fast and Accurate Semiautomatic Segmentation of Individual Teeth from Dental CT Images,2015,Kang,1.0,1.0,2026-11-04T10:19:59Z,verified
+r0378,10.1007/s11548-015-1321-z,crossref,200,Implementation and use of 3D pairwise geodesic distance fields for seeding abdominal aortic vessels,2016,Selver,1.0,1.0,2026-11-04T10:20:00Z,verified
+r0379,10.1186/s12938-015-0060-2,crossref,200,Optimizing parameters of an open-source airway segmentation algorithm using different CT images,2015,Nardelli,1.0,1.0,2026-11-04T10:20:01Z,verified
+r0381,10.1016/j.brachy.2015.05.004,crossref,200,Development and evaluation of an automatic interstitial catheter digitization tool for adaptive high-dose-rate brachytherapy,2015,Dise,1.0,1.0,2026-11-04T10:20:03Z,verified
+r0382,10.1088/0031-9155/60/3/1307,crossref,200,Robust semi-automatic segmentation of pulmonary subsolid nodules in chest computed tomography scans,2015,Lassen,1.0,1.0,2026-11-04T10:20:03Z,verified
+r0384,10.1016/j.neuroimage.2016.01.048,crossref,200,Human habenula segmentation using myelin content,2016,Kim,1.0,1.0,2026-11-04T10:20:04Z,verified
+r0390,10.1007/s00246-026-04478-8,crossref,200,Evaluating the Accuracy and Efficiency of Virtual Reality Segmentation for Black-Blood Fetal Cardiac MRI,2026,Azar,1.0,1.0,2026-11-04T10:20:05Z,verified
+r0392,10.1038/s41598-026-49586-w,crossref,200,Randomized crossover study of immersive planning in craniomaxillofacial trauma comparing virtual reality and workstation workflows,2026,Pargätzi,1.0,1.0,2026-11-04T10:20:06Z,verified
+r0394,10.1007/s11548-025-03497-9,crossref,200,Interactive AI annotation of medical images in a virtual reality environment,2025,Orsmaa,1.0,1.0,2026-11-04T10:20:07Z,verified
+r0397,10.1007/s11548-025-03424-y,crossref,200,Exploring interaction paradigms for segmenting medical images in virtual reality,2025,Jones,1.0,1.0,2026-11-04T10:20:08Z,verified
+r0402,10.1007/s11548-025-03432-y,crossref,200,Multi-volume rendering using depth buffers for surgical planning in virtual reality,2025,Faludi,1.0,1.0,2026-11-04T10:20:09Z,verified
+r0411,10.1016/j.compbiomed.2023.107217,crossref,200,Online view enhancement for exploration inside medical volumetric data using virtual reality,2023,Zhang,1.0,1.0,2026-11-04T10:20:10Z,verified
+r0415,10.1093/ehjimp/qyag151,crossref,200,Bringing paediatric coronary artery abnormalities into view: the role of virtual reality,2026,Ng,1.0,1.0,2026-11-04T10:20:11Z,verified
+r0435,10.1007/s10278-024-01048-3,crossref,200,A Pilot Clinical and Technical Validation of an Immersive Virtual Reality Platform for 3D Anatomical Modeling and Contouring in Support of Surgical and Radiation Oncology Treatment Planning,2024,Belec,1.0,1.0,2026-11-04T10:20:12Z,verified
+r0482,10.3389/fbinf.2021.777101,crossref,200,New Approach to Accelerated Image Annotation by Leveraging Virtual Reality and Cloud Computing,2022,Guérinot,1.0,1.0,2026-11-04T10:20:13Z,verified
+r0505,10.1109/mcg.2018.2881985,crossref,200,Towards Placental Surface Vasculature Exploration in Virtual Reality,2020,Novotny,1.0,1.0,2026-11-04T10:20:14Z,verified
+r0517,10.1007/s11548-019-02091-0,crossref,200,Multi-atlas segmentation of the facial nerve from clinical CT for virtual reality simulators,2020,Gare,1.0,1.0,2026-11-04T10:20:15Z,verified
+r0524,10.1177/0003489420970217,crossref,200,Segmentation of Temporal Bone Anatomy for Patient-Specific Virtual Reality Simulation,2021,Andersen,1.0,1.0,2026-11-04T10:20:16Z,verified
+r0536,10.1007/s10278-018-0108-5,crossref,200,Using Virtual Reality to Improve Performance and User Experience in Manual Correction of MRI Segmentation Errors by Non-experts,2019,Duncan,1.0,1.0,2026-11-04T10:20:16Z,verified
+r0580,40740510,pubmed,200,SAM2-Aug: Prior knowledge-based Augmentation for Target Volume Auto-Segmentation in Adaptive Radiation Therapy Using Segment Anything Model 2.,2025,Xu,1.0,1.0,2026-11-04T10:20:17Z,verified
+r0582,10.1093/jmicro/dfae054,crossref,200,Evaluating accuracy in artificial intelligence-powered serial segmentation for sectional images applied to morphological studies with three-dimensional reconstruction,2025,Muro,1.0,1.0,2026-11-04T10:20:18Z,verified
+r0583,10.1101/2024.05.03.24306808,crossref,200,Interactive Segmentation of Lung Tissue and Lung Excursion in Thoracic Dynamic MRI Based on Shape-guided Convolutional Neural Networks,2024,Xie,1.0,1.0,2026-11-04T10:20:19Z,verified
+r0584,10.1007/s11548-022-02730-z,crossref,200,Efficient contour-based annotation by iterative deep learning for organ segmentation from volumetric medical images,2022,Zhuang,1.0,1.0,2026-11-04T10:20:20Z,verified
+r0585,10.3390/s20174823,crossref,200,Organ Contouring for Lung Cancer Patients with a Seed Generation Scheme and Random Walks,2020,Cheng,1.0,1.0,2026-11-04T10:20:21Z,verified
+r0586,10.3389/fncom.2020.00032,crossref,200,Measuring Efficiency of Semi-automated Brain Tumor Segmentation by Simulating User Interaction,2020,Gering,1.0,1.0,2026-11-04T10:20:22Z,verified
+r0595,10.1007/s11548-014-1010-3,crossref,200,Semi-automatic MRI segmentation and volume quantification of intra-plaque hemorrhage,2015,Tang,1.0,1.0,2026-11-04T10:20:24Z,verified
+s002,10.1002/mp.14852,crossref,200,Interactive contouring through contextual deep learning,2021,Trimpl,1.0,1.0,2026-11-04T10:20:25Z,verified
+s004,10.1007/978-3-319-46723-8_41,crossref,200,Dynamically Balanced Online Random Forests for Interactive Scribble-Based Segmentation,2016,Wang,1.0,1.0,2026-11-04T10:20:26Z,verified
+s005,10.1007/978-3-319-69775-8_10,crossref,200,A Fast Semi-Automatic Segmentation Tool for Processing Brain Tumor Images,2017,Chen,1.0,1.0,2026-11-04T10:20:27Z,verified
+s010,10.1007/s10055-021-00577-4,crossref,200,A VR-based volumetric medical image segmentation and visualization system with natural human interaction,2022,Gao,1.0,1.0,2026-11-04T10:20:28Z,verified
+s011,10.1007/s10055-022-00740-5,crossref,200,Assessment of user-interaction strategies for neurosurgical data navigation and annotation in virtual reality,2023,Hellum,1.0,1.0,2026-11-04T10:20:29Z,verified
+s012,10.1007/s10111-017-0436-0,crossref,200,The influence of automation on tumor contouring,2017,Aselmaa,1.0,1.0,2026-11-04T10:20:30Z,verified
+s020,10.1016/j.cmpb.2021.106534,crossref,200,An efficient interactive multi-label segmentation tool for 2D and 3D medical images using fully connected conditional random field,2022,Li,1.0,1.0,2026-11-04T10:20:31Z,verified
+s023,10.1016/j.eswa.2023.122275,crossref,200,"Accuracy and Precision of Mandible Segmentation and Its Clinical Implications: Virtual Reality, Desktop Screen and Artificial Intelligence",2024,Gruber,1.0,1.0,2026-11-04T10:20:32Z,verified
+s028,10.1016/j.media.2022.102599,crossref,200,Volumetric memory network for interactive medical image segmentation,2023,Zhou,1.0,1.0,2026-11-04T10:20:33Z,verified
+s032,10.1016/j.phro.2022.12.005,crossref,200,Towards interactive deep-learning for tumour segmentation in head and neck cancer radiotherapy,2023,Wei,1.0,1.0,2026-11-04T10:20:34Z,verified
+s036,10.1080/10447318.2016.1220729,crossref,200,Using GOMS and NASA-TLX to Evaluate Human–Computer Interaction Process in Interactive Segmentation,2017,Ramkumar,1.0,1.0,2026-11-04T10:20:35Z,verified
+s046,10.1109/embc.2016.7591443,crossref,200,ITK-SNAP: An interactive tool for semi-automatic segmentation of multi-modality biomedical images,2016,Yushkevich,1.0,1.0,2026-11-04T10:20:36Z,verified
+s053,10.1109/isbi.2015.7164073,crossref,200,"Single-click, semi-automatic lung nodule contouring using hierarchical conditional random fields",2015,Haider,1.0,1.0,2026-11-04T10:20:36Z,verified
+s054,10.1109/ismar55827.2022.00020,crossref,200,VRContour: Bringing Contour Delineations of Medical Structures Into Virtual Reality,2022,Chen,1.0,1.0,2026-11-04T10:20:37Z,verified
+s057,10.1109/tbme.2017.2777742,crossref,200,Latency Management in Scribble-Based Interactive Segmentation of Medical Images,2018,Gueziri,1.0,1.0,2026-11-04T10:20:38Z,verified
+s090,10.1145/3531706.3536456,crossref,200,Exploring Needs and Design Opportunities for Virtual Reality-based Contour Delineations of Medical Structures,2022,Chen,1.0,1.0,2026-11-04T10:20:39Z,verified
+s094,10.21203/rs.3.rs-6221538/v1,crossref,200,Interactive 3D Segmentation for Primary Gross Tumor Volume in Oropharyngeal Cancer,2025,Saukkoriipi,1.0,1.0,2026-11-04T10:20:40Z,verified
+s095,10.2352/issn.2470-1173.2019.2.ervr-188,crossref,200,3D Medical Image Segmentation in Virtual Reality,2019,Yonker,1.0,1.0,2026-11-04T10:20:41Z,verified

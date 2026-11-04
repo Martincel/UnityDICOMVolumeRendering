@@ -5,6 +5,13 @@ For each BibTeX entry: resolve doi (Crossref), else pmid (PubMed esummary), else
 else url (HTTP status only, status "web"). Compare the retrieved title with the BibTeX title
 (difflib ratio on normalised strings). Writes docs/research/data/verification-log.csv.
 status: verified (ratio >= 0.85), check (resolved but title differs; check by hand), failed, web.
+Options: --only key1,key2,...  re-check just these keys and merge the rows into the existing log; --web  same for all
+url entries. For url entries that return HTML the page text is also searched for the words of the BibTeX title
+(share of title words found, column title_match_score; status "web" if at least 0.85, else "check"); a PDF or
+non-HTML answer gets the HTTP status only.
+Amendment A3: when data/reference-ids.csv carries a title_hint for a non-url row (included studies: the title seen
+at screening time), the resolver title is also compared with that hint (column hint_match_score). The status is
+"verified" only if both scores are >= 0.85, so the check does not depend on the metadata used to build the entry.
 """
 import csv
 import datetime as dt
@@ -12,6 +19,7 @@ import difflib
 import json
 import os
 import re
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -97,8 +105,19 @@ def arxiv(aid):
 
 def main():
     entries = parse_bib(open(os.path.join(ROOT, "references.bib"), encoding="utf-8").read())
+    with open(os.path.join(ROOT, "data", "reference-ids.csv"), encoding="utf-8", newline="") as fh:
+        hints = {r["key"]: r["title_hint"] for r in csv.DictReader(fh) if r["id_type"] != "url" and r["title_hint"]}
+    only = None
+    for i, a in enumerate(sys.argv):
+        if a == "--only" and i + 1 < len(sys.argv):
+            only = set(sys.argv[i + 1].split(","))
+    if "--web" in sys.argv:
+        only = (only or set()) | {k for k, f in entries if not (f.get("doi") or f.get("pmid") or f.get("eprint"))
+                                  and "arxiv.org/abs/" not in f.get("url", "") and f.get("url")}
     rows = []
     for key, f in entries:
+        if only is not None and key not in only:
+            continue
         today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         aid = f.get("eprint") or ""
         if not aid and "arxiv.org/abs/" in f.get("url", ""):
@@ -115,23 +134,43 @@ def main():
             time.sleep(3)
         elif f.get("url"):
             src, ident = "web", f["url"]
-            st, _ = get(ident, accept="text/html")
+            st, body = get(ident, accept="text/html")
             t = y = a = ""
+            wscore = ""
+            if st == 200 and "<html" in body[:3000].lower():
+                m = re.search(r"<title[^>]*>(.*?)</title>", body, re.S | re.I)
+                t = " ".join((m.group(1) if m else "").split())
+                words = norm(f.get("title")).split()
+                page = set(norm(body).split())
+                wscore = round(sum(w in page for w in words) / len(words), 3) if words else 0
         else:
-            rows.append([key, "", "none", "", "", "", "", "", today, "failed"])
+            rows.append([key, "", "none", "", "", "", "", "", "", today, "failed"])
             continue
+        hscore = ""
         if src == "web":
-            score, status = "", ("web" if st == 200 else "failed")
+            score = wscore
+            status = "failed" if st != 200 else ("web" if wscore == "" or wscore >= 0.85 else "check")
         else:
             score = round(difflib.SequenceMatcher(None, norm(f.get("title")), norm(t)).ratio(), 3) if t else 0
-            status = "failed" if st != 200 else ("verified" if score >= 0.85 else "check")
-        rows.append([key, ident, src, st, t, y, a, score, today, status])
-        print(f"{status:9s} {key}  {score}")
+            ok = score >= 0.85
+            if key in hints:
+                hscore = round(difflib.SequenceMatcher(None, norm(hints[key]), norm(t)).ratio(), 3) if t else 0
+                ok = ok and hscore >= 0.85
+            status = "failed" if st != 200 else ("verified" if ok else "check")
+        rows.append([key, ident, src, st, t, y, a, score, hscore, today, status])
+        print(f"{status:9s} {key}  {score} {hscore}")
         time.sleep(0.4)
-    with open(os.path.join(ROOT, "data", "verification-log.csv"), "w", newline="", encoding="utf-8") as fh:
+    header = ["key", "identifier", "source", "http_status", "retrieved_title", "retrieved_year",
+              "retrieved_first_author", "title_match_score", "hint_match_score", "date_utc", "status"]
+    logp = os.path.join(ROOT, "data", "verification-log.csv")
+    if only is not None and os.path.exists(logp):  # merge: replace the re-checked rows, keep the others in order
+        with open(logp, encoding="utf-8", newline="") as fh:
+            old = list(csv.reader(fh))[1:]
+        new = {r[0]: r for r in rows}
+        rows = [new.pop(r[0], r) for r in old] + list(new.values())
+    with open(logp, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
-        w.writerow(["key", "identifier", "source", "http_status", "retrieved_title", "retrieved_year",
-                    "retrieved_first_author", "title_match_score", "date_utc", "status"])
+        w.writerow(header)
         w.writerows(rows)
     from collections import Counter
     print(Counter(r[-1] for r in rows))
