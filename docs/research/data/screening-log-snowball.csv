@@ -1,101 +1,101 @@
-record_id,doi,decision_ta,reason_ta,rq,note
-S001,10.1002/cnm.3580,exclude,E1,,Physics-based porosity segmentation of CT vessels; no user seeds/corrections described
-S002,10.1002/mp.14852,include,I1-I6,RQ1,User 2D contour gives context for DL 3D segmentation
-S003,10.1007/11566489_95,exclude,E8,,foundational? Random walker interactive organ segmentation 2D/3D (2005)
-S004,10.1007/978-3-319-46723-8_41,maybe,no abstract,RQ1,Scribble-based interactive segmentation with online random forests; MICCAI 2016
-S005,10.1007/978-3-319-69775-8_10,maybe,no abstract,RQ1,Semi-automatic brain tumor segmentation tool; modality not stated
-S006,10.1007/978-3-540-24670-1_33,exclude,E8,,foundational? Adaptive GMMRF interactive segmentation (2004)
-S007,10.1007/978-3-540-88682-2_9,exclude,E8,,foundational? GeoS geodesic segmentation (2008)
-S008,10.1007/978-3-642-23626-6_74,exclude,E8,,Active learning interactive 3D segmentation (2011)
-S009,10.1007/s00371-024-03596-9,exclude,E3,,Automatic attention-driven DVR emphasis; not segmentation by users
-S010,10.1007/s10055-021-00577-4,include,I1-I6,RQ1;RQ2,NUI-VR2: interactive segmentation plus volume rendering in immersive VR
-S011,10.1007/s10055-022-00740-5,maybe,no abstract,RQ2,VR interaction strategies for neurosurgical data annotation
-S012,10.1007/s10111-017-0436-0,include,I1-I6,RQ1,Between-slice interpolation semi-automatic contouring; physician user study
-S013,10.1007/s10278-015-9839-8,include,I1-I6,RQ1,Strokes vs contour semi-automatic OAR segmentation; HCI evaluation
-S014,10.1007/s11263-006-7934-5,exclude,E8,,foundational? Graph cuts N-D segmentation (2006)
-S015,10.1007/s41095-020-0177-5,exclude,E5,,Survey of interactive image segmentation
-S016,10.1016/j.cag.2006.11.015,exclude,E8,,foundational? Live Surface interactive volume segmentation (2007)
-S017,10.1016/j.cag.2010.12.006,exclude,E8,,Interactive 3D medical segmentation with implicit functions (2011)
-S018,10.1016/j.cmpb.2008.04.010,exclude,E8,,
-S019,10.1016/j.cmpb.2009.04.004,exclude,E8,,MITK interactive segmentation framework (2009)
-S020,10.1016/j.cmpb.2021.106534,maybe,no abstract,RQ1;RQ2,Interactive multi-label 2D/3D medical tool with dense CRF
-S021,10.1016/j.cmpb.2022.107015,exclude,E5,,Systematic review of coronary artery segmentation
-S022,10.1016/j.compmedimag.2013.01.003,exclude,E8,,Hybrid desktop/VR lung segmentation refinement (2013); relevant to RQ2 background
-S023,10.1016/j.eswa.2023.122275,maybe,no abstract,RQ2,Mandible segmentation in VR vs desktop vs AI
-S024,10.1016/j.jsb.2017.02.007,exclude,E2,,SuRVoS supervoxel interactive workbench for biological (non-CT/MR) volumes
-S025,10.1016/j.media.2003.07.002,exclude,E8,,Interactive 3D editing tools for segmentation (2003)
-S026,10.1016/j.media.2004.06.022,exclude,E8,,GIST GPU level set tool (2004)
-S027,10.1016/j.media.2012.06.002,exclude,E8,,Interactive 3D active contour multi-object tool (2012)
-S028,10.1016/j.media.2022.102599,include,I1-I6,RQ1,Volumetric memory network propagating slice interactions through volume
-S029,10.1016/j.neuroimage.2006.01.015,exclude,E8,,foundational? ITK-SNAP user-guided 3D active contour (2006)
-S030,10.1016/j.neuroimage.2009.02.013,exclude,E8,,Also fully automatic (E1)
-S031,10.1016/j.patcog.2009.03.008,exclude,E8,,Comparative evaluation of interactive segmentation algorithms (2009)
-S032,10.1016/j.phro.2022.12.005,include,I1-I6,RQ1,Interactive DL with annotated slices for HNC GTV; simulated user input
-S033,10.1023/a:1007979827043,exclude,E8,,foundational? Geodesic active contours (1997)
-S034,10.1038/s41592-024-02245-2,exclude,E2,,VR annotation of cleared mouse brain microscopy
-S035,10.1049/htl.2018.5077,exclude,E3,,VR neuroimaging visualization; text annotations only
-S036,10.1080/10447318.2016.1220729,include,I1-I6,RQ1,GOMS and NASA-TLX evaluation of interactive OAR segmentation
-S037,10.1088/1361-6560/ac6d9c,exclude,E5,,Review of spectrum manual to automatic delineation
-S038,10.1109/34.537343,exclude,E8,,foundational? Region competition (1996)
-S039,10.1109/83.902291,exclude,E8,,foundational? Chan-Vese active contours without edges (2001)
-S040,10.1109/acssc.2008.5074488,exclude,E8,,Also fundus images (E2)
-S041,10.1109/cvpr.2008.4587464,exclude,E8,,
-S042,10.1109/cvpr.2010.5539903,exclude,E8,,
-S043,10.1109/cvpr.2013.16,exclude,E8,,
-S044,10.1109/cvpr.2016.344,exclude,E2,,Scribble-supervised training on natural images; not interactive inference
-S045,10.1109/cvpr.2016.47,include,I1-I6,RQ1,Natural images; click distance-map base of deep interactive medical methods
-S046,10.1109/embc.2016.7591443,include,I1-I6,RQ1;RQ2,ITK-SNAP multi-modality random forest strokes plus active contour
-S047,10.1109/iccv.2001.937505,exclude,E8,,foundational? Interactive graph cuts Boykov-Jolly (2001)
-S048,10.1109/iccv.2005.13,exclude,E8,,
-S049,10.1109/iccv.2007.4408931,exclude,E8,,foundational? Geodesic interactive segmentation framework (2007)
-S050,10.1109/iccv51070.2023.00371,include,I1-I6,RQ1,SAM: natural images; direct base of MedSAM/SAM-Med3D
-S051,10.1109/icip.2010.5654046,exclude,E8,,
-S052,10.1109/icip46576.2022.9897365,maybe,natural images,RQ1,RITM click-based; natural images; possible base of medical click methods
-S053,10.1109/isbi.2015.7164073,include,I1-I6,RQ1,Single-click lung nodule contouring with hierarchical CRF on CT
-S054,10.1109/ismar55827.2022.00020,include,I1-I6,RQ2,VRContour: contouring in VR with tablet and stylus; user study n=8
-S055,10.1109/nfsi-icfbi.2007.4387709,exclude,E8,,Also overview (E5)
-S056,10.1109/sibgrapi.2006.23,exclude,E8,,Also video hand segmentation (E2)
-S057,10.1109/tbme.2017.2777742,include,I1-I6,RQ1;RQ3,Effect of latency on scribble-based interactive medical segmentation
-S058,10.1109/tip.2010.2048611,exclude,E8,,
-S059,10.1109/tip.2010.2092434,exclude,E8,,
-S060,10.1109/tip.2011.2131662,exclude,E8,,
-S061,10.1109/tmi.2004.824224,exclude,E8,,
-S062,10.1109/tmi.2008.2008968,exclude,E8,,
-S063,10.1109/tmi.2008.929101,exclude,E8,,
-S064,10.1109/tmi.2009.2013851,exclude,E8,,
-S065,10.1109/tmi.2011.2181857,exclude,E8,,foundational? Tumor-Cut cellular automata seeded segmentation (2011)
-S066,10.1109/tmi.2012.2219881,exclude,E8,,
-S067,10.1109/tpami.2004.1262177,exclude,E8,,
-S068,10.1109/tpami.2004.60,exclude,E8,,foundational? Boykov-Kolmogorov max-flow comparison (2004)
-S069,10.1109/tpami.2006.233,exclude,E8,,foundational? Random walks for image segmentation (2006)
-S070,10.1109/tvcg.2007.47,exclude,E8,,
-S071,10.1109/tvcg.2008.120,exclude,E8,,
-S072,10.1109/tvcg.2012.292,exclude,E8,,
-S073,10.1109/tvcg.2018.2864690,exclude,E3,,Occlusion lens for volume visualization; not segmentation
-S074,10.1109/uccv.2013.6530803,exclude,E8,,
-S075,10.1111/cgf.12193,exclude,E8,,Sketch-based 3D segmentation editing (2013)
-S076,10.1117/12.2042766,exclude,E8,,
-S077,10.1117/12.2042768,exclude,E8,,
-S078,10.1117/12.813452,exclude,E8,,
-S079,10.1117/12.877659,exclude,E8,,
-S080,10.1118/1.2962931,exclude,E8,,
-S081,10.1118/1.3181206,exclude,E8,,
-S082,10.1118/1.3682171,exclude,E8,,Graph cuts plus VR refinement of liver (2012); RQ2 background
-S083,10.1118/1.4728979,exclude,E8,,
-S084,10.1118/1.4818017,exclude,E8,,
-S085,10.1118/1.4887830,exclude,E8,,
-S086,10.1145/1015706.1015719,exclude,E8,,foundational? Lazy Snapping (2004)
-S087,10.1145/1015706.1015720,exclude,E8,,foundational? GrabCut (2004)
-S088,10.1145/1857907.1857910,exclude,E8,,
-S089,10.1145/2968220.2968235,maybe,insufficient,RQ2,Observational study of 3D volume segmentation; data type unclear
-S090,10.1145/3531706.3536456,include,I1-I6,RQ2,Needs-finding and co-design for VR contour delineation
-S091,10.1155/2019/1464592,maybe,insufficient,RQ1;RQ2,Usability (SUS) evaluation framework for interactive segmentation; modality unclear
-S092,10.1167/tvst.15.1.12,exclude,E2,,Fundus autofluorescence 2D images
-S093,10.19153/cleiej.16.2.4,exclude,E8,,GPU 3D GrabCut (2013)
-S094,10.21203/rs.3.rs-6221538/v1,include,I1-I6,RQ1,Two-stage interactive click refinement for OPC GTV
-S095,10.2352/issn.2470-1173.2019.2.ervr-188,include,I1-I6,RQ2,VR segmentation tool for MRI/CT with two algorithms
-S096,10.2967/jnumed.110.077974,exclude,E8,,
-S097,10.2967/jnumed.118.216028,exclude,E4,,PET/CT metric variability across segmentation methods
-S098,10.3389/fsurg.2022.1078735,exclude,E3,,Surgical technique note
-S099,10.3390/cancers15102677,exclude,E4,,Contouring tools as instruments for radiomics variability
-S100,10.7937/1fpg-vm46,exclude,E4,,Dataset; semi-automatic segmentation used as instrument
+record_id,doi,decision_ta,reason_ta,rq,note,decision_ft,reason_ft,fulltext_source,note_ft,final_decision,final_reason
+S001,10.1002/cnm.3580,exclude,E1,,Physics-based porosity segmentation of CT vessels; no user seeds/corrections described,,,,,exclude,E1
+S002,10.1002/mp.14852,include,I1-I6,RQ1,User 2D contour gives context for DL 3D segmentation,include,I,abstract-only,User 2D contour as context for 3D propagation,include,I
+S003,10.1007/11566489_95,exclude,E8,,foundational? Random walker interactive organ segmentation 2D/3D (2005),,,,,exclude,E8
+S004,10.1007/978-3-319-46723-8_41,maybe,no abstract,RQ1,Scribble-based interactive segmentation with online random forests; MICCAI 2016,include,I,abstract-only,Interactive scribble-based online random forest; MICCAI 2016; no abstract in record.,include,I
+S005,10.1007/978-3-319-69775-8_10,maybe,no abstract,RQ1,Semi-automatic brain tumor segmentation tool; modality not stated,include,I,abstract-only,Semi-automatic brain tumor segmentation tool; title only; modality not given.,include,I
+S006,10.1007/978-3-540-24670-1_33,exclude,E8,,foundational? Adaptive GMMRF interactive segmentation (2004),,,,,exclude,E8
+S007,10.1007/978-3-540-88682-2_9,exclude,E8,,foundational? GeoS geodesic segmentation (2008),,,,,exclude,E8
+S008,10.1007/978-3-642-23626-6_74,exclude,E8,,Active learning interactive 3D segmentation (2011),,,,,exclude,E8
+S009,10.1007/s00371-024-03596-9,exclude,E3,,Automatic attention-driven DVR emphasis; not segmentation by users,,,,,exclude,E3
+S010,10.1007/s10055-021-00577-4,include,I1-I6,RQ1;RQ2,NUI-VR2: interactive segmentation plus volume rendering in immersive VR,include,I,fulltext,NUI-VR2: Oculus Rift + Kinect gesture/voice seeds/surfaces; Dice NUI vs mouse,include,I
+S011,10.1007/s10055-022-00740-5,maybe,no abstract,RQ2,VR interaction strategies for neurosurgical data annotation,include,I,fulltext,VR point annotation on MRI-derived brain models; compares controller/head/gaze/eye-dwell; n=17; NASA-TLX.,include,I
+S012,10.1007/s10111-017-0436-0,include,I1-I6,RQ1,Between-slice interpolation semi-automatic contouring; physician user study,include,I,abstract-only,Between-slice interpolation contouring; 5 physicians; interaction logging,include,I
+S013,10.1007/s10278-015-9839-8,include,I1-I6,RQ1,Strokes vs contour semi-automatic OAR segmentation; HCI evaluation,include,I,fulltext,Strokes vs contour semi-automatic OAR CT; 2 physicians; NASA-TLX.,include,I
+S014,10.1007/s11263-006-7934-5,exclude,E8,,foundational? Graph cuts N-D segmentation (2006),,,,,exclude,E8
+S015,10.1007/s41095-020-0177-5,exclude,E5,,Survey of interactive image segmentation,,,,,exclude,E5
+S016,10.1016/j.cag.2006.11.015,exclude,E8,,foundational? Live Surface interactive volume segmentation (2007),,,,,exclude,E8
+S017,10.1016/j.cag.2010.12.006,exclude,E8,,Interactive 3D medical segmentation with implicit functions (2011),,,,,exclude,E8
+S018,10.1016/j.cmpb.2008.04.010,exclude,E8,,,,,,,exclude,E8
+S019,10.1016/j.cmpb.2009.04.004,exclude,E8,,MITK interactive segmentation framework (2009),,,,,exclude,E8
+S020,10.1016/j.cmpb.2021.106534,maybe,no abstract,RQ1;RQ2,Interactive multi-label 2D/3D medical tool with dense CRF,include,I,abstract-only,Title only (abstract missing); interactive CRF multi-label 2D/3D tool; verify modality and results,include,I
+S021,10.1016/j.cmpb.2022.107015,exclude,E5,,Systematic review of coronary artery segmentation,,,,,exclude,E5
+S022,10.1016/j.compmedimag.2013.01.003,exclude,E8,,Hybrid desktop/VR lung segmentation refinement (2013); relevant to RQ2 background,,,,,exclude,E8
+S023,10.1016/j.eswa.2023.122275,maybe,no abstract,RQ2,Mandible segmentation in VR vs desktop vs AI,include,I,abstract-only,Title only (no abstract): VR vs desktop vs AI mandible segmentation accuracy; verify at full text.,include,I
+S024,10.1016/j.jsb.2017.02.007,exclude,E2,,SuRVoS supervoxel interactive workbench for biological (non-CT/MR) volumes,,,,,exclude,E2
+S025,10.1016/j.media.2003.07.002,exclude,E8,,Interactive 3D editing tools for segmentation (2003),,,,,exclude,E8
+S026,10.1016/j.media.2004.06.022,exclude,E8,,GIST GPU level set tool (2004),,,,,exclude,E8
+S027,10.1016/j.media.2012.06.002,exclude,E8,,Interactive 3D active contour multi-object tool (2012),,,,,exclude,E8
+S028,10.1016/j.media.2022.102599,include,I1-I6,RQ1,Volumetric memory network propagating slice interactions through volume,include,I,abstract-only,Volumetric memory network; user hints on slice,include,I
+S029,10.1016/j.neuroimage.2006.01.015,exclude,E8,,foundational? ITK-SNAP user-guided 3D active contour (2006),,,,,exclude,E8
+S030,10.1016/j.neuroimage.2009.02.013,exclude,E8,,Also fully automatic (E1),,,,,exclude,E8
+S031,10.1016/j.patcog.2009.03.008,exclude,E8,,Comparative evaluation of interactive segmentation algorithms (2009),,,,,exclude,E8
+S032,10.1016/j.phro.2022.12.005,include,I1-I6,RQ1,Interactive DL with annotated slices for HNC GTV; simulated user input,include,I,abstract-only,Interactive DL with corrected slices; simulated user input; H&N GTV,include,I
+S033,10.1023/a:1007979827043,exclude,E8,,foundational? Geodesic active contours (1997),,,,,exclude,E8
+S034,10.1038/s41592-024-02245-2,exclude,E2,,VR annotation of cleared mouse brain microscopy,,,,,exclude,E2
+S035,10.1049/htl.2018.5077,exclude,E3,,VR neuroimaging visualization; text annotations only,,,,,exclude,E3
+S036,10.1080/10447318.2016.1220729,include,I1-I6,RQ1,GOMS and NASA-TLX evaluation of interactive OAR segmentation,include,I,abstract-only,Abstract only: GOMS + NASA-TLX evaluation of interactive segmentation; 3 physicians.,include,I
+S037,10.1088/1361-6560/ac6d9c,exclude,E5,,Review of spectrum manual to automatic delineation,,,,,exclude,E5
+S038,10.1109/34.537343,exclude,E8,,foundational? Region competition (1996),,,,,exclude,E8
+S039,10.1109/83.902291,exclude,E8,,foundational? Chan-Vese active contours without edges (2001),,,,,exclude,E8
+S040,10.1109/acssc.2008.5074488,exclude,E8,,Also fundus images (E2),,,,,exclude,E8
+S041,10.1109/cvpr.2008.4587464,exclude,E8,,,,,,,exclude,E8
+S042,10.1109/cvpr.2010.5539903,exclude,E8,,,,,,,exclude,E8
+S043,10.1109/cvpr.2013.16,exclude,E8,,,,,,,exclude,E8
+S044,10.1109/cvpr.2016.344,exclude,E2,,Scribble-supervised training on natural images; not interactive inference,,,,,exclude,E2
+S045,10.1109/cvpr.2016.47,include,I1-I6,RQ1,Natural images; click distance-map base of deep interactive medical methods,include,I,fulltext,2D natural images; direct base of click distance-map medical methods,include,I
+S046,10.1109/embc.2016.7591443,include,I1-I6,RQ1;RQ2,ITK-SNAP multi-modality random forest strokes plus active contour,include,I,abstract-only,ITK-SNAP random forest brushstrokes + active contour; multi-modality MRI,include,I
+S047,10.1109/iccv.2001.937505,exclude,E8,,foundational? Interactive graph cuts Boykov-Jolly (2001),,,,,exclude,E8
+S048,10.1109/iccv.2005.13,exclude,E8,,,,,,,exclude,E8
+S049,10.1109/iccv.2007.4408931,exclude,E8,,foundational? Geodesic interactive segmentation framework (2007),,,,,exclude,E8
+S050,10.1109/iccv51070.2023.00371,include,I1-I6,RQ1,SAM: natural images; direct base of MedSAM/SAM-Med3D,include,I,abstract-only,SAM natural images; accepted as direct base of medical SAM methods,include,I
+S051,10.1109/icip.2010.5654046,exclude,E8,,,,,,,exclude,E8
+S052,10.1109/icip46576.2022.9897365,maybe,natural images,RQ1,RITM click-based; natural images; possible base of medical click methods,include,I,abstract-only,RITM click model on natural images; 2D base for medical click methods.,include,I
+S053,10.1109/isbi.2015.7164073,include,I1-I6,RQ1,Single-click lung nodule contouring with hierarchical CRF on CT,include,I,abstract-only,Abstract only: single-click CRF lung nodule CT contouring.,include,I
+S054,10.1109/ismar55827.2022.00020,include,I1-I6,RQ2,VRContour: contouring in VR with tablet and stylus; user study n=8,include,I,fulltext,VRContour: stylus+tracked tablet contouring in VR; n=8; DSC; SUS; NASA-TLX.,include,I
+S055,10.1109/nfsi-icfbi.2007.4387709,exclude,E8,,Also overview (E5),,,,,exclude,E8
+S056,10.1109/sibgrapi.2006.23,exclude,E8,,Also video hand segmentation (E2),,,,,exclude,E8
+S057,10.1109/tbme.2017.2777742,include,I1-I6,RQ1;RQ3,Effect of latency on scribble-based interactive medical segmentation,include,I,abstract-only,Latency effect on scribble interactive segmentation user study,include,I
+S058,10.1109/tip.2010.2048611,exclude,E8,,,,,,,exclude,E8
+S059,10.1109/tip.2010.2092434,exclude,E8,,,,,,,exclude,E8
+S060,10.1109/tip.2011.2131662,exclude,E8,,,,,,,exclude,E8
+S061,10.1109/tmi.2004.824224,exclude,E8,,,,,,,exclude,E8
+S062,10.1109/tmi.2008.2008968,exclude,E8,,,,,,,exclude,E8
+S063,10.1109/tmi.2008.929101,exclude,E8,,,,,,,exclude,E8
+S064,10.1109/tmi.2009.2013851,exclude,E8,,,,,,,exclude,E8
+S065,10.1109/tmi.2011.2181857,exclude,E8,,foundational? Tumor-Cut cellular automata seeded segmentation (2011),,,,,exclude,E8
+S066,10.1109/tmi.2012.2219881,exclude,E8,,,,,,,exclude,E8
+S067,10.1109/tpami.2004.1262177,exclude,E8,,,,,,,exclude,E8
+S068,10.1109/tpami.2004.60,exclude,E8,,foundational? Boykov-Kolmogorov max-flow comparison (2004),,,,,exclude,E8
+S069,10.1109/tpami.2006.233,exclude,E8,,foundational? Random walks for image segmentation (2006),,,,,exclude,E8
+S070,10.1109/tvcg.2007.47,exclude,E8,,,,,,,exclude,E8
+S071,10.1109/tvcg.2008.120,exclude,E8,,,,,,,exclude,E8
+S072,10.1109/tvcg.2012.292,exclude,E8,,,,,,,exclude,E8
+S073,10.1109/tvcg.2018.2864690,exclude,E3,,Occlusion lens for volume visualization; not segmentation,,,,,exclude,E3
+S074,10.1109/uccv.2013.6530803,exclude,E8,,,,,,,exclude,E8
+S075,10.1111/cgf.12193,exclude,E8,,Sketch-based 3D segmentation editing (2013),,,,,exclude,E8
+S076,10.1117/12.2042766,exclude,E8,,,,,,,exclude,E8
+S077,10.1117/12.2042768,exclude,E8,,,,,,,exclude,E8
+S078,10.1117/12.813452,exclude,E8,,,,,,,exclude,E8
+S079,10.1117/12.877659,exclude,E8,,,,,,,exclude,E8
+S080,10.1118/1.2962931,exclude,E8,,,,,,,exclude,E8
+S081,10.1118/1.3181206,exclude,E8,,,,,,,exclude,E8
+S082,10.1118/1.3682171,exclude,E8,,Graph cuts plus VR refinement of liver (2012); RQ2 background,,,,,exclude,E8
+S083,10.1118/1.4728979,exclude,E8,,,,,,,exclude,E8
+S084,10.1118/1.4818017,exclude,E8,,,,,,,exclude,E8
+S085,10.1118/1.4887830,exclude,E8,,,,,,,exclude,E8
+S086,10.1145/1015706.1015719,exclude,E8,,foundational? Lazy Snapping (2004),,,,,exclude,E8
+S087,10.1145/1015706.1015720,exclude,E8,,foundational? GrabCut (2004),,,,,exclude,E8
+S088,10.1145/1857907.1857910,exclude,E8,,,,,,,exclude,E8
+S089,10.1145/2968220.2968235,maybe,insufficient,RQ2,Observational study of 3D volume segmentation; data type unclear,exclude,E3,abstract-only,Observational study of expert segmentation behaviour; no interactive method/tool or medical modality stated,exclude,E3
+S090,10.1145/3531706.3536456,include,I1-I6,RQ2,Needs-finding and co-design for VR contour delineation,include,I,abstract-only,Formative co-design study of VR contouring prototypes; 6 experts; qualitative only.,include,I
+S091,10.1155/2019/1464592,maybe,insufficient,RQ1;RQ2,Usability (SUS) evaluation framework for interactive segmentation; modality unclear,include,I,abstract-only,Usability evaluation framework for interactive segmentation (SUS; AttrakDiff-2); modality unverified,include,I
+S092,10.1167/tvst.15.1.12,exclude,E2,,Fundus autofluorescence 2D images,,,,,exclude,E2
+S093,10.19153/cleiej.16.2.4,exclude,E8,,GPU 3D GrabCut (2013),,,,,exclude,E8
+S094,10.21203/rs.3.rs-6221538/v1,include,I1-I6,RQ1,Two-stage interactive click refinement for OPC GTV,include,I,abstract-only,Two-stage click refinement oropharyngeal GTV; Dice after 10 clicks,include,I
+S095,10.2352/issn.2470-1173.2019.2.ervr-188,include,I1-I6,RQ2,VR segmentation tool for MRI/CT with two algorithms,include,I,abstract-only,VR segmentation app for CT/MRI with two algorithms; no evaluation details in abstract.,include,I
+S096,10.2967/jnumed.110.077974,exclude,E8,,,,,,,exclude,E8
+S097,10.2967/jnumed.118.216028,exclude,E4,,PET/CT metric variability across segmentation methods,,,,,exclude,E4
+S098,10.3389/fsurg.2022.1078735,exclude,E3,,Surgical technique note,,,,,exclude,E3
+S099,10.3390/cancers15102677,exclude,E4,,Contouring tools as instruments for radiomics variability,,,,,exclude,E4
+S100,10.7937/1fpg-vm46,exclude,E4,,Dataset; semi-automatic segmentation used as instrument,,,,,exclude,E4
