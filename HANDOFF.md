@@ -150,7 +150,16 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
   površina je crna.
 - Zasebno (nije u ovom planu): undo kista i postavljanje volumena ispred glave.
 
-## Raspored checkouta (od 2026-11-02)
+## Raspored checkouta (od 2026-11-04)
+- `feature/volume-format` je fast-forward spojena u `feature/vr-vive` (2026-11-04); glavni checkout više nije
+  detached, nego je na `feature/vr-vive` (isti commit, lokalne izmjene su ostale). Nove izmjene: u glavnom checkoutu
+  na `feature/vr-vive` ili na novoj grani; ovaj worktree se dalje ne koristi za razvoj.
+- Lokalne nekomitane izmjene u glavnom checkoutu (Martinove, namjerno izvan commitova): `Volume Rendering.mat`
+  (`_Iteration` 100), VR scena (Unity je zapisao zadane vrijednosti novih polja, `folderPath` na lokalni dataset,
+  i **`rotationGain: 2`**, jer je scena spremljena prije promjene na 1,5; za 1,5× postaviti `Rotation Gain` na
+  `VrVolumeController`), `OpenXR Package Settings.asset`, `UserSettings`.
+
+## Raspored checkouta (2026-11-02 – 2026-11-04, povijest)
 - Grana `feature/volume-format` je checkoutana u worktreeu `.claude/worktrees/renderer-upgrade-continue-2fea64`;
   tamo se uređuje i commita.
 - Glavni checkout (`C:\Dicom\UnityDICOMVolumeRendering`, otvoren u Unityju) je na **detached HEAD** na vrhu te grane.
@@ -176,6 +185,6 @@ sad se samo vidi, jer builder upozorava na odstupanje razmaka (do 500 %).
 
 ## Sljedeće
 1. Spajanje u `feature/magic-brush` (integracijska sesija magic brusha), pa S2 i S4.
-2. Merge u `feature/vr-vive` (ručna provjera je prošla): u glavnom checkoutu `git switch feature/vr-vive` i
-   `git merge --ff-only feature/volume-format`. Tek tada plan za Unity 6 + XRI + stereo makroe.
+2. ~~Merge u `feature/vr-vive`~~ gotovo 2026-11-04 (fast-forward, lokalno; push `feature/vr-vive` čeka Martina).
+   Sljedeći veliki korak: plan za Unity 6 + XRI + stereo makroe.
 3. Odluka o `series-000003` (vidi Nalaz): zaseban posao ili prihvatiti trenutne proporcije.
