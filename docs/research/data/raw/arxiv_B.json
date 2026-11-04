@@ -1,0 +1,351 @@
+{
+ "source": "arxiv",
+ "block": "B",
+ "query": "(abs:\"region growing\" OR abs:\"GrowCut\" OR abs:\"random walker\" OR abs:\"graph cut\" OR abs:\"graph-cut\" OR abs:\"level set\" OR abs:\"watershed\" OR abs:\"supervoxel\" OR abs:\"supervoxels\") AND (abs:\"real-time\" OR abs:\"real time\" OR abs:\"GPU\" OR abs:\"interactive\" OR abs:\"semi-automatic\" OR abs:\"semiautomatic\" OR abs:\"seed\" OR abs:\"seeds\") AND (abs:\"computed tomography\" OR abs:\"CT\" OR abs:\"magnetic resonance\" OR abs:\"MRI\" OR abs:\"MR images\" OR abs:\"medical\") AND (abs:\"3D\" OR abs:\"three-dimensional\" OR abs:\"volumetric\" OR abs:\"volume\" OR abs:\"volumes\") AND (cat:cs.CV OR cat:eess.IV OR cat:cs.HC OR cat:cs.GR OR cat:cs.LG) AND submittedDate:[201501010000 TO 202610312359]",
+ "run_utc": "2026-11-04T09:00:34Z",
+ "hits_reported": 14,
+ "records": [
+  {
+   "source": "arxiv",
+   "source_id": "2502.02409",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2502.02409",
+   "title": "Extending SEEDS to a Supervoxel Algorithm for Medical Image Analysis",
+   "abstract": "In this work, we extend the SEEDS superpixel algorithm from 2D images to 3D volumes, resulting in 3D SEEDS, a faster, better, and open-source supervoxel algorithm for medical image analysis. We compare 3D SEEDS with the widely used supervoxel algorithm SLIC on 13 segmentation tasks across 10 organs. 3D SEEDS accelerates supervoxel generation by a factor of 10, improves the achievable Dice score by +6.5%, and reduces the under-segmentation error by -0.16%. The code is available at https://github.com/Zch0414/3d_seeds",
+   "year": "2025",
+   "authors": [
+    "Zhao",
+    "Jiang",
+    "Hollon"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "1605.03012",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "1605.03012",
+   "title": "Automatic 3D liver location and segmentation via convolutional neural networks and graph cut",
+   "abstract": "Purpose Segmentation of the liver from abdominal computed tomography (CT) image is an essential step in some computer assisted clinical interventions, such as surgery planning for living donor liver transplant (LDLT), radiotherapy and volume measurement. In this work, we develop a deep learning algorithm with graph cut refinement to automatically segment liver in CT scans. Methods The proposed method consists of two main steps: (i) simultaneously liver detection and probabilistic segmentation using 3D convolutional neural networks (CNNs); (ii) accuracy refinement of initial segmentation with graph cut and the previously learned probability map. Results The proposed approach was validated on forty CT volumes taken from two public databases MICCAI-Sliver07 and 3Dircadb. For the MICCAI-Sliver07 test set, the calculated mean ratios of volumetric overlap error (VOE), relative volume difference (RVD), average symmetric surface distance (ASD), root mean square symmetric surface distance (RMSD) and maximum symmetric surface distance (MSD) are 5.9%, 2.7%, 0.91%, 1.88 mm, and 18.94 mm, respectively. In the case of 20 3Dircadb data, the calculated mean ratios of VOE, RVD, ASD, RMSD and MSD are 9.36%, 0.97%, 1.89%, 4.15 mm and 33.14 mm, respectively. Conclusion The proposed method is fully automatic without any user interaction. Quantitative results reveal that the proposed approach is efficient and accurate for hepatic volume estimation in a clinical setup. The high correlation between the automatic and manual references shows that the proposed method can be good enough to replace the time-consuming and non-reproducible manual segmentation method.",
+   "year": "2016",
+   "authors": [
+    "Lu",
+    "Wu",
+    "Hu",
+    "Peng",
+    "Kong"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "1809.05210",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "1809.05210",
+   "title": "A Time Series Graph Cut Image Segmentation Scheme for Liver Tumors",
+   "abstract": "Tumor detection in biomedical imaging is a time-consuming process for medical professionals and is not without errors. Thus in recent decades, researchers have developed algorithmic techniques for image processing using a wide variety of mathematical methods, such as statistical modeling, variational techniques, and machine learning. In this paper, we propose a semi-automatic method for liver segmentation of 2D CT scans into three labels denoting healthy, vessel, or tumor tissue based on graph cuts. First, we create a feature vector for each pixel in a novel way that consists of the 59 intensity values in the time series data and propose a simplified perimeter cost term in the energy functional. We normalize the data and perimeter terms in the functional to expedite the graph cut without having to optimize the scaling parameter $λ$. In place of a training process, predetermined tissue means are computed based on sample regions identified by expert radiologists. The proposed method also has the advantage of being relatively simple to implement computationally. It was evaluated against the ground truth on a clinical CT dataset of 10 tumors and yielded segmentations with a mean Dice similarity coefficient (DSC) of .77 and mean volume overlap error (VOE) of 36.7%. The average processing time was 1.25 minutes per slice.",
+   "year": "2018",
+   "authors": [
+    "Paxton",
+    "Cao",
+    "Vixie",
+    "Wang",
+    "Hobbs",
+    "Ng"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2103.09564",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "10.1109/TIP.2022.3185551",
+   "arxiv": "2103.09564",
+   "title": "Hierarchical Random Walker Segmentation for Large Volumetric Biomedical Images",
+   "abstract": "The random walker method for image segmentation is a popular tool for semi-automatic image segmentation, especially in the biomedical field. However, its linear asymptotic run time and memory requirements make application to 3D datasets of increasing sizes impractical. We propose a hierarchical framework that, to the best of our knowledge, is the first attempt to overcome these restrictions for the random walker algorithm and achieves sublinear run time and constant memory complexity. The goal of this framework is -- rather than improving the segmentation quality compared to the baseline method -- to make interactive segmentation on out-of-core datasets possible. The method is evaluated quantitavely on synthetic data and the CT-ORG dataset where the expected improvements in algorithm run time while maintaining high segmentation quality are confirmed. The incremental (i.e., interaction update) run time is demonstrated to be in seconds on a standard PC even for volumes of hundreds of gigabytes in size. In a small case study the applicability to large real world from current biomedical research is demonstrated. An implementation of the presented method is publicly available in version 5.2 of the widely used volume rendering and processing software Voreen (https://www.uni-muenster.de/Voreen/).",
+   "year": "2021",
+   "authors": [
+    "Drees",
+    "Eilers",
+    "Jiang"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": "IEEE Trans. Image Process. 31: pp. 4431-4446 (2022)"
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2406.05285",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2406.05285",
+   "title": "VISTA3D: A Unified Segmentation Foundation Model For 3D Medical Imaging",
+   "abstract": "Foundation models for interactive segmentation in 2D natural images and videos have sparked significant interest in building 3D foundation models for medical imaging. However, the domain gaps and clinical use cases for 3D medical imaging require a dedicated model that diverges from existing 2D solutions. Specifically, such foundation models should support a full workflow that can actually reduce human effort. Treating 3D medical images as sequences of 2D slices and reusing interactive 2D foundation models seems straightforward, but 2D annotation is too time-consuming for 3D tasks. Moreover, for large cohort analysis, it's the highly accurate automatic segmentation models that reduce the most human effort. However, these models lack support for interactive corrections and lack zero-shot ability for novel structures, which is a key feature of \"foundation\". While reusing pre-trained 2D backbones in 3D enhances zero-shot potential, their performance on complex 3D structures still lags behind leading 3D models. To address these issues, we present VISTA3D, Versatile Imaging SegmenTation and Annotation model, that targets to solve all these challenges and requirements with one unified foundation model. VISTA3D is built on top of the well-established 3D segmentation pipeline, and it is the first model to achieve state-of-the-art performance in both 3D automatic (supporting 127 classes) and 3D interactive segmentation, even when compared with top 3D expert models on large and diverse benchmarks. Additionally, VISTA3D's 3D interactive design allows efficient human correction, and a novel 3D supervoxel method that distills 2D pretrained backbones grants VISTA3D top 3D zero-shot performance. We believe the model, recipe, and insights represent a promising step towards a clinically useful 3D foundation model. Code and weights are publicly available at https://github.com/Project-MONAI/VISTA.",
+   "year": "2024",
+   "authors": [
+    "He",
+    "Guo",
+    "Tang",
+    "Myronenko",
+    "Nath",
+    "Xu",
+    "Yang",
+    "Zhao",
+    "Simon",
+    "Belue",
+    "Harmon",
+    "Turkbey",
+    "Xu",
+    "Li"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2007.00833",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "10.1007/978-3-030-59719-1_28",
+   "arxiv": "2007.00833",
+   "title": "Uncertainty-Guided Efficient Interactive Refinement of Fetal Brain Segmentation from Stacks of MRI Slices",
+   "abstract": "Segmentation of the fetal brain from stacks of motion-corrupted fetal MRI slices is important for motion correction and high-resolution volume reconstruction. Although Convolutional Neural Networks (CNNs) have been widely used for automatic segmentation of the fetal brain, their results may still benefit from interactive refinement for challenging slices. To improve the efficiency of interactive refinement process, we propose an Uncertainty-Guided Interactive Refinement (UGIR) framework. We first propose a grouped convolution-based CNN to obtain multiple automatic segmentation predictions with uncertainty estimation in a single forward pass, then guide the user to provide interactions only in a subset of slices with the highest uncertainty. A novel interactive level set method is also proposed to obtain a refined result given the initial segmentation and user interactions. Experimental results show that: (1) our proposed CNN obtains uncertainty estimation in real time which correlates well with mis-segmentations, (2) the proposed interactive level set is effective and efficient for refinement, (3) UGIR obtains accurate refinement results with around 30% improvement of efficiency by using uncertainty to guide user interactions. Our code is available online.",
+   "year": "2020",
+   "authors": [
+    "Wang",
+    "Aertsen",
+    "Deprest",
+    "Ourselin",
+    "Vercauteren",
+    "Zhang"
+   ],
+   "venue": "arXiv eess.IV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "1708.02096",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "1708.02096",
+   "title": "Extraction of Airways with Probabilistic State-space Models and Bayesian Smoothing",
+   "abstract": "Segmenting tree structures is common in several image processing applications. In medical image analysis, reliable segmentations of airways, vessels, neurons and other tree structures can enable important clinical applications. We present a framework for tracking tree structures comprising of elongated branches using probabilistic state-space models and Bayesian smoothing. Unlike most existing methods that proceed with sequential tracking of branches, we present an exploratory method, that is less sensitive to local anomalies in the data due to acquisition noise and/or interfering structures. The evolution of individual branches is modelled using a process model and the observed data is incorporated into the update step of the Bayesian smoother using a measurement model that is based on a multi-scale blob detector. Bayesian smoothing is performed using the RTS (Rauch-Tung-Striebel) smoother, which provides Gaussian density estimates of branch states at each tracking step. We select likely branch seed points automatically based on the response of the blob detection and track from all such seed points using the RTS smoother. We use covariance of the marginal posterior density estimated for each branch to discriminate false positive and true positive branches. The method is evaluated on 3D chest CT scans to track airways. We show that the presented method results in additional branches compared to a baseline method based on region growing on probability images.",
+   "year": "2017",
+   "authors": [
+    "Selvan",
+    "Petersen",
+    "Pedersen",
+    "Bruijne"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2101.09253",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2101.09253",
+   "title": "Automatic Cerebral Vessel Extraction in TOF-MRA Using Deep Learning",
+   "abstract": "Deep learning approaches may help radiologists in the early diagnosis and timely treatment of cerebrovascular diseases. Accurate cerebral vessel segmentation of Time-of-Flight Magnetic Resonance Angiographs (TOF-MRAs) is an essential step in this process. This study investigates deep learning approaches for automatic, fast and accurate cerebrovascular segmentation for TOF-MRAs. The performance of several data augmentation and selection methods for training a 2D and 3D U-Net for vessel segmentation was investigated in five experiments: a) without augmentation, b) Gaussian blur, c) rotation and flipping, d) Gaussian blur, rotation and flipping and e) different input patch sizes. All experiments were performed by patch-training both a 2D and 3D U-Net and predicted on a test set of MRAs. Ground truth was manually defined using an interactive threshold and region growing method. The performance was evaluated using the Dice Similarity Coefficient (DSC), Modified Hausdorff Distance and Volumetric Similarity, between the predicted images and the interactively defined ground truth. The segmentation performance of all trained networks on the test set was found to be good, with DSC scores ranging from 0.72 to 0.83. Both the 2D and 3D U-Net had the best segmentation performance with Gaussian blur, rotation and flipping compared to other experiments without augmentation or only one of those augmentation techniques. Additionally, training on larger patches or slices gave optimal segmentation results. In conclusion, vessel segmentation can be optimally performed on TOF-MRAs using a trained 3D U-Net on larger patches, where data augmentation including Gaussian blur, rotation and flipping was performed on the training data.",
+   "year": "2021",
+   "authors": [
+    "Vos",
+    "Timmins",
+    "Schaaf",
+    "Ruigrok",
+    "Velthuis",
+    "Kuijf"
+   ],
+   "venue": "arXiv eess.IV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2510.27596",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2510.27596",
+   "title": "Navigated hepatic tumor resection using intraoperative ultrasound imaging",
+   "abstract": "Purpose: This proof-of-concept study evaluates feasibility and accuracy of an ultrasound-based navigation system for open liver surgery. Unlike most conventional systems that rely on registration to preoperative imaging, the proposed system provides navigation-guided resection using 3D models generated from intraoperative ultrasound. Methods: A pilot study was conducted in 25 patients undergoing resection of liver metastases. The first five cases served to optimize the workflow. Intraoperatively, an electromagnetic sensor compensated for organ motion, after which an ultrasound volume was acquired. Vasculature was segmented automatically and tumors semi-automatically using region-growing (n=15) or a deep learning algorithm (n=5). The resulting 3D model was visualized alongside tracked surgical instruments. Accuracy was assessed by comparing the distance between surgical clips and tumors in the navigation software with the same distance on a postoperative CT of the resected specimen. Results: Navigation was successfully established in all 20 patients. However, four cases were excluded from accuracy assessment due to intraoperative sensor detachment (n=3) or incorrect data recording (n=1). The complete navigation workflow was operational within 5-10 minutes. In 16 evaluable patients, 78 clip-to-tumor distances were analyzed. The median navigation accuracy was 3.2 mm [IQR: 2.8-4.8 mm], and an R0 resection was achieved in 15/16 (93.8%) patients and one patient had an R1 vascular resection. Conclusion: Navigation based solely on intra-operative ultrasound is feasible and accurate for liver surgery. This registration-free approach paves the way for simpler and more accurate image guidance systems.",
+   "year": "2025",
+   "authors": [
+    "Olthof",
+    "Ruers",
+    "Natali",
+    "Venix",
+    "Smit",
+    "Hartor",
+    "Kok",
+    "Fusaglia",
+    "Kuhlmann"
+   ],
+   "venue": "arXiv eess.IV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2404.02813",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2404.02813",
+   "title": "GPU-Accelerated RSF Level Set Evolution for Large-Scale Microvascular Segmentation",
+   "abstract": "Microvascular networks are challenging to model because these structures are currently near the diffraction limit for most advanced three-dimensional imaging modalities, including confocal and light sheet microscopy. This makes semantic segmentation difficult, because individual components of these networks fluctuate within the confines of individual pixels. Level set methods are ideally suited to solve this problem by providing surface and topological constraints on the resulting model, however these active contour techniques are extremely time intensive and impractical for terabyte-scale images. We propose a reformulation and implementation of the region-scalable fitting (RSF) level set model that makes it amenable to three-dimensional evaluation using both single-instruction multiple data (SIMD) and single-program multiple-data (SPMD) parallel processing. This enables evaluation of the level set equation on independent regions of the data set using graphics processing units (GPUs), making large-scale segmentation of high-resolution networks practical and inexpensive. We tested this 3D parallel RSF approach on multiple data sets acquired using state-of-the-art imaging techniques to acquire microvascular data, including micro-CT, light sheet fluorescence microscopy (LSFM) and milling microscopy. To assess the performance and accuracy of the RSF model, we conducted a Monte-Carlo-based validation technique to compare results to other segmentation methods. We also provide a rigorous profiling to show the gains in processing speed leveraging parallel hardware. This study showcases the practical application of the RSF model, emphasizing its utility in the challenging domain of segmenting large-scale high-topology network structures with a particular focus on building microvascular models.",
+   "year": "2024",
+   "authors": [
+    "Niger",
+    "Goharbavang",
+    "Ahn",
+    "Alley",
+    "Wythe",
+    "Chen",
+    "Mayerich"
+   ],
+   "venue": "arXiv eess.IV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "1805.08604",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "10.1371/journal.pone.0196378",
+   "arxiv": "1805.08604",
+   "title": "Clinical evaluation of semi-automatic opensource algorithmic software segmentation of the mandibular bone: Practical feasibility and assessment of a new course of action",
+   "abstract": "Computer assisted technologies based on algorithmic software segmentation are an increasing topic of interest in complex surgical cases. However - due to functional instability, time consuming software processes, personnel resources or licensed-based financial costs many segmentation processes are often outsourced from clinical centers to third parties and the industry. Therefore, the aim of this trial was to assess the practical feasibility of an easy available, functional stable and licensed-free segmentation approach to be used in the clinical practice. In this retrospective, randomized, controlled trail the accuracy and accordance of the open-source based segmentation algorithm GrowCut (GC) was assessed through the comparison to the manually generated ground truth of the same anatomy using 10 CT lower jaw data-sets from the clinical routine. Assessment parameters were the segmentation time, the volume, the voxel number, the Dice Score (DSC) and the Hausdorff distance (HD). Overall segmentation times were about one minute. Mean DSC values of over 85% and HD below 33.5 voxel could be achieved. Statistical differences between the assessment parameters were not significant (p<0.05) and correlation coefficients were close to the value one (r > 0.94). Complete functional stable and time saving segmentations with high accuracy and high positive correlation could be performed by the presented interactive open-source based approach. In the cranio-maxillofacial complex the used method could represent an algorithmic alternative for image-based segmentation in the clinical practice for e.g. surgical treatment planning or visualization of postoperative results and offers several advantages. Systematic comparisons to other segmentation approaches or with a greater data amount are areas of future works.",
+   "year": "2018",
+   "authors": [
+    "Wallner",
+    "Hochegger",
+    "Chen",
+    "Mischak",
+    "Reinbacher",
+    "Pau",
+    "Zrnc",
+    "Schwenzer-Zimmerer",
+    "Zemann",
+    "Schmalstieg",
+    "Egger"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": "Wallner J, et al. (2018) Clinical evaluation of semi-automatic open-source algorithmic software segmentation of the mandibular bone: Practical feasibility and assessment of a new course of action. PLoS ONE 13(5):e0196378"
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2610.28974",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2610.28974",
+   "title": "TEMPL: A Resource-Efficient and Transparent Model-Free Framework for Pseudo-Label Generation in Material CT Scans",
+   "abstract": "The scarcity of large annotated datasets limits deep learning (DL) segmentation in material CT analysis. DL-based pseudo-labeling can help, but it is often computationally expensive and hard to interpret. We introduce a multi-stage, model-free framework that generates pseudo-labels directly from grayscale CT scans. It combines thresholding, morphological dilation, and a custom breadth-first search region-growing algorithm to produce polygonal annotations without pre-trained weights, labeled data, or a GPU. We compare it against the zero-shot Segment Anything Model (SAM), a fully supervised 3D U-Net, and classical baselines. On a dendrite dataset with ground truth, our method reaches 63.19% IoU versus 10.74% for zero-shot SAM, with four times the instance recall at 0.5 IoU (33.3% versus 8.3%). The supervised 3D U-Net serves as a reference ceiling that requires expert labels. On a silica sand specimen, YOLO models trained on our labels performed comparably to models trained on SAM labels in a qualitative comparison. Across 1,053 extracted grains, the median equivalent diameter was 163.8 micrometers, near the specimen's known 106 to 150 micrometers sieve range, compared with 219.5 micrometers for SAM, whose labels merge adjacent particles and add spurious detections. A sensitivity analysis shows a stable operating range for the key threshold and a sharp, predictable failure point linked to phase contrast. Our method needs 15s per image on a standard CPU versus 28s for SAM on a GPU. These results support our transparent approach as a tool for annotation bootstrapping and microstructural quantification in resource-limited settings.",
+   "year": "2026",
+   "authors": [
+    "Rahman",
+    "Seethi",
+    "Yunker",
+    "Kettimuthu",
+    "Alhoori"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  },
+  {
+   "source": "arxiv",
+   "source_id": "1910.01236",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "10.1007/978-3-030-33642-4_5",
+   "arxiv": "1910.01236",
+   "title": "Weakly supervised segmentation from extreme points",
+   "abstract": "Annotation of medical images has been a major bottleneck for the development of accurate and robust machine learning models. Annotation is costly and time-consuming and typically requires expert knowledge, especially in the medical domain. Here, we propose to use minimal user interaction in the form of extreme point clicks in order to train a segmentation model that can, in turn, be used to speed up the annotation of medical images. We use extreme points in each dimension of a 3D medical image to constrain an initial segmentation based on the random walker algorithm. This segmentation is then used as a weak supervisory signal to train a fully convolutional network that can segment the organ of interest based on the provided user clicks. We show that the network's predictions can be refined through several iterations of training and prediction using the same weakly annotated data. Ultimately, our method has the potential to speed up the generation process of new training datasets for the development of new machine learning and deep learning-based models for, but not exclusively, medical image analysis.",
+   "year": "2019",
+   "authors": [
+    "Roth",
+    "Zhang",
+    "Yang",
+    "Milletari",
+    "Xu",
+    "Wang",
+    "Xu"
+   ],
+   "venue": "arXiv cs.CV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": "LABELS 2019, HAL-MICCAI 2019, CuRIOUS 2019. Lecture Notes in Computer Science, vol 11851. Springer, Cham"
+  },
+  {
+   "source": "arxiv",
+   "source_id": "2207.14663",
+   "pmid": "",
+   "pmcid": "",
+   "doi": "",
+   "arxiv": "2207.14663",
+   "title": "Going Off-Grid: Continuous Implicit Neural Representations for 3D Vascular Modeling",
+   "abstract": "Personalised 3D vascular models are valuable for diagnosis, prognosis and treatment planning in patients with cardiovascular disease. Traditionally, such models have been constructed with explicit representations such as meshes and voxel masks, or implicit representations such as radial basis functions or atomic (tubular) shapes. Here, we propose to represent surfaces by the zero level set of their signed distance function (SDF) in a differentiable implicit neural representation (INR). This allows us to model complex vascular structures with a representation that is implicit, continuous, light-weight, and easy to integrate with deep learning algorithms. We here demonstrate the potential of this approach with three practical examples. First, we obtain an accurate and watertight surface for an abdominal aortic aneurysm (AAA) from CT images and show robust fitting from as little as 200 points on the surface. Second, we simultaneously fit nested vessel walls in a single INR without intersections. Third, we show how 3D models of individual arteries can be smoothly blended into a single watertight surface. Our results show that INRs are a flexible representation with potential for minimally interactive annotation and manipulation of complex vascular structures.",
+   "year": "2022",
+   "authors": [
+    "Alblas",
+    "Brune",
+    "Yeung",
+    "Wolterink"
+   ],
+   "venue": "arXiv eess.IV",
+   "pub_types": [
+    "preprint"
+   ],
+   "journal_ref": ""
+  }
+ ]
+}
