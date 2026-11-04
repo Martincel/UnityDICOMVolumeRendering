@@ -21,10 +21,18 @@ namespace VolumeRendering.Runtime.UI
     {
         public enum Tool { Brush, Magic2D, Magic3D }
 
+        public const float MinSensitivity = 0.5f;
+        public const float MaxSensitivity = 10f;
+        public const float MinRadiusMm = 5f;
+        public const float MaxRadiusMm = 100f;
+
         [SerializeField] DicomVolumeLoader loader;
         [SerializeField] AnnotationMaskManager maskManager;
         [SerializeField] Tool tool = Tool.Brush;
-        [SerializeField, Range(0.5f, 6f)] float sensitivity = 2.5f;
+        [SerializeField, Range(MinSensitivity, MaxSensitivity)] float sensitivity = 2.5f;
+        // Najveći radijus regije (mm) oko klika; odvojeno za 2D i 3D jer 3D ima manji zadani ROI.
+        [SerializeField, Range(MinRadiusMm, MaxRadiusMm)] float radius2DMm = 60f;
+        [SerializeField, Range(MinRadiusMm, MaxRadiusMm)] float radius3DMm = 40f;
         [SerializeField] bool subtract;
         [SerializeField, Min(0f)] float debounceSeconds = 0.05f;
         [SerializeField] bool showPanel = true;
@@ -59,6 +67,8 @@ namespace VolumeRendering.Runtime.UI
         public bool IsMagicSelected => tool != Tool.Brush;
         public Tool CurrentTool => tool;
         public float Sensitivity => sensitivity;
+        // Najveći radijus regije za odabrani alat (za Kist vrijedi 2D vrijednost).
+        public float RadiusMm => tool == Tool.Magic3D ? radius3DMm : radius2DMm;
         public bool Subtract => subtract;
         public bool Busy => _job != null && !_job.Done;
         public string Message { get; private set; }
@@ -96,6 +106,7 @@ namespace VolumeRendering.Runtime.UI
             tool = value;
             if (!IsMagicSelected)
                 CancelRunning();
+            ForgetClick();   // osjetljivost/radijus se odnose na novi alat, ne na klik starim
             Message = null;
             StateChanged?.Invoke();
         }
@@ -115,7 +126,7 @@ namespace VolumeRendering.Runtime.UI
         // Mijenja osjetljivost i, ako postoji zadnji klik, poništava njegov rezultat i računa ponovno (debounce).
         public void SetSensitivity(float value)
         {
-            value = Mathf.Clamp(value, 0.5f, 6f);
+            value = Mathf.Clamp(value, MinSensitivity, MaxSensitivity);
             if (Mathf.Approximately(value, sensitivity))
                 return;
             sensitivity = value;
@@ -125,6 +136,23 @@ namespace VolumeRendering.Runtime.UI
         }
 
         public void AdjustSensitivity(float delta) => SetSensitivity(sensitivity + delta);
+
+        // Najveći radijus regije (mm) za odabrani alat; kao i osjetljivost, ponovno računa zadnji klik.
+        public void SetRadiusMm(float value)
+        {
+            value = Mathf.Clamp(value, MinRadiusMm, MaxRadiusMm);
+            if (Mathf.Approximately(value, RadiusMm))
+                return;
+            if (tool == Tool.Magic3D)
+                radius3DMm = value;
+            else
+                radius2DMm = value;
+            if (_hasClick)
+                _recomputeAt = Time.unscaledTime + debounceSeconds;
+            StateChanged?.Invoke();
+        }
+
+        public void AdjustRadiusMm(float delta) => SetRadiusMm(RadiusMm + delta);
 
         // Klik na piksel (px, py) sliceu `slice`. subtractOverride (Shift) obrće zadani način.
         public void Click(int slice, int px, int py, bool subtractOverride = false)
@@ -188,6 +216,7 @@ namespace VolumeRendering.Runtime.UI
             // Postavke se klonira na main threadu; nit ih samo čita.
             var settings = is3D ? MagicBrushSettings.Default3D() : new MagicBrushSettings();
             settings.Sensitivity = k;
+            settings.MaxRadiusMm = is3D ? radius3DMm : radius2DMm;
 
             Task.Run(() =>
             {
@@ -265,7 +294,7 @@ namespace VolumeRendering.Runtime.UI
         // ---- privremeno sučelje ----
 
         const float PanelWidth = 230f;
-        const float PanelHeight = 124f;
+        const float PanelHeight = 168f;
 
         static Rect PanelRect() => new Rect(Screen.width - PanelWidth - 10f, 10f, PanelWidth, PanelHeight);
 
@@ -297,9 +326,14 @@ namespace VolumeRendering.Runtime.UI
                     SetSubtract(sub);
 
                 GUILayout.Label($"Osjetljivost k = {sensitivity:0.0}" + (Busy ? "  · računam…" : ""));
-                float k = GUILayout.HorizontalSlider(sensitivity, 0.5f, 6f);
+                float k = GUILayout.HorizontalSlider(sensitivity, MinSensitivity, MaxSensitivity);
                 if (!Mathf.Approximately(k, sensitivity))
                     SetSensitivity(k);
+
+                GUILayout.Label($"Najveći radijus {RadiusMm:0} mm");
+                float r = GUILayout.HorizontalSlider(RadiusMm, MinRadiusMm, MaxRadiusMm);
+                if (!Mathf.Approximately(r, RadiusMm))
+                    SetRadiusMm(r);
 
                 if (!string.IsNullOrEmpty(Message))
                     GUILayout.Label(Message);

@@ -85,6 +85,10 @@ namespace VolumeRendering.Runtime.Xr
         MaterialPropertyBlock _block;
         LineRenderer _line;
 
+        enum Page { Display, Magic }
+
+        Page _page;
+        bool _switchRequested;
         bool _open;
         bool _prevMenuButton, _prevTrigger;
         Item _hover, _pressed;
@@ -118,6 +122,16 @@ namespace VolumeRendering.Runtime.Xr
         // Orderu). Vraća true kad izbornik u ovom okviru drži desnu ruku.
         public bool Tick(bool rightTrigger)
         {
+            if (_switchRequested)
+            {
+                // Zamjena stranice radi se ovdje, a ne u kliku, jer klik dolazi iz petlje po stavkama panela.
+                _switchRequested = false;
+                _page = _page == Page.Magic ? Page.Display : Page.Magic;
+                DestroyPanel();
+                if (BuildPanel())
+                    _panel.gameObject.SetActive(_open);
+            }
+
             bool menuButton = ReadButton(XRNode.LeftHand, CommonUsages.menuButton)
                            || ReadButton(XRNode.LeftHand, CommonUsages.primaryButton);
             if (menuButton && !_prevMenuButton)
@@ -147,8 +161,16 @@ namespace VolumeRendering.Runtime.Xr
 
         public void SetOpen(bool open)
         {
-            if (open && _panel == null && !BuildPanel())
-                return;
+            if (open)
+            {
+                // Dok je crtanje uključeno, lijevi menu otvara stranicu s magic brushom, inače prikaz volumena.
+                var wanted = magicTool != null && _controller.DrawingActive ? Page.Magic : Page.Display;
+                if (_panel != null && wanted != _page)
+                    DestroyPanel();
+                _page = wanted;
+                if (_panel == null && !BuildPanel())
+                    return;
+            }
             _open = open;
             _hover = _pressed = null;
             if (_panel != null)
@@ -413,6 +435,17 @@ namespace VolumeRendering.Runtime.Xr
 
         // ---- izgradnja panela ----
 
+        void SwitchPage() => _switchRequested = true;
+
+        void DestroyPanel()
+        {
+            if (_panel != null)
+                Destroy(_panel.gameObject);
+            _panel = null;
+            _items.Clear();
+            _hover = _pressed = null;
+        }
+
         bool BuildPanel()
         {
             Transform hand = _controller.Rig != null ? _controller.Rig.LeftHand : null;
@@ -425,18 +458,52 @@ namespace VolumeRendering.Runtime.Xr
             _panel.localRotation = Quaternion.Euler(panelEuler);
 
             var rows = new List<Action<float>>();
-            // Alat za označavanje je na vrhu: najčešće se mijenja, a dno dugačkog izbornika je teško dohvatiti.
-            if (magicTool != null)
+            if (_page == Page.Magic && magicTool != null)
             {
+                // Zasebna stranica za označavanje: otvara se lijevim menu dok je crtanje uključeno.
+                rows.Add(y => Row(y, () => "Prikaz volumena  >", SwitchPage));
                 rows.Add(y => Row(y, () => "Alat: " + MagicToolName(), magicTool.CycleTool));
                 rows.Add(y => Row(y, () => magicTool.Subtract ? "Oznaka: oduzmi" : "Oznaka: dodaj", magicTool.ToggleSubtract));
-                rows.Add(y => Row(y, () => $"Osjetljivost: {magicTool.Sensitivity:0.0}", null,
-                                  ("-", () => magicTool.AdjustSensitivity(-0.1f), SmallButton, true),
-                                  ("+", () => magicTool.AdjustSensitivity(0.1f), SmallButton, true)));
+                rows.Add(y => Row(y, () => $"Osjetljivost k: {magicTool.Sensitivity:0.0}", null,
+                                  ("-", () => magicTool.AdjustSensitivity(-0.2f), SmallButton, true),
+                                  ("+", () => magicTool.AdjustSensitivity(0.2f), SmallButton, true)));
+                rows.Add(y => Row(y, () => $"Najveći radijus: {magicTool.RadiusMm:0} mm", null,
+                                  ("-", () => magicTool.AdjustRadiusMm(-5f), SmallButton, true),
+                                  ("+", () => magicTool.AdjustRadiusMm(5f), SmallButton, true)));
+                rows.Add(y => Row(y, () => $"Veličina kista: {_controller.BrushRadius:0} px", null,
+                                  ("-", () => _controller.AdjustBrushRadius(-1f), SmallButton, true),
+                                  ("+", () => _controller.AdjustBrushRadius(1f), SmallButton, true)));
+                AddUndoRow(rows);
             }
+            else
+            {
+                if (magicTool != null)
+                    rows.Add(y => Row(y, () => "<  Magic brush", SwitchPage));
+                AddDisplayRows(rows);
+                AddUndoRow(rows);
+            }
+
+            float height = rows.Count * RowHeight + (rows.Count + 1) * Gap;
+            _panelRect = new Rect(-Width * 0.5f, -height * 0.5f, Width, height);
+            CreateQuad("Background", _panelRect, BackgroundColor, 0, 0f);
+
+            float top = height * 0.5f - Gap - RowHeight * 0.5f;
+            for (int i = 0; i < rows.Count; i++)
+                rows[i](top - i * (RowHeight + Gap));
+
+            _panel.gameObject.SetActive(false);
+            return true;
+        }
+
+        void AddUndoRow(List<Action<float>> rows)
+        {
             if (maskManager != null)
                 rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
                                   () => maskManager.Undo()));
+        }
+
+        void AddDisplayRows(List<Action<float>> rows)
+        {
             rows.AddRange(new List<Action<float>>
             {
                 y => Row(y, () => $"Preset: {PresetName(volumeRendering.Preset)}", NextPreset,
@@ -457,17 +524,6 @@ namespace VolumeRendering.Runtime.Xr
             if (sliceClip != null)
                 rows.Add(y => Row(y, MaskOnlyName, CycleMaskOnly));
             rows.Add(y => Row(y, ClipName, ToggleClipPlane, ("Postavi", BeginPlacement, 0.06f, false)));
-
-            float height = rows.Count * RowHeight + (rows.Count + 1) * Gap;
-            _panelRect = new Rect(-Width * 0.5f, -height * 0.5f, Width, height);
-            CreateQuad("Background", _panelRect, BackgroundColor, 0, 0f);
-
-            float top = height * 0.5f - Gap - RowHeight * 0.5f;
-            for (int i = 0; i < rows.Count; i++)
-                rows[i](top - i * (RowHeight + Gap));
-
-            _panel.gameObject.SetActive(false);
-            return true;
         }
 
         // Jedan red: glavni dio (gumb ako ima akciju, inače natpis) i mali gumbi zdesna.

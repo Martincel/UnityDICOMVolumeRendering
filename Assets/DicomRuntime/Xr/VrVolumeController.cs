@@ -78,6 +78,16 @@ namespace VolumeRendering.Runtime.Xr
         VrMenu _menu;
 
         public VrRig Rig => rig;
+        public bool DrawingActive => painter != null && painter.DrawingActive;
+        public float BrushRadius => brushRadius;
+
+        // Veličina običnog kista u pikselima (isto što mijenja desni trackpad), za izbornik.
+        public void AdjustBrushRadius(float delta)
+        {
+            brushRadius = Mathf.Clamp(brushRadius + delta, 1f, 40f);
+            if (painter != null)
+                painter.SetBrushRadius(brushRadius);
+        }
 
         // Zraka iz desnog (ili bilo kojeg) kontrolera; dijele je crtanje i VrMenu.
         public Ray PointerRay(Transform hand) =>
