@@ -1,0 +1,11 @@
+Synthetic timing of our method (unit tests, NOT real data, NOT Unity/Mono, NOT the VR PC)
+Date: 2026-11-04. Branch research/magic-brush-literature (code identical to feature/magic-brush @ 9b47415).
+Machine: cloud VM, 4 vCPU "Intel(R) Xeon(R) Processor @ 2.10GHz", Linux; .NET SDK 8 (dotnet-install --channel 8.0), Release.
+Command: cd Assets/DicomRuntime/Tests~/SegmentationTests && dotnet test -c Release --logger "console;verbosity=detailed"
+Result: Total tests 51, Passed 51.
+
+Run 1 (full suite):          3D ROI 129x129x51, 438519 voxels in ellipsoid: median 125.0 ms (min 72.3, max 179.4)
+Run 2 (filter Performance|Speed):
+  2D 512x512: default ROI 1.08 ms, ROI over the full slice 13.32 ms
+  3D ROI 129x129x51, 438519 voxels: median 101.6 ms (min 88.7, max 199.7)
+Synthetic inputs: see SyntheticSlice.cs / SyntheticVolume.cs and the Performance_512x512 / Speed_Roi128x128x50 tests.

@@ -1,0 +1,67 @@
+key,id_type,identifier,note,title_hint,author_hint,year_hint
+tricco2018prismascr,doi,10.7326/M18-0850,method,,,
+arksey2005scoping,doi,10.1080/1364557032000119616,method,,,
+adams1994srg,doi,10.1109/34.295913,foundational,,,
+vincent1993reconstruction,doi,10.1109/83.217222,foundational,,,
+vincent1991watershed,doi,10.1109/34.87344,foundational,,,
+kass1988snakes,doi,10.1007/BF00133570,foundational,,,
+osher1988levelset,doi,10.1016/0021-9991(88)90002-2,foundational,,,
+caselles1997gac,doi,10.1023/A:1007979827043,foundational,,,
+sethian1996fastmarching,doi,10.1073/pnas.93.4.1591,foundational,,,
+dijkstra1959,doi,10.1007/BF01386390,foundational,,,
+boykov2001graphcut,doi,10.1109/ICCV.2001.937505,foundational,,,2001
+boykov2004maxflow,doi,10.1109/TPAMI.2004.60,foundational,,,
+rother2004grabcut,doi,10.1145/1015706.1015720,foundational,,,
+grady2006randomwalker,doi,10.1109/TPAMI.2006.233,foundational,,,
+vezhnevets2005growcut,url,https://www.graphicon.ru/html/2005/proceedings/papers/VezhntvetsKonushin.pdf,"foundational; Proc. Graphicon 2005, pp. 150-156; no DOI","``GrowCut'' -- Interactive Multi-Label N-D Image Segmentation By Cellular Automata","Vezhnevets, Vladimir and Konouchine, Vadim",2005
+zhu2014fastgrowcut,url,https://nac.spl.harvard.edu/publications/effective-interactive-medical-image-segmentation-method-using-fast-growcut,"foundational; MICCAI 2014 Workshop on Interactive Medical Image Computing; no DOI",An Effective Interactive Medical Image Segmentation Method Using Fast GrowCut,"Zhu, Liangjia and Kolesov, Ivan and Gao, Yi and Kikinis, Ron and Tannenbaum, Allen",2014
+bai2007geodesic,doi,10.1109/ICCV.2007.4408931,foundational,,,
+criminisi2008geos,doi,10.1007/978-3-540-88682-2_9,foundational,,,
+achanta2012slic,doi,10.1109/TPAMI.2012.120,foundational,,,
+rousseeuw1993mad,doi,10.1080/01621459.1993.10476408,foundational,,,
+yushkevich2006itksnap,doi,10.1016/j.neuroimage.2006.01.015,foundational,,,
+fedorov2012slicer,doi,10.1016/j.mri.2012.05.001,foundational,,,
+mccormick2014itk,doi,10.3389/fninf.2014.00013,foundational,,,
+itk_confidenceconnected,url,https://itk.org/Doxygen/html/classitk_1_1ConfidenceConnectedImageFilter.html,software documentation,itk::ConfidenceConnectedImageFilter Class Reference,Insight Software Consortium,2024
+slicer_segmenteditor,url,https://slicer.readthedocs.io/en/latest/user_guide/modules/segmenteditor.html,software documentation (Flood filling; Grow from seeds),3D Slicer documentation: Segment Editor,3D Slicer community,2024
+gao2024slicerinteractive,doi,10.1038/s41598-024-80206-7,related,,,
+ramkumar2016userinteraction,doi,10.1007/s10278-015-9839-8,related,,,
+xu2016deepselection,doi,10.1109/CVPR.2016.47,foundational,,,
+maninis2018dextr,doi,10.1109/CVPR.2018.00071,foundational,,,
+sofiiuk2022ritm,doi,10.1109/ICIP46576.2022.9897365,foundational,,,
+wang2018bifseg,doi,10.1109/TMI.2018.2791721,foundational,,,
+wang2019deepigeos,doi,10.1109/TPAMI.2018.2840695,foundational,,,
+sakinis2019interactive,arxiv,1903.08205,foundational,,,
+isensee2021nnunet,doi,10.1038/s41592-020-01008-z,foundational,,,
+kirillov2023sam,doi,10.1109/ICCV51070.2023.00371,foundational,,,
+ravi2024sam2,arxiv,2408.00714,foundational,,,
+ma2024medsam,doi,10.1038/s41467-024-44824-z,foundational,,,
+mazurowski2023samstudy,doi,10.1016/j.media.2023.102918,related,,,
+cheng2023sammed2d,arxiv,2308.16184,foundational,,,
+wang2023sammed3d,arxiv,2310.15161,foundational,,,
+ma2025medsam2,arxiv,2504.03600,foundational,,,
+isensee2025nninteractive,arxiv,2503.08373,foundational,,,
+deVente2025slicernninteractive,arxiv,2504.07991,related,,,
+elbeheiry2020diva,doi,10.1016/j.jmb.2020.05.026,related,,,
+card1991infovis,doi,10.1145/108844.108874,related (response-time thresholds),,,
+miller1968response,doi,10.1145/1476589.1476628,related (response-time thresholds),,,
+antonelli2022msd,doi,10.1038/s41467-022-30695-9,dataset,,,
+simpson2019msd,arxiv,1902.09063,dataset,,,
+wasserthal2023totalseg,doi,10.1148/ryai.230024,dataset,,,
+ji2022amos,arxiv,2206.08023,dataset,,,
+heller2021kits,doi,10.1016/j.media.2020.101821,dataset,,,
+bilic2023lits,doi,10.1016/j.media.2022.102680,dataset,,,
+menze2015brats,doi,10.1109/TMI.2014.2377694,dataset,,,
+kavur2021chaos,doi,10.1016/j.media.2020.101950,dataset,,,
+maierhein2024metrics,doi,10.1038/s41592-023-02151-z,metrics,,,
+dice1945,doi,10.2307/1932409,metrics,,,
+taha2015metrics,doi,10.1186/s12880-015-0068-x,metrics,,,
+brooke1996sus,doi,10.1201/9781498710411-35,user study,,"Brooke, John",
+bangor2008sus,doi,10.1080/10447310802205776,user study,,,
+hart1988nasatlx,doi,10.1016/S0166-4115(08)62386-9,user study,,"Hart, Sandra G. and Staveland, Lowell E.",
+slicer_extraeffects,url,https://github.com/lassoan/SlicerSegmentEditorExtraEffects,"software documentation (Flood filling, Local threshold: minimum diameter against leaks); BSD-3-Clause",SlicerSegmentEditorExtraEffects: extra effects for the 3D Slicer Segment Editor,Lasso and contributors,2024
+totalseg_zenodo,url,https://zenodo.org/records/10047292,dataset record; license CC BY 4.0 (checked 2026-11-04),Dataset with segmentations of 117 important anatomical structures in 1228 CT images (v2.0.1),Wasserthal and others,2023
+amos_zenodo,url,https://zenodo.org/records/7262581,dataset record; license CC BY 4.0 (checked 2026-11-04),AMOS: A large-scale abdominal multi-organ benchmark for versatile medical image segmentation (data record),Ji and others,2022
+chaos_zenodo,url,https://zenodo.org/records/3431873,dataset record; license CC BY-NC-SA 4.0 (checked 2026-11-04),CHAOS - Combined (CT-MR) Healthy Abdominal Organ Segmentation Challenge Data,Kavur and others,2019
+msd_aws,url,https://registry.opendata.aws/msd/,dataset registry entry; license CC BY-SA 4.0 (checked 2026-11-04),Medical Segmentation Decathlon (Registry of Open Data on AWS),MONAI Development Team,2024
+kits23_github,url,https://github.com/neheller/kits23,dataset repository; data license CC BY-NC-SA (checked 2026-11-04),KiTS23: The 2023 Kidney and Kidney Tumor Segmentation Challenge (official repository),Heller and others,2023

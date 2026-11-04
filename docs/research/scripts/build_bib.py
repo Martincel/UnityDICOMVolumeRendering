@@ -10,12 +10,14 @@ import csv
 import datetime as dt
 import json
 import os
+import sys
 import re
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 
-import verify_refs as v  # same HTTP helper (run with -I from repo root: script dir is on sys.path)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I drops the script dir
+import verify_refs as v  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
@@ -103,6 +105,12 @@ def main():
             print("FAILED", r["key"], i)
             continue
         entry, f = res
+        # Resolver gaps (e.g. Crossref has no author for some book chapters): fill from hints, marked in note.
+        filled = [k for k, h in (("author", "author_hint"), ("year", "year_hint")) if not f.get(k) and r.get(h)]
+        for k in filled:
+            f[k] = r[k + "_hint"]
+        if filled and t != "url":
+            r["note"] = (r.get("note", "") + f"; {'/'.join(filled)} not in resolver metadata, added by hand").strip("; ")
         if r.get("note") and t != "url":
             f["note"] = r["note"]
         body = ",\n".join(f"  {k} = {{{esc(val) if k not in ('url', 'doi') else val}}}" for k, val in f.items() if val)

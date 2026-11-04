@@ -1,7 +1,7 @@
 """One round of backward + forward snowballing from key papers (protocol Section 6, step 4).
 
 Usage: python -I docs/research/scripts/snowball.py
-Reads  docs/research/data/snowball-seeds.csv   (record_id or key, doi)
+Reads  docs/research/data/snowball-seeds.csv   (id, doi, direction = both | backward, reason)
 Writes docs/research/data/raw/snowball_links.json  (seed -> referenced DOIs, citing DOIs, with source)
        docs/research/data/snowball-candidates.csv  (unique DOIs not already in records.csv, with OpenAlex
                                                     title/abstract/year, and which seeds point to them)
@@ -13,11 +13,13 @@ feasible; the rule and the counts before/after are written to the log printed at
 import csv
 import json
 import os
+import sys
 import re
 import time
 import urllib.parse
 
-import verify_refs as v
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I drops the script dir
+import verify_refs as v  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.normpath(os.path.join(HERE, "..", "data"))
@@ -63,7 +65,8 @@ def main():
     links, pointers = {}, {}
     for s in seeds:
         doi = s["doi"].lower().strip()
-        refs, cits = oc("references", doi), oc("citations", doi)
+        refs = oc("references", doi)
+        cits = oc("citations", doi) if s.get("direction", "both") == "both" else []
         src = "opencitations"
         if refs is None and cits is None:
             w = openalex(doi)

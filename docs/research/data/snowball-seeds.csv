@@ -1,0 +1,17 @@
+id,doi,direction,reason
+R0184,10.1007/s10055-025-01284-0,both,RQ2 VR interactive segmentation system
+R0394,10.1007/s11548-025-03497-9,both,RQ2 VR AI annotation
+R0397,10.1007/s11548-025-03424-y,both,RQ2 VR segmentation interaction paradigms
+R0402,10.1007/s11548-025-03432-y,both,RQ2 VR rough segmentation + rendering
+R0411,10.1016/j.compbiomed.2023.107217,both,RQ2 VR annotation in volumes
+R0435,10.1007/s10278-024-01048-3,both,RQ2 immersive VR contouring platform
+R0536,10.1007/s10278-018-0108-5,both,RQ2 VR manual correction of MRI segmentation
+R0505,10.1109/mcg.2018.2881985,both,RQ2 VR vessel tracing on MRI
+R0390,10.1007/s00246-026-04478-8,both,RQ2 VR segmentation accuracy/efficiency (Elucis)
+R0288,10.1088/1361-6560/aa7674,backward,RQ1/RQ2 fast interactive 3D segmentation tool
+R0352,10.1118/1.4947484,backward,RQ1 interactive contouring clinical evaluation
+medsam,10.1038/s41467-024-44824-z,backward,RQ1 foundation model (forward too large)
+deepigeos,10.1109/TPAMI.2018.2840695,backward,RQ1 deep interactive
+bifseg,10.1109/TMI.2018.2791721,backward,RQ1 deep interactive
+gao2024,10.1038/s41598-024-80206-7,both,RQ1 open-source interactive 3D (Slicer) classical/learning
+ramkumar2016,10.1007/s10278-015-9839-8,both,RQ1/RQ3 user interaction in semi-automatic segmentation
