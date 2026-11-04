@@ -120,7 +120,21 @@ stylus) also reports a sustained 72 FPS and a 3D-model update latency below 200 
 segmentation latency in VR from click to display" still holds: R0179's figure is for a manual stylus tool, R0394 says
 only "within a few seconds", and R0184 does not quantify latency.
 
-## 7. Decisions for the human re-check
+## 7. Reference verification (protocol Section 8, amendment A3)
+
+`references.bib` has 279 entries: 66 foundational, method, dataset and software references and 213 included studies (nine
+more included studies are the same publication as a foundational reference, `data/key-aliases.csv`). Result in
+`data/verification-log.csv`: **269 verified** against Crossref (184), arXiv (84) or PubMed (1) with a
+title similarity of at least 0.85 to the bibliography title and, for included studies, to the title seen at screening;
+**10 web entries** (software documentation, dataset records, two foundational papers without DOI) with HTTP 200. For the
+HTML pages the share of title words found on the page is 0.889 to 1.0; the GrowCut PDF (Vezhnevets and Konouchine, 2005)
+was checked by hand (title and authors on its first page match). No entry is `check` or `failed`. Two web entries failed
+on the first run because of a transient network error and passed on the re-check (`verify_refs.py --web`).
+`scripts/check_citations.py` confirms that all 145 keys used in the documents are in the bibliography and verified.
+Verification shows that a reference exists and matches its title; it does not show that the paper supports the sentence it
+is cited for.
+
+## 8. Decisions for the human re-check
 
 1. All 80 abstract-only inclusions and the 97 abstract-only decisions in total (`fulltext_source = abstract-only`).
 2. The 43 full-text-stage exclusions (reason in `note_ft`), especially E1 (auto-prompt boundaries) and E4.
@@ -129,7 +143,7 @@ only "within a few seconds", and R0184 does not quantify latency.
    S057 (modality).
 5. Preprints (81 included): published versions may differ; check before citing numbers.
 
-## 8. Limitations of this execution
+## 9. Limitations of this execution
 
 - One AI reviewer (five instances) for screening and extraction; no second reviewer, no agreement statistic.
 - Extraction values were copied from open full texts by an AI model; table and figure values in particular can be

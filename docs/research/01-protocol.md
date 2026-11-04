@@ -229,3 +229,18 @@ are labelled separately. Numbers from our unit tests are synthetic and are label
   by text (no seeds/clicks/strokes/boxes/contours) and SAM variants with automatically generated prompts are E1;
   (c) TA screening was split into five batches screened by five instances of the same AI reviewer with the same
   written instructions (`02-search-and-screening.md`, Section 3). This is still a single-reviewer design.
+- **A3 (2026-11-04, reference verification).** Included studies were added to the bibliography by identifier only
+  (priority DOI, arXiv ID, PMID; an arXiv-registered DOI is converted to its arXiv ID). The title seen at screening time is
+  stored as `title_hint` and `verify_refs.py` compares it with the resolver title as well (column `hint_match_score`); an
+  entry is `verified` only if both similarity scores are at least 0.85, so the check does not depend on the metadata used to
+  build the entry. A study that is the same publication as a foundational reference is not listed twice
+  (`data/key-aliases.csv`). `build_bib.py` reuses entries already resolved for an unchanged identifier (`--refresh` forces a
+  new lookup). For url entries that return HTML, `verify_refs.py` also searches the page for the words of the title; PDFs
+  are checked by hand.
+- **A4 (2026-11-04, after the full-text stage).** (a) Records for which no open full text exists were decided on the
+  abstract and flagged `abstract-only`; E7 was not used. (b) Post-merge manual checks against the sources are recorded in
+  `data/manual-checks.csv` and applied by `merge_screening.py`, the group files stay unchanged; S091 was excluded as E2
+  after reading its full text. (c) The column `peer_reviewed` in the extraction table is derived from the identifier
+  (journal or proceedings DOI = `y`; arXiv ID only or a preprint-server DOI = `preprint`), not from a check of each
+  journal's review process. (d) Final counts and the PRISMA flow are in `02-search-and-screening.md` and
+  `data/prisma-counts.csv`.
