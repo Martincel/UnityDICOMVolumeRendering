@@ -97,7 +97,13 @@ namespace VolumeRendering.Runtime.Segmentation
                 }
             }
             Array.Resize(ref values, n);
+            CenterAndSpread(values, robust, out center, out spread);
+        }
 
+        // Središte i raspršenje uzorka: robust = false: μ i σ; robust = true: medijan i MAD·1,4826.
+        // Uzorak ne smije biti prazan. Koriste ga 2D (WindowStats) i 3D (RegionGrow3D).
+        public static void CenterAndSpread(double[] values, bool robust, out double center, out double spread)
+        {
             if (robust)
             {
                 center = Median(values);

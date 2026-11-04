@@ -17,6 +17,8 @@
     <Compile Include="../../Segmentation/RegionStats.cs" Link="Segmentation/RegionStats.cs" />
     <Compile Include="../../Segmentation/Morphology2D.cs" Link="Segmentation/Morphology2D.cs" />
     <Compile Include="../../Segmentation/RegionGrow2D.cs" Link="Segmentation/RegionGrow2D.cs" />
+    <Compile Include="../../Segmentation/Morphology3D.cs" Link="Segmentation/Morphology3D.cs" />
+    <Compile Include="../../Segmentation/RegionGrow3D.cs" Link="Segmentation/RegionGrow3D.cs" />
     <!-- HU pretvorba (HuMin, HuRange). -->
     <Compile Include="../../Building/VolumeGeometry.cs" Link="Building/VolumeGeometry.cs" />
   </ItemGroup>

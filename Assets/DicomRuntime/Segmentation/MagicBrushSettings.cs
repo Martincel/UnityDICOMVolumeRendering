@@ -34,6 +34,21 @@ namespace VolumeRendering.Runtime.Segmentation
         // Zatvaranje rupa u rezultatu.
         public bool FillHoles { get; set; } = true;
 
+        // Samo 3D (RegionGrow3D): najviše voksela u regiji. Iznad toga rezultat je prazan, a
+        // Diagnostics javlja "smanji osjetljivost". 2D ga ne čita (ROI krug ionako ograničava).
+        public long MaxVoxels { get; set; } = 3000000;
+
         public MagicBrushSettings Clone() => (MagicBrushSettings)MemberwiseClone();
+
+        // Zadane vrijednosti za 3D (stupac 3D iz tablice "Zadani parametri", poglavlje 4).
+        // Konstruktor (new MagicBrushSettings()) i dalje daje 2D zadane vrijednosti.
+        public static MagicBrushSettings Default3D() => new MagicBrushSettings
+        {
+            SeedWindow = 3,          // 3×3×3
+            SeedSlidePixels = 1,     // do 1 voksel
+            MaxRadiusMm = 40,
+            EdgeStop = 0.6,          // G kanal
+            MaxVoxels = 3000000,
+        };
     }
 }

@@ -735,7 +735,7 @@ MaskRegion RegionGrow2D.Run(ushort[] data, int width, int height, int z,
 | S2 | nije počela | | čeka `mb/s3-grow2d` za `MaskRegion` |
 | S3 | gotovo (cloud) | `mb/s3-grow2d` @ `310e318` | 30/30 testova (`Tests~/SegmentationTests`). 512×512 Release (.NET 8): zadani ROI ~1–4 ms, ROI preko cijelog slicea 10–14 ms; u Unityju (Mono) provjeriti u S4/S8. Odstupanja od plana: erozija diskom (ne kvadratom); klizanje sjemena i prozor statistike gledaju samo piksele unutar maxTol od sjemena; uz `FillHoles` rupe u T se zatvaraju prije erozije (šum). Dodatno: `RegionGrow2D.Diagnostics` (μ, t, upotrijebljeni r). `.meta` nisu stvorene. |
 | S4 | nije počela | | |
-| S5 | nije počela | | |
+| S5 | algoritam gotov (cloud), integracija čeka S4 | `mb/s5-grow3d` | `RegionGrow3D.Run` + `Morphology3D`, 44/44 testova (30 starih nepromijenjeno + 14 novih). ROI 129×129×51 (~440 k voksela, rubni stop uključen) Release (.NET 8): medijan ~120–130 ms; u Unityju (Mono) provjeriti. 3D zadano: `MagicBrushSettings.Default3D()` (40 mm, rubni stop 0,6, prozor 3×3×3, klizanje 1, `MaxVoxels` 3 M); `new MagicBrushSettings()` i dalje daje 2D. Odstupanja: erozija elipsoidom (ne kvadrom); klizanje sjemena na najmanji G (ne gradijent u ravnini); kao u 2D, rupe u T se po sliceu zatvaraju prije erozije; kad sjeme ne preživi, r se smanjuje na svim osima zajedno (rz prvi padne na 0); `MaxVoxels` se provjerava u floodu i na kraju. Za S8: rubni stop 0,6 odreže ~1 voksel uz jaki rub (na kugli 40 vs −500 HU ostane ~62 %). Dodatno: `RegionGrow3D.Diagnostics` (μ, t, ROI i r po osi, `TooManyVoxels` + `Message`). `.meta` nisu stvorene. |
 | S6 | nije počela | | |
 | S7 | nije počela | | |
 | S8 | nije počela | | |
