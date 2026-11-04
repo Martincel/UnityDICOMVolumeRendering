@@ -180,7 +180,8 @@ namespace VolumeRendering.Runtime.Xr
                 : "Slice -";
             _status.text = magicTool != null && magicTool.Active
                 ? $"{slice}\nMagic {(magicTool.CurrentTool == MagicBrushTool.Tool.Magic3D ? "3D" : "2D")} · k = {magicTool.Sensitivity:0.0} · {(magicTool.Subtract ? "Oduzmi" : "Dodaj")}"
-                : $"{slice}\nKist {Mathf.RoundToInt(brushRadius)} px";
+                : $"{slice}\nKist {Mathf.RoundToInt(brushRadius)} px" +
+                  (magicTool != null ? "\nKlik trackpada: Magic" : "");
             VrLabel.PlaceAbove(_status.transform, hand, rig.Head);
         }
 
@@ -268,6 +269,20 @@ namespace VolumeRendering.Runtime.Xr
         void HandleBrushAndScale()
         {
             Vector2 a = ReadAxis(XRNode.RightHand);
+
+            // Klik na desni trackpad prebacuje alat: Kist → Magic 2D → Magic 3D. Dok je trackpad stisnut
+            // prst klizi pa se os ne čita, da klik ne pomakne osjetljivost, veličinu kista ni skalu.
+            bool padClick = ReadButton(XRNode.RightHand, CommonUsages.primary2DAxisClick);
+            bool padPressed = padClick && !_prevPadClick;
+            _prevPadClick = padClick;
+            if (padPressed && magicTool != null && painter.DrawingActive && _grabHand == null && !_menuBusy)
+            {
+                magicTool.CycleTool();
+                Haptic(XRNode.RightHand);
+            }
+            if (padClick)
+                return;
+
             if (_grabHand != null || _menuBusy)
                 return;
 
@@ -335,7 +350,7 @@ namespace VolumeRendering.Runtime.Xr
             _line.endColor = c;
         }
 
-        bool _wasMagicBusy;
+        bool _wasMagicBusy, _prevPadClick;
 
         static void Haptic(XRNode node)
         {

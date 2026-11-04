@@ -424,7 +424,20 @@ namespace VolumeRendering.Runtime.Xr
             _panel.localPosition = panelOffset;
             _panel.localRotation = Quaternion.Euler(panelEuler);
 
-            var rows = new List<Action<float>>
+            var rows = new List<Action<float>>();
+            // Alat za označavanje je na vrhu: najčešće se mijenja, a dno dugačkog izbornika je teško dohvatiti.
+            if (magicTool != null)
+            {
+                rows.Add(y => Row(y, () => "Alat: " + MagicToolName(), magicTool.CycleTool));
+                rows.Add(y => Row(y, () => magicTool.Subtract ? "Oznaka: oduzmi" : "Oznaka: dodaj", magicTool.ToggleSubtract));
+                rows.Add(y => Row(y, () => $"Osjetljivost: {magicTool.Sensitivity:0.0}", null,
+                                  ("-", () => magicTool.AdjustSensitivity(-0.1f), SmallButton, true),
+                                  ("+", () => magicTool.AdjustSensitivity(0.1f), SmallButton, true)));
+            }
+            if (maskManager != null)
+                rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
+                                  () => maskManager.Undo()));
+            rows.AddRange(new List<Action<float>>
             {
                 y => Row(y, () => $"Preset: {PresetName(volumeRendering.Preset)}", NextPreset,
                          ("<", PreviousPreset, SmallButton, false), (">", NextPreset, SmallButton, false)),
@@ -440,21 +453,10 @@ namespace VolumeRendering.Runtime.Xr
                          ("-", () => ChangeBand(-1, true), SmallButton, true), ("+", () => ChangeBand(1, true), SmallButton, true)),
                 y => Row(y, () => $"Pojas do: {volumeRendering.HuBandMaxHU:0} HU", null,
                          ("-", () => ChangeBand(-1, false), SmallButton, true), ("+", () => ChangeBand(1, false), SmallButton, true)),
-            };
+            });
             if (sliceClip != null)
                 rows.Add(y => Row(y, MaskOnlyName, CycleMaskOnly));
             rows.Add(y => Row(y, ClipName, ToggleClipPlane, ("Postavi", BeginPlacement, 0.06f, false)));
-            if (magicTool != null)
-            {
-                rows.Add(y => Row(y, () => "Alat: " + MagicToolName(), magicTool.CycleTool));
-                rows.Add(y => Row(y, () => magicTool.Subtract ? "Način: oduzmi" : "Način: dodaj", magicTool.ToggleSubtract));
-                rows.Add(y => Row(y, () => $"Osjetljivost: {magicTool.Sensitivity:0.0}", null,
-                                  ("-", () => magicTool.AdjustSensitivity(-0.1f), SmallButton, true),
-                                  ("+", () => magicTool.AdjustSensitivity(0.1f), SmallButton, true)));
-            }
-            if (maskManager != null)
-                rows.Add(y => Row(y, () => maskManager.CanUndo ? "Poništi oznaku" : "Poništi oznaku (nema)",
-                                  () => maskManager.Undo()));
 
             float height = rows.Count * RowHeight + (rows.Count + 1) * Gap;
             _panelRect = new Rect(-Width * 0.5f, -height * 0.5f, Width, height);
