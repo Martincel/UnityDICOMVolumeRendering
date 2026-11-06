@@ -91,3 +91,70 @@ targets at a latency and integration cost that fit VR without a second GPU or se
 
 Report all parameters, code commit, hardware, Unity version, dataset versions and case IDs; release the evaluation
 scripts. Keep synthetic numbers (unit tests) separate from measurements on real data.
+
+## 7. Preliminary measurement in the Unity Editor (2026-11-05)
+
+Status: **partial, not a VR result.** It covers compute and click-to-end-of-frame time only. It does not cover frame time
+in a headset, the 11.1 ms budget, or a player build (Section 3 is still open).
+
+Setup: Unity 2021.3.45f2 Editor Play mode (Mono), no headset, one CT volume of the project (512 x 512 x 335, spacing
+0.754 x 0.754 x 1 mm, 87.8 million voxels), default parameters (sensitivity 2.5, radius 2D 60 mm, 3D 40 mm, add only).
+Clicks were issued from an editor script at 10 automatically chosen seed points in homogeneous soft tissue (not in a
+chosen organ), 2 s apart (2D) and 3 s apart (3D). Per mode, the first 3 clicks were discarded as warm-up. Instrumentation
+as in Section 3 (`MagicBrushMetrics`, branch `mb/s8-measure`); raw rows in `data/editor-timing-2026-11-05.csv`.
+
+| Mode | n | Compute, median / p95 / max (ms) | Click to end of frame, median / p95 / max (ms) | Target (ms) |
+|---|---|---|---|---|
+| 2D | 20 | 2.2 / 3.0 / 3.0 | 25.4 / 46.8 / 57.1 | 150 |
+| 3D ROI | 22 | 149.7 / 192.7 / 273.8 | 169.8 / 218.5 / 318.2 | 400 |
+
+Mean region size: about 7,900 voxels (2D), about 234,000 voxels (3D). Warm-up clicks: 2D 9.8 ms then about 2 ms; 3D 155,
+135, 106 ms.
+
+Limits to state with these numbers:
+- Editor, not a Release player; no headset, so no frame-time or GPU-contention evidence.
+- Time is counted from the start of the background job, not from the physical click (debounce excluded) and ends at the
+  end of the frame in which the mask is applied (no headset scan-out).
+- All 42 regions had `TouchedRoiBorder` set: seeds were in large homogeneous tissue, so regions filled the ROI. This is a
+  worst case for 3D compute, not a typical organ click.
+- One run, one volume, seeds not chosen by anatomy; no accuracy was measured.
+- The synthetic numbers in `06-rq4-method-description.md` (2D 1.1 ms, 3D 102-125 ms, .NET 8, cloud VM) remain a separate
+  class; the 3D median here (150 ms) is higher than the synthetic one.
+
+### 7.2 Editor Play with the Vive connected (2026-11-05, one series)
+
+Status: **one series, Editor Play, headset connected, no Release player.** It is the only measurement in the project so far
+that has frame times with an XR display running. It is still not the planned evaluation of Section 3.
+
+Setup: as in Section 7 (same volume and parameters), clicks made by hand in VR inside the lungs; mask cleared between
+phases as in the protocol. Raw rows: `data/editor-vr-timing-2026-11-05.csv` (2D: 58 ok; 3D: 45 ok, 2 empty, discarded).
+Warm-up clicks were not separated in this series, so the table includes them.
+
+| Mode | n | Compute, median / p95 / max (ms) | Click to end of frame, median / p95 / max (ms) | Target (ms) |
+|---|---|---|---|---|
+| 2D | 58 | 0.9 / 1.2 / 6.7 | 17.3 / 25.1 / 38.6 | 150 |
+| 3D ROI | 45 | 144 / 185 / 208 | 170 / 215 / 247 | 400 |
+
+Mean region size about 5,700 voxels (2D) and 211,000 voxels (3D). `TouchedRoiBorder` was set in 56 of 58 (2D) and 39 of 45
+(3D) clicks.
+
+Frame time (`VrFrameStats`, 10 s windows over about 6 minutes, 36 windows after loading): the median window frame time was
+14.0–15.3 ms (about 68–70 FPS), the 95th percentile 14.9–20.9 ms, the 99th percentile 15.8–42.1 ms, and one window had a
+single frame of 163.8 ms. **The 11.1 ms budget was not met in the idle windows either**, so the tool cannot be
+shown to cause or not cause budget misses from this series.
+
+Limits to state with these numbers:
+- The windows of this series carry no timestamps (added afterwards), so they cannot be assigned to idle or clicking
+  phases. No comparison of tool on and off is possible from this series.
+- The headset refresh rate changed between 60 Hz and 120 Hz during the session, so the logged count of frames above
+  budget is not meaningful (the budget switched between 16.7 ms and 8.3 ms). Use the millisecond values.
+- Editor Play adds overhead; a Release player build failed to load the volume because the slice shader was not included
+  in the build (`SliceViewController` found no shader by name), and was not pursued. The frame times above are therefore
+  an upper bound on what a player build would show **[ours, not measured]**.
+- A single series: no run-to-run variance. A second pass was started but produced no click records (measurement flag off)
+  and was dropped.
+- No accuracy was measured.
+
+Conclusion for the article: compute and click-to-end-of-frame times are within the 150 ms (2D) and 400 ms (3D) targets
+in this Editor measurement. The frame-time claim (no frame over 11.1 ms caused by the tool) is **not** supported yet
+and must not be made.
