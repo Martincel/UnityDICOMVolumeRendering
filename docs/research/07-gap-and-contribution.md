@@ -11,7 +11,7 @@ the Scopus/WoS queries (`data/queries-scopus-wos.md`) have been run.
 - **Accuracy at few clicks** with promptable 3D models on CT/MR: nnInteractive, CT-SAM3D, VISTA3D and others
   (`isensee2025nninteractive`, r0004, r0143), evaluated on public datasets with simulated clicks and, rarely, with users.
 - **Low latency of learned models** on a GPU (8 ms to 200 ms per prompt, r0050, r0250, `isensee2025nninteractive`) and first
-  CPU-capable variants (r0151 at 0.12 s per interaction on a 64-core server CPU; r0009 at 1.09 s per volume on a laptop CPU).
+  CPU-capable variants (r0151 at 0.12 s per interaction on a 64-core server CPU; r0009 at 1.09 s of inference per volume on a laptop CPU, not a click-to-result time).
 - **VR annotation tools** with user studies: manual (s054, r0179, r0392, s023) and with a remote model (r0184, r0394, r0482).
 - **Classical interactive methods** as application tools with per-case times (r0316, r0375, r0174, r0120) and as ready-made
   Slicer effects (`fedorov2012slicer`, `slicer_segmenteditor`, `slicer_extraeffects`).
@@ -54,8 +54,7 @@ Each item has a status. Only items marked "measured" may appear as results in th
    to C6 support it.
 3. "Real-time in VR" before C4 has been measured in the Unity player on the VR PC.
 4. Any accuracy or timing number from the unit tests as a result. They are [synthetic].
-5. "Machine learning is impractical in VR": r0184 (SUS 90.0) and r0394 show a server works; r0151 and r0009 show CPU-capable
-   learned models. The defensible statement is about single-PC deployment without extra hardware.
+5. "Machine learning is impractical in VR": r0184 (SUS 90.0 for the full workflow with a voice agent; Dice 94.92 % only after refinement on brain MRI) and r0394 (median SUS 77.1, lower usability in editing mode for 2 of 3 radiologists) show a server can work; r0151 shows a CPU-capable learned model per interaction and r0009 CPU inference per volume. The defensible statement is about single-PC deployment without extra hardware.
 
 ## 5. Threats to the novelty statement
 

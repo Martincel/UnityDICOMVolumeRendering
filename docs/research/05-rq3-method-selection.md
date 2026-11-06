@@ -70,13 +70,13 @@ Every non-empty cell cites its basis.
 | Requirement | Our brush (statistical region growing + anti-leak) | Fast GrowCut / seeded competition | GPU level set / random walker | Local learned model (SLIP, FastSAM-3D class) | GPU learned model on render PC (nnInteractive class) | Remote learned model (r0184, r0394 style) |
 |---|---|---|---|---|---|---|
 | Q1 frame budget | ~ background thread, no GPU use **[ours]**; not measured in Unity | ~ CPU implementation; not measured **[ours]** | − shares the render GPU **[ours]** | ~ CPU variant claimed (r0151) but on a 64-core server CPU | − 6–10 GB VRAM and heavy compute on the render GPU **[ours]** | + no local cost; adds network (r0184 not quantified) |
-| Q2 click to result | + 1.1 ms 2D, 102–125 ms 3D ROI **[synthetic]**; classical per-case seconds (r0316, r0375) | ~ GrowCut about 1 min per case (r0174), not per click | ~ 3.5 s per volume (r0300); 0.0807 s cluster update (r0186) | + 0.12 s (r0151); 1.09 s per volume on a laptop CPU (r0009) | + 120–200 ms, up to 3700 ms (isensee2025nninteractive) | ~ "within a few seconds" (r0394) |
+| Q2 click to result | + 1.1 ms 2D, 102–125 ms 3D ROI **[synthetic]**; classical per-case seconds (r0316, r0375) | ~ GrowCut about 1 min per case (r0174), not per click | ~ 3.5 s per volume (r0300); 0.0807 s cluster update (r0186) | + 0.12 s per interaction (r0151; 64-core server CPU, preprint, 6 users); ~ 1.09 s per volume on a laptop CPU (r0009) is inference only, not click to result, and no new accuracy is reported | + 120–200 ms, up to 3700 ms (isensee2025nninteractive) | ~ "within a few seconds" (r0394) |
 | Q3 GPU shared | + CPU only **[ours]** | + CPU possible **[ours]** | − | + CPU mode (r0151) | − | + render GPU untouched |
 | Q4 Unity 2021.3, light dependencies | + managed C# code, no native dependencies **[ours]** | + same **[ours]** | ~ compute shaders possible (r0402 uses them for rendering) | ? no Unity inference in the corpus | ? | ~ WebSocket/Python servers (r0184), Unity client only |
-| Q5 accuracy with few clicks | ? no per-click evaluation of this method in the corpus; Dice 0.83–0.94 for application-specific classical tools (r0318 0.83, r0375 0.84–0.94, r0585 0.92 lungs) | ~ Dice 0.88 vs consensus (r0335), mean above 85 % (r0174) | ~ DC 0.96 or higher in most cases (r0300) | ~ CT liver lesions DSC 0.827 vs 0.763 for nnInteractive, 6 users (r0151) | + user-study Dice 0.794 vs specialist, 0.853 vs resident, inter-expert 0.842, one radiologist (isensee2025nninteractive); mDSC 78.4–82.2 % with 1–3 clicks (r0004) | + Dice 94.9 % refined brain MRI (r0184) |
+| Q5 accuracy with few clicks | ? no per-click evaluation of this method in the corpus; Dice 0.83–0.94 for application-specific classical tools (r0318 0.83, r0375 0.84–0.94, r0585 0.92 lungs) | ~ Dice 0.88 vs consensus (r0335), mean above 85 % (r0174) | ~ DC 0.96 or higher in most cases (r0300) | ~ CT liver lesions DSC 0.827 vs 0.763 for nnInteractive, 6 users (r0151) | + user-study Dice 0.794 vs specialist, 0.853 vs resident, inter-expert 0.842, one radiologist (isensee2025nninteractive); mDSC 78.4–82.2 % with 1–3 clicks (r0004) | ~ Brain MRI Dice 94.92 ± 0.52 % after refinement vs 90.53 ± 10.51 % unrefined; liver CT 95.46 ± 0.40 vs 95.47 ± 0.39 %, no gain (r0184); simulated DSC 0.490 (0 clicks) to 0.645 (10 clicks) on CBCT (r0394) |
 
 Notes for the matrix. The "Q5" cells mix different datasets and are not comparable across columns. The "frame
-budget" column is **[ours]** for every local method: no study measured it.
+budget" column is **[ours]** for every local method: no study measured it. In the "Remote learned model" column the SUS of 90.0 (r0184) belongs to the whole workflow with a voice agent, not to segmentation alone; r0394 reports a median SUS of 77.1.
 
 ## 4. Does the evidence support our choice?
 
@@ -93,15 +93,15 @@ budget" column is **[ours]** for every local method: no study measured it.
 
 **Not supported or contradicted.**
 1. **Accuracy.** Learned promptable models are reported with high agreement at few clicks on many structures
-   (isensee2025nninteractive, r0004, r0184). The corpus gives no evidence that a statistical region-growing brush reaches
+   (isensee2025nninteractive, r0004); r0184 reaches 94.92 % on brain MRI only after refinement (90.53 ± 10.51 % unrefined, no gain on liver CT), and r0394 simulates DSC 0.490 to 0.645 on CBCT. The corpus gives no evidence that a statistical region-growing brush reaches
    comparable Dice at few clicks on CT/MR in general; low-contrast lesions and MR intensity drift are the expected weak
    spots (`06-rq4-method-description.md`, Section 6). The claim cannot rest on the literature.
 2. **"ML needs a GPU" is weakening.** SLIP reports 0.12 s per interaction on CPU (r0151, on a 64-core server CPU, not a
-   consumer laptop), FastSAM-3D 1.09 s per volume on a laptop CPU (r0009), and older interactive CNNs ran on laptop GPUs
+   consumer laptop), FastSAM-3D 1.09 s of inference per volume on a laptop CPU (r0009; not a click-to-result time, no new accuracy reported), and older interactive CNNs ran on laptop GPUs
    (wang2019deepigeos, wang2018bifseg). A local learned model in a VR PC with limited spare compute is therefore a live alternative, and
    should be a baseline in the evaluation, not dismissed.
-3. **Server offload works in VR.** r0184 reports SUS 90.0 with a second RTX 3090 server and r0394 reports usable
-   interaction with a server model. Our argument that learned models are impractical in VR holds for a single-PC
+3. **Server offload works in VR.** r0184 reports SUS 90.0 with a second RTX 3090 server, for the full workflow with a voice agent and not for segmentation alone, and r0394 reports a median SUS of 77.1 with
+   the updated mask "within a few seconds", but lower usability in editing mode for 2 of 3 radiologists. Our argument that learned models are impractical in VR holds for a single-PC
    deployment, not for a lab with a server.
 4. **Fast GrowCut** (our planned next step) has only per-case evidence in the corpus (r0174, r0335, r0319), no per-click
    latency.

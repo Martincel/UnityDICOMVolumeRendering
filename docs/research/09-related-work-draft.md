@@ -44,8 +44,8 @@ structures with nnInteractive on an RTX 4090 and up to 3.7 s in the worst case, 
 adaptation [@r0012; @r0128]. Accuracy depends strongly on data and prompts: CT-SAM3D reaches a mean Dice of 78.4 % with one
 click and 82.2 % with three on BTCV [@r0004], and a preprint reports a median Dice of 0.794 against a specialist in a user
 study with one radiologist [@isensee2025nninteractive]. Recent work moves learned models to the CPU: a preprint reports
-0.12 s per interaction in CPU mode on a 64-core server CPU [@r0151], and FastSAM-3D runs at 1.09 s per volume on a laptop
-CPU [@r0009]. Wrappers inside 3D Slicer report 0.6 s and 0.06 s per inference cycle after a one-off image embedding of up
+0.12 s per interaction in CPU mode on a 64-core server CPU [@r0151], and FastSAM-3D needs 1.09 s of inference per volume on a laptop
+CPU, without newly reported accuracy [@r0009]. Wrappers inside 3D Slicer report 0.6 s and 0.06 s per inference cycle after a one-off image embedding of up
 to 147 s per volume [@r0113; @r0185].
 
 ### 2.3 Annotation and segmentation in virtual reality
@@ -59,9 +59,9 @@ lower Dice (abstract) [@s023]. Interaction studies compare controllers, head poi
 keyboard and mouse with motion controllers (abstract) [@r0397].
 
 Assisted segmentation in VR sends data to a model on another machine. SAMIRA couples SAM 2 point prompts and a voice agent
-with a separate inference server and reports a SUS of 90.0 and NASA-TLX values of 16.8 to 26.6 on a 0 to 100 scale for
-15 to 19 participants [@r0184]; a click-based model on a server updates a mandibular canal segmentation "within a few
-seconds" in a study with three radiologists [@r0394]; classifiers trained in the cloud learn from voxels tagged in VR
+with a separate inference server and reports a SUS of 90.0 for the full workflow and NASA-TLX values of 16.8 to 26.6 on a 0 to 100 scale for
+15 to 19 participants, with a brain MRI Dice of 94.92 % after refinement against 90.53 % without it and no gain on liver CT [@r0184]; a click-based model on a server updates a mandibular canal segmentation "within a few
+seconds" in a study with three radiologists, with a simulated DSC of 0.490 without clicks and 0.645 after ten, and lower usability in editing mode for two of them [@r0394]; classifiers trained in the cloud learn from voxels tagged in VR
 [@r0482]. A system with gesture-placed seeds and a locally computed probability map was compared with mouse input using
 Dice [@s010]. For rendering, multi-volume ray marching in Unity stays above 90 Hz [@r0402] and a general
 volume-selection tool reaches about 120 FPS [@r0186]. We found no immersive study that reports the latency of a

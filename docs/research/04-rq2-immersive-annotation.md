@@ -15,7 +15,7 @@ Segmentation method in the VR tool: **M** = manual (brush, contour, threshold + 
 
 | Study | Year | Peer rev. | Basis | Task / data | Device, engine | Interaction technique | Seg. | Evaluation, as reported |
 |---|---|---|---|---|---|---|---|---|
-| r0184 SAMIRA | 2026 | y | F | brain tumour MRI, liver CT | HTC Vive Pro Eye; Unity 2022.3 + Python WebSocket servers; **second RTX 3090 server** | controller ray, head or eye-gaze pointing, voice agent | L (SAM 2 point prompts, BiomedParse seeding, remote) | n = 15 (paradigm) and 19 (workflow); SUS 90.0 ± 9.0; NASA-TLX 16.8–26.6 (paradigm study), 18.33 overall; paradigm Dice 99.1–99.3 % on refinement tasks; completion 220–251 s |
+| r0184 SAMIRA | 2026 | y | F | brain tumour MRI, liver CT | HTC Vive Pro Eye; Unity 2022.3 + Python WebSocket servers; **second RTX 3090 server** | controller ray, head or eye-gaze pointing, voice agent | L (SAM 2 point prompts, BiomedParse seeding, remote) | n = 15 (paradigm) and 19 (workflow); SUS 90.0 ± 9.0 (full workflow with a voice agent); NASA-TLX 16.8–26.6 (paradigm study), 18.33 overall; paradigm Dice 99.1–99.3 % on refinement tasks (starting from 0.91); full workflow: brain MRI 94.92 % refined vs 90.53 % unrefined, liver CT 95.46 vs 95.47 %; completion 220–251 s |
 | r0394 | 2026 | y | F | mandibular canal, CBCT | headset not named; Unity + OpenXR + open-source Unity volume renderer; DL model on a separate server | controller beam, A/B buttons for positive/negative clicks | L (2S-ICR click model, server) | n = 3 radiologists; UMUX-LITE converted to SUS, median 77.1; updated mask "within a few seconds" after each click; simulated DSC 0.490 (0 clicks) to 0.645 (10 clicks) |
 | r0482 DIVA Cloud | 2021 | y | F | tumours/organs on CT, MRI; microscopy | HTC Vive, Unity/SteamVR; classifier trained on remote NVIDIA DGX-1 | controller strokes tag voxels | L (RF/MLP/XGB/SVM trained in cloud, iterative corrections) | proof of concept; Dice and compute time only in figures |
 | s010 NUI-VR2 | 2021 | y | F | CT/MR vessels, tumours, kidneys, hippocampus | Oculus Rift; VTK; Kinect | hand/arm gestures + voice | S (gesture-placed seeds and surfaces, fast-GrowCut-type, KDE) | Dice NUI vs mouse e.g. vessels 0.88 vs 0.807; no formal user-study scores |
@@ -72,7 +72,7 @@ should be recomputed if the extraction is edited.)
    with 3D visualisation vs 51.80 %).
 3. **Usability scores are positive but small-sample.** SUS ranges from 66.0 (r0179, stylus on Quest) through 73.0
    (r0392) and about 77 (r0394) to 87.5–90.0 (s054, r0184), with 3 to 19 participants. The strongest VR assistance score
-   (r0184, SUS 90) was obtained with a second GPU server.
+   (r0184, SUS 90, full workflow with a voice agent) was obtained with a second GPU server.
 4. **Workload is rarely measured.** NASA-TLX appears in r0184, s011, s054. r0184 reports 16.8–26.6 on a 0–100 scale in
    the paradigm study; values for s054 are only in a figure.
 5. **Real-time budgets are not studied.** The three papers that report frame rate do so for rendering, not for the

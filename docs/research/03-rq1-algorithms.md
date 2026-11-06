@@ -121,7 +121,7 @@ ten points on AMOS (r0050), which shows how strongly accuracy depends on the ben
 1. **What exists.** Three groups: (a) classical seeded and statistical methods with per-case times in seconds to
    minutes on CPU, in application-specific tools; (b) interactive CNNs with typical per-interaction times of 0.1–6 s on
    a data-centre or high-end consumer GPU; (c) promptable foundation models, now at 0.01–0.2 s per prompt on a modern
-   GPU once an image embedding or patch is prepared, and with the first CPU-capable variants (r0151, r0009).
+   GPU once an image embedding or patch is prepared, and with the first CPU-capable variants (r0151 per interaction; r0009 reports inference per volume only).
 2. **Interaction taxonomy.** Click is the dominant prompt (70 + part of the 48 mixed), consistent with our "one click"
    brush; scribbles and boxes are the other main inputs.
 3. **Accuracy is reported but not comparable** across families (different data, prompts, metrics: Dice, NSD, HD95, NoC).
